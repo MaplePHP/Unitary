@@ -1,0 +1,31 @@
+{
+    "name": "maplephp/unitary",
+    "type": "library",
+    "description": "MaplePHP Unitary is an interactive, lightweight and very easy to use PHP CLI (Command Line Interface) Testing library.",
+    "keywords": ["php", "cli", "command line", "prompt", "lightweight", "cross-platform"],
+    "homepage": "https://wazabii.se",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "Daniel Ronkainen",
+            "email": "daniel.ronkainen@wazabii.se"
+        },
+        {
+            "name": "MaplePHP",
+            "homepage": "https://wazabii.se"
+        }
+    ],
+    "require": {
+        "php": ">=8.0",
+        "maplephp/dto": "^1.0",
+        "maplephp/http": "^1.0",
+        "maplephp/validate": "^1.0",
+        "maplephp/prompts": "^1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "MaplePHP\\Unitary\\": ""
+        }
+    },
+    "minimum-stability": "dev"
+}
