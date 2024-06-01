@@ -1,9 +1,9 @@
-Here's an improved version of your markdown guide for your PHP testing library:
+# MaplePHP - Unitary
+PHP Unitary is a lightweight PHP testing library designed to simplify the process of writing and running tests for your PHP code. With an easy-to-use interface and powerful validation options, Unitary allows developers to ensure their code is reliable and performs as expected.
 
-# Unitary
-**PHP Unitary** is a lightweight PHP testing library.
+By following a simple setup process, you can create and execute tests quickly, making it easier to maintain high-quality code and catch potential issues early in the development cycle.
 
-## Example
+## Setup
 
 ### 1. Create a Test File
 Start by creating a test file with a name that starts with "unitary-", e.g., "unitary-lib-name.php".
