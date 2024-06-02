@@ -19,7 +19,7 @@
         "php": ">=8.0",
         "maplephp/dto": "^1.0",
         "maplephp/http": "^1.0",
-        "maplephp/validate": "^1.0",
+        "maplephp/validate": "^1.0.0",
         "maplephp/prompts": "^1.0"
     },
     "autoload": {
