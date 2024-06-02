@@ -17,7 +17,7 @@ if (!class_exists(Unit::class)) {
 
 // If you add true to Unit it will run in quite mode
 // and only report if it finds any errors!
-$unit = new Unit(true);
+$unit = new Unit();
 
 // Add a title to your tests (not required)
 $unit->addTitle("Testing MaplePHP Unitary library!");

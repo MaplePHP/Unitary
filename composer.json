@@ -22,6 +22,12 @@
         "maplephp/validate": "^1.0",
         "maplephp/prompts": "^1.0"
     },
+    "replace": {
+        "maplephp/dto": "self.version",
+        "maplephp/http": "self.version",
+        "maplephp/validate": "self.version",
+        "maplephp/prompts": "self.version"
+    },
     "autoload": {
         "psr-4": {
             "MaplePHP\\Unitary\\": ""

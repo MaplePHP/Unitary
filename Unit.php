@@ -14,6 +14,7 @@ class Unit
     private Command $command;
     private bool $quite;
     private ?string $title;
+    private array $args = [];
     private array $units;
     private int $index = 0;
     private array $error;
@@ -24,10 +25,35 @@ class Unit
         $this->quite = $quite;
     }
 
+    /**
+     * Add title to the test (optional)
+     * @param string $title
+     * @return void
+     */
     public function addTitle(string $title): void
     {
         $this->title = $title;
     }
+
+    /**
+     * Pass arguments to the testing script (optional)
+     * @param array $args
+     * @return void
+     */
+    public function setArgs(array $args): void
+    {
+        $this->args = $args;
+    }
+
+    /**
+     * Get passed arguments in the testing script
+     * @return array
+     */
+    public function getArgs(): array
+    {
+        return $this->args;
+    }
+
     /**
      * Add a test unit/group
      * @param string $message
@@ -94,6 +120,7 @@ class Unit
             throw new Exception("No files found matching the pattern \"" . static::PATTERN . "\" in directory \"$directory\" ");
         } else {
             foreach ($files as $file) {
+                extract($this->args, EXTR_PREFIX_SAME, "wddx");
                 require_once ($file);
             }
         }
