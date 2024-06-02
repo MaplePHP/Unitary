@@ -8,7 +8,7 @@ use MaplePHP\Unitary\Unit;
 
 if (!class_exists(Unit::class)) {
     $dir = realpath(__DIR__ . "/../../../");
-    $alFile = (defined("UNITARY_AUTOLOAD_FILE") ? UNITARY_AUTOLOAD_FILE : "$dir/vendor/autoload.php");
+    $alFile = (defined("UNITARY_AUTOLOAD_FILE") ? UNITARY_AUTOLOAD_FILE : "$dir/autoload.php");
     if (is_file($alFile)) {
         require_once($alFile);
     } else {
@@ -24,7 +24,7 @@ $request = new ServerRequest(new Uri($env->getUriParts([
 ])), $env);
 
 $data = $request->getCliArgs();
-$defaultPath = (defined("UNITARY_PATH") ? UNITARY_PATH : null);
+$defaultPath = (defined("UNITARY_PATH") ? UNITARY_PATH : "./");
 
 try {
     $path = ($data['path'] ?? $defaultPath);
@@ -32,7 +32,7 @@ try {
         throw new Exception("Path not specified: --path=path/to/dir");
     }
 
-    $testDir = realpath($data['path']);
+    $testDir = realpath($path);
     if(!is_dir($testDir)) {
         throw new Exception("Test directory '$testDir' does not exist");
     }

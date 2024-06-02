@@ -13,7 +13,7 @@ class Unit
     const PATTERN = 'unitary-*.php';
     private Command $command;
     private bool $quite;
-    private ?string $title;
+    private ?string $title = null;
     private array $args = [];
     private array $units;
     private int $index = 0;
@@ -90,7 +90,7 @@ class Unit
      */
     public function execute(): void
     {
-        if(!is_null($this->title) && !$this->quite || count($this->error) > 0) {
+        if(!is_null($this->title) && (!$this->quite || count($this->error) > 0)) {
             $this->command->title("\n--------- $this->title ---------");
         }
         if(count($this->error) > 0) {
@@ -147,7 +147,7 @@ class Unit
         $files = [];
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir));
         foreach ($iterator as $file) {
-            if (fnmatch(static::PATTERN, $file->getFilename())) {
+            if(isset($this->args['path']) || strpos($file->getPathname(), "vendor/") === false) {
                 $files[] = $file->getPathname();
             }
         }
