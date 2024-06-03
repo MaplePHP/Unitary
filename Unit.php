@@ -148,7 +148,7 @@ class Unit
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir));
         foreach ($iterator as $file) {
             if (fnmatch(static::PATTERN, $file->getFilename()) &&
-                (isset($this->args['path']) || strpos($file->getPathname(), "vendor/") === false)) {
+                (isset($this->args['path']) || !str_contains($file->getPathname(), "vendor/"))) {
                 $files[] = $file->getPathname();
             }
         }

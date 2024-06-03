@@ -7,7 +7,7 @@ use MaplePHP\Prompts\Command;
 use MaplePHP\Unitary\Unit;
 
 if (!class_exists(Unit::class)) {
-    $dir = realpath(__DIR__ . "/../../../");
+    $dir = realpath(__DIR__ . "/../../");
     $alFile = (defined("UNITARY_AUTOLOAD_FILE") ? UNITARY_AUTOLOAD_FILE : "$dir/autoload.php");
     if (is_file($alFile)) {
         require_once($alFile);
