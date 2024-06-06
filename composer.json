@@ -1,6 +1,7 @@
 {
     "name": "maplephp/unitary",
     "type": "library",
+    "version": "v1.0.3",
     "description": "PHP Unitary is a lightweight PHP testing library designed to simplify the process of writing and running tests for your PHP code.",
     "keywords": ["php", "cli", "command line", "test", "testing"],
     "homepage": "https://wazabii.se",
