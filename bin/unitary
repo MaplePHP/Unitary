@@ -4,7 +4,8 @@
  * MaplePHP Unitary unit testing library
  * @example php unitary --path=fullDirPath --exclude="dir1/dir2/
  */
-require __DIR__ . '/../vendor/autoload.php';
+
+require $GLOBALS['_composer_autoload_path'];
 
 use MaplePHP\Http\Environment;
 use MaplePHP\Http\ServerRequest;
