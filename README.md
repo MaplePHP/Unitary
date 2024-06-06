@@ -105,7 +105,7 @@ Each prompt can have validation rules and custom error messages. Validation can 
     - **Description**: Checks if the value is a valid date and time with the specified format.
     - **Usage**: `"dateTime" => ["Y-m-d H:i"]`
 
-11. **bool**
+11. **isBool**
     - **Description**: Checks if the value is a boolean.
     - **Usage**: `"bool" => []`
 
@@ -117,11 +117,11 @@ Each prompt can have validation rules and custom error messages. Validation can 
     - **Description**: Validates if all of the provided conditions are met.
     - **Usage**: `"allOf" => [["length", [1, 200]], "email"]`
 
-14. **float**
+14. **isFloat**
     - **Description**: Checks if the value is a float.
     - **Usage**: `"float" => []`
 
-15. **int**
+15. **isInt**
     - **Description**: Checks if the value is an integer.
     - **Usage**: `"int" => []`
 
@@ -173,7 +173,7 @@ Each prompt can have validation rules and custom error messages. Validation can 
     - **Description**: Checks if the value is not equal to a specified value.
     - **Usage**: `"notEqual" => ["someValue"]`
 
-28. **string**
+28. **isString**
     - **Description**: Checks if the value is a string.
     - **Usage**: `"string" => []`
 
@@ -213,6 +213,6 @@ Each prompt can have validation rules and custom error messages. Validation can 
     - **Description**: Checks if the value is an object.
     - **Usage**: `"isObject" => []`
 
-38. **boolVal**
+38. **isBoolVal**
     - **Description**: Checks if the value is a boolean-like value (e.g., "on", "yes", "1", "true").
     - **Usage**: `"boolVal" => []`

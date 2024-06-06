@@ -38,12 +38,12 @@ class Test
             }
 
             $readableValue = $this->getReadableValue($value);
-            $message = (is_string($message)) ? $message : "Validation-error: %s";
+            $msg = (is_string($message)) ? ", ($message)" : "";
             $this->test[] = [
                 "method" => $method,
                 "args" => $args,
                 "test" => $bool,
-                "message" => sprintf($message, $method),
+                "message" => sprintf("Validation-error: %s", $method) . $msg,
                 "readableValue" => $readableValue,
             ];
         }

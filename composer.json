@@ -17,15 +17,18 @@
     ],
     "require": {
         "php": ">=8.0",
-        "maplephp/dto": "*",
-        "maplephp/http": "*",
-        "maplephp/validate": "*",
-        "maplephp/prompts": "*"
+        "maplephp/dto": "^1.0",
+        "maplephp/http": "^1.0",
+        "maplephp/validate": "^1.0",
+        "maplephp/prompts": "^1.0"
     },
     "autoload": {
         "psr-4": {
             "MaplePHP\\Unitary\\": ""
         }
     },
+    "bin": [
+        "bin/unitary"
+    ],
     "minimum-stability": "dev"
 }

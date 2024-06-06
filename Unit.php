@@ -95,8 +95,10 @@ class Unit
         }
         if(count($this->error) > 0) {
             foreach($this->error as $error) {
+                $tests = [];
                 $this->command->title("\n{$error['message']}");
                 foreach($error['error'] as $row) {
+                    $tests[] = $row['method'];
                     $this->command->error("Test-value {$row['readableValue']}");
                     $this->command->error("{$row['message']}\n");
                 }
@@ -149,9 +151,42 @@ class Unit
         foreach ($iterator as $file) {
             if (fnmatch(static::PATTERN, $file->getFilename()) &&
                 (isset($this->args['path']) || !str_contains($file->getPathname(), "vendor/"))) {
-                $files[] = $file->getPathname();
+                if(!$this->findExcluded($this->exclude(), $dir, $file->getPathname())) {
+                    $files[] = $file->getPathname();
+                }
             }
         }
         return $files;
+    }
+
+    /**
+     * Get exclude parameter
+     * @return array
+     */
+    function exclude(): array
+    {
+        $excl = array();
+        if(isset($this->args['exclude'])) {
+            $exclude = explode(',', $this->args['exclude']);
+            foreach ($exclude as $file) {
+                $new = trim($file);
+                $lastChar = substr($new, -1);
+                if($lastChar === "/") {
+                    $new .= "*";
+                }
+                $excl[] = trim($new);
+            }
+        }
+        return $excl;
+    }
+
+    function findExcluded(array $exclArr, string $relativeDir, string $file): bool
+    {
+        foreach ($exclArr as $excl) {
+            if(fnmatch($relativeDir . "/". $excl, $file)) {
+               return true;
+            }
+        }
+        return false;
     }
 }
