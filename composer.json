@@ -1,35 +1,41 @@
 {
-    "name": "maplephp/unitary",
-    "type": "library",
-    "version": "v1.0.3",
-    "description": "PHP Unitary is a lightweight PHP testing library designed to simplify the process of writing and running tests for your PHP code.",
-    "keywords": ["php", "cli", "command line", "test", "testing"],
-    "homepage": "https://wazabii.se",
-    "license": "Apache-2.0",
-    "authors": [
-        {
-            "name": "Daniel Ronkainen",
-            "email": "daniel.ronkainen@wazabii.se"
-        },
-        {
-            "name": "MaplePHP",
-            "homepage": "https://wazabii.se"
-        }
-    ],
-    "require": {
-        "php": ">=8.0",
-        "maplephp/dto": "^1.0",
-        "maplephp/http": "^1.0",
-        "maplephp/validate": "^1.0",
-        "maplephp/prompts": "^1.0"
+  "name": "maplephp/unitary",
+  "type": "library",
+  "version": "v1.0.4",
+  "description": "PHP Unitary is a lightweight PHP testing library designed to simplify the process of writing and running tests for your PHP code.",
+  "keywords": [
+    "php",
+    "cli",
+    "command line",
+    "test",
+    "testing"
+  ],
+  "homepage": "https://wazabii.se",
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "Daniel Ronkainen",
+      "email": "daniel.ronkainen@wazabii.se"
     },
-    "autoload": {
-        "psr-4": {
-            "MaplePHP\\Unitary\\": ""
-        }
-    },
-    "bin": [
-        "bin/unitary"
-    ],
-    "minimum-stability": "dev"
+    {
+      "name": "MaplePHP",
+      "homepage": "https://wazabii.se"
+    }
+  ],
+  "require": {
+    "php": ">=8.0",
+    "maplephp/dto": "^1.0",
+    "maplephp/http": "^1.0",
+    "maplephp/validate": "^1.0",
+    "maplephp/prompts": "^1.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "MaplePHP\\Unitary\\": ""
+    }
+  },
+  "bin": [
+    "bin/unitary"
+  ],
+  "minimum-stability": "dev"
 }
