@@ -38,11 +38,13 @@ Unitary will, by default, find all files prefixed with "unitary-" recursively fr
 
 Start by creating a test file with a name that starts with "unitary-", e.g., "unitary-lib-name.php". You can place the file inside `tests/unitary-lib-name.php` for example.
 
+**Note: All of your library classes should be automatically be autoloaded when used in test file!** 
+
 ```php
 <?php
 // If you add the argument "true" to the Unit class, it will run in quiet mode
 // and only report if it finds any errors.
-$unit = new MaplePHP\Unitary\Unit(true);
+$unit = new MaplePHP\Unitary\Unit();
 
 // Add a title to your tests (optional)
 $unit->addTitle("Testing MaplePHP Unitary library!");
