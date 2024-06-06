@@ -1,20 +1,16 @@
 #!/usr/bin/env php
 <?php
+/**
+ * MaplePHP Unitary unit testing library
+ * @example php unitary --path=fullDirPath --exclude="dir1/dir2/
+ */
+require __DIR__ . '/../vendor/autoload.php';
+
 use MaplePHP\Http\Environment;
 use MaplePHP\Http\ServerRequest;
 use MaplePHP\Http\Uri;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Unitary\Unit;
-
-if (!class_exists(Unit::class)) {
-    $dir = realpath(__DIR__ . "/../../");
-    $alFile = (defined("UNITARY_AUTOLOAD_FILE") ? UNITARY_AUTOLOAD_FILE : "$dir/autoload.php");
-    if (is_file($alFile)) {
-        require_once($alFile);
-    } else {
-        die("Please run 'composer install' before running the example test suite");
-    }
-}
 
 $unit = new Unit();
 $command = new Command();
