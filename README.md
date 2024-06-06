@@ -8,9 +8,9 @@ By following a simple setup process, you can create and execute tests quickly, m
 The documentation is divided into several sections:
 - [Installation](#installation)
 - [Guide](#guide)
-    - [Create a Test File](#create-a-test-file)
-    - [Run the Tests](#run-the-tests)
-    - [Configurations](#configurations)
+    - [Create a Test File](#1-create-a-test-file)
+    - [Run the Tests](#2-run-the-tests)
+    - [Configurations](#3-configurations)
 - [Example Breakdown](#example-breakdown)
 - [Validation List](#validation-list)
     - [Data Type Checks](#data-type-checks)
