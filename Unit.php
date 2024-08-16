@@ -95,10 +95,10 @@ class Unit
         }
         if(count($this->error) > 0) {
             foreach($this->error as $error) {
-                $tests = [];
+                //$tests = [];
                 $this->command->title("\n{$error['message']}");
                 foreach($error['error'] as $row) {
-                    $tests[] = $row['method'];
+                    //$tests[] = $row['method'];
                     $this->command->error("Test-value {$row['readableValue']}");
                     $this->command->error("{$row['message']}\n");
                 }
@@ -148,17 +148,13 @@ class Unit
     {
         $files = [];
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir));
-
-        $key = 0;
         foreach ($iterator as $file) {
             if (fnmatch(static::PATTERN, $file->getFilename()) &&
                 (isset($this->args['path']) || !str_contains($file->getPathname(), DIRECTORY_SEPARATOR . "vendor" . DIRECTORY_SEPARATOR ))) {
-
                 if(!$this->findExcluded($this->exclude(), $dir, $file->getPathname())) {
                     $files[] = $file->getPathname();
                 }
             }
-
         }
         return $files;
     }
