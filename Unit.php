@@ -95,10 +95,10 @@ class Unit
         }
         if(count($this->error) > 0) {
             foreach($this->error as $error) {
-                $tests = [];
+                //$tests = [];
                 $this->command->title("\n{$error['message']}");
                 foreach($error['error'] as $row) {
-                    $tests[] = $row['method'];
+                    //$tests[] = $row['method'];
                     $this->command->error("Test-value {$row['readableValue']}");
                     $this->command->error("{$row['message']}\n");
                 }
@@ -150,7 +150,7 @@ class Unit
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir));
         foreach ($iterator as $file) {
             if (fnmatch(static::PATTERN, $file->getFilename()) &&
-                (isset($this->args['path']) || !str_contains($file->getPathname(), "vendor/"))) {
+                (isset($this->args['path']) || !str_contains($file->getPathname(), DIRECTORY_SEPARATOR . "vendor" . DIRECTORY_SEPARATOR ))) {
                 if(!$this->findExcluded($this->exclude(), $dir, $file->getPathname())) {
                     $files[] = $file->getPathname();
                 }
@@ -169,9 +169,10 @@ class Unit
         if(isset($this->args['exclude'])) {
             $exclude = explode(',', $this->args['exclude']);
             foreach ($exclude as $file) {
+                $file = str_replace(['"', "'"], "", $file);
                 $new = trim($file);
                 $lastChar = substr($new, -1);
-                if($lastChar === "/") {
+                if($lastChar === DIRECTORY_SEPARATOR) {
                     $new .= "*";
                 }
                 $excl[] = trim($new);
@@ -180,13 +181,32 @@ class Unit
         return $excl;
     }
 
+    /**
+     * Validate a exclude path
+     * @param array $exclArr
+     * @param string $relativeDir
+     * @param string $file
+     * @return bool
+     */
     function findExcluded(array $exclArr, string $relativeDir, string $file): bool
     {
+        $file = $this->getNaturalPath($file);
         foreach ($exclArr as $excl) {
-            if(fnmatch($relativeDir . "/". $excl, $file)) {
-               return true;
+            $relativeExclPath = $this->getNaturalPath($relativeDir . DIRECTORY_SEPARATOR . $excl);
+            if(fnmatch($relativeExclPath, $file)) {
+                return true;
             }
         }
         return false;
+    }
+
+    /**
+     * Get path as natural path
+     * @param string $path
+     * @return string
+     */
+    function getNaturalPath(string $path): string
+    {
+        return str_replace("\\", "/", $path);
     }
 }

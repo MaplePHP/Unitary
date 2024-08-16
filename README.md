@@ -38,7 +38,7 @@ Unitary will, by default, find all files prefixed with "unitary-" recursively fr
 
 Start by creating a test file with a name that starts with "unitary-", e.g., "unitary-lib-name.php". You can place the file inside `tests/unitary-lib-name.php` for example.
 
-**Note: All of your library classes should be automatically be autoloaded when used in test file!** 
+**Note: All of your library classes should be automatically be autoloaded if you are using composers autoloader inside your test file!** 
 
 ```php
 <?php
@@ -74,14 +74,14 @@ $unit->add("Checking data type", function($inst) {
 
 $unit->execute();
 ```
-The example above uses both built-in validation and custom validation (see below for all built-in validation options).
+The example above uses both built-in validation and custom validation (see below for all built-in validation options). 
 
 ### 2. Run the Tests
 
 Now you are ready to execute the tests. Open your command line of choice, navigate (cd) to your project's root directory (where your `composer.json` file exists), and execute the following command:
 
 ```bash
-./vendor/bin/unitary
+php vendor/bin/unitary
 ```
 
 And that is it. Your tests have been successfully executed.
@@ -97,7 +97,7 @@ You can change the default root testing path and exclude files or whole director
 The path argument takes both absolute and relative paths. The command below will find all tests recursively from the "tests" directory.
 
 ```bash
-./vendor/bin/unitary --path="./tests/"
+php vendor/bin/unitary --path="./tests/"
 ```
 
 #### 2. Exclude Specific Files or Directories
@@ -105,7 +105,7 @@ The path argument takes both absolute and relative paths. The command below will
 The exclude argument will always be a relative path from the `--path` argument's path.
 
 ```bash
-./vendor/bin/unitary --exclude="./tests/unitary-query-php, tests/otherTests/*, */extras/*"
+php vendor/bin/unitary --exclude="./tests/unitary-query-php, tests/otherTests/*, */extras/*"
 ```
 
 ## Example Breakdown
