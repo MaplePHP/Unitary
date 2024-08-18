@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace MaplePHP\Unitary;
 
 use Exception;
+use MaplePHP\Blunder\Handlers\CliHandler;
+use MaplePHP\Blunder\Run;
 use MaplePHP\Prompts\Command;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -90,6 +92,9 @@ class Unit
      */
     public function execute(): void
     {
+        $run = new Run(new CliHandler());
+        $run->load();
+
         if(!is_null($this->title) && (!$this->quite || count($this->error) > 0)) {
             $this->command->title("\n--------- $this->title ---------");
         }
