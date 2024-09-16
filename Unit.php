@@ -16,6 +16,7 @@ class Unit
     private Command $command;
     private bool $quite;
     private ?string $title = null;
+    private string $output = "";
     private array $args = [];
     private array $units;
     private int $index = 0;
@@ -67,7 +68,9 @@ class Unit
         $hasError = false;
         $test = $this->unitTest();
         // Make the tests
+        ob_start();
         $callback($test);
+        $this->output .= ob_get_clean();
         // Get the tests results
         $data = $test->getTestResult();
         $index = $this->index-1;
@@ -84,6 +87,35 @@ class Unit
         if(!$hasError) {
             unset($this->error[$index]);
         }
+    }
+
+    /**
+     * Access command instance
+     * @return Command
+     */
+    public function command(): Command
+    {
+        return $this->command;
+    }
+
+    /**
+     * Print message
+     * @param string $message
+     * @return false|string
+     */
+    public function message(string $message): false|string
+    {
+        return $this->command->message($message);
+    }
+
+    /**
+     * confirm for execute
+     * @param string $message
+     * @return bool
+     */
+    public function confirm(string $message = "Do you wish to continue?"): bool
+    {
+        return $this->command->confirm($message);
     }
 
     /**
@@ -112,6 +144,8 @@ class Unit
         } elseif(!$this->quite) {
             $this->command->approve("Every test has been successfully run!");
         }
+
+        $this->command->message($this->output);
     }
 
     /**
