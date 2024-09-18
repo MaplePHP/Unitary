@@ -21,6 +21,8 @@ class Unit
     private array $units;
     private int $index = 0;
     private array $error;
+    private static string $file = "";
+    private static array $info = [];
 
     public function __construct(bool $quite = false)
     {
@@ -75,17 +77,22 @@ class Unit
         $data = $test->getTestResult();
         $index = $this->index-1;
 
-        $this->error[$index] = [
-            'message' => $message
+        $count = count($test->getTestCases());
+        $this->error['info'] = [
+            'count' => $count,
+            'total' => $count
         ];
+        $this->error['feed'][$index] = [
+            'message' => $message,
+            'file' => self::$file,
+            'error' => []
+        ];
+
         foreach($data as $key => $row) {
             if(!$row['test']) {
-                $hasError = true;
-                $this->error[$index]['error'][$key] = $row;
+                $this->error['feed'][$index]['error'][$key] = $row;
+                $this->error['info']['count']--;
             }
-        }
-        if(!$hasError) {
-            unset($this->error[$index]);
         }
     }
 
@@ -127,25 +134,49 @@ class Unit
         $run = new Run(new CliHandler());
         $run->load();
 
-        if(!is_null($this->title) && (!$this->quite || count($this->error) > 0)) {
-            $this->command->title("\n--------- $this->title ---------");
-        }
-        if(count($this->error) > 0) {
-            foreach($this->error as $error) {
-                //$tests = [];
-                $this->command->title("\n{$error['message']}");
-                foreach($error['error'] as $row) {
-                    //$tests[] = $row['method'];
-                    $this->command->error("Test-value {$row['readableValue']}");
-                    $this->command->error("{$row['message']}\n");
-                }
+
+
+        $this->command->message("");
+
+        foreach($this->error['feed'] as $error) {
+
+            $color = ($error['error'] ? "red" : "blue");
+            $flag = $this->command->getAnsi()->style(['blueBg', 'white'],  " PASS ");
+            if($error['error']) {
+                $flag = $this->command->getAnsi()->style(['redBg', 'white'],  " FAIL ");
             }
 
-        } elseif(!$this->quite) {
-            $this->command->approve("Every test has been successfully run!");
+            $this->command->message("");
+            $this->command->message(
+                $flag .
+                " " .
+                $this->command->getAnsi()->style(["bold"],  $this->formatFileTitle($error['file'])) .
+                " - " .
+                $this->command->getAnsi()->style(["bold", $color],  $error['message'])
+            );
+            foreach($error['error'] as $row) {
+                $this->command->message("");
+
+                $this->command->message($this->command->getAnsi()->style(["bold", "red"], "Error: {$row['message']}"));
+                $this->command->message($this->command->getAnsi()->bold("Value: ") . "{$row['readableValue']}");
+                if(is_string($row['method'])) {
+                    $this->command->message($this->command->getAnsi()->bold("Validation: ") . "{$row['method']}");
+                }
+
+            }
+
+            $this->command->message("");
+            $this->command->message(
+                $this->command->getAnsi()->bold("Passed: ") .
+                $this->command->getAnsi()->style([$color, "bold"], $this->error['info']['count'] . "/" . $this->error['info']['total']));
         }
 
-        $this->command->message($this->output);
+
+
+
+        if($this->output) {
+            $this->command->message($this->output);
+        }
     }
 
     /**
@@ -162,6 +193,7 @@ class Unit
         } else {
             foreach ($files as $file) {
                 extract($this->args, EXTR_PREFIX_SAME, "wddx");
+                self::$file = $file;
                 require_once ($file);
             }
         }
@@ -247,5 +279,28 @@ class Unit
     function getNaturalPath(string $path): string
     {
         return str_replace("\\", "/", $path);
+    }
+    /**
+     * Get path as natural path
+     * @param string $path
+     * @return string
+     */
+    function getUnnaturalPath(string $path): string
+    {
+        return str_replace("/", "\\", $path);
+    }
+
+    /**
+     * Make file path into a title
+     * @param string $file
+     * @return string
+     */
+    function formatFileTitle(string $file): string
+    {
+        $file = explode("/", $file);
+        $file = array_chunk(array_reverse($file), 3);
+        $file = implode("\\", array_reverse($file[0]));
+        $exp = explode('.', $file);
+        return ".." . reset($exp);
     }
 }

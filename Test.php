@@ -3,12 +3,14 @@ declare(strict_types=1);
 
 namespace MaplePHP\Unitary;
 
+use ErrorException;
 use MaplePHP\DTO\Format\Str;
 use MaplePHP\Validate\Inp;
 use InvalidArgumentException;
 
 class Test
 {
+    private array $cases = [];
     private array $test = [];
 
     /**
@@ -17,9 +19,11 @@ class Test
      * @param array $validation
      * @param string|null $message
      * @return $this
+     * @throws ErrorException
      */
     public function add(mixed $value, array $validation, ?string $message = null): self
     {
+        $this->cases[] = $validation;
         foreach($validation as $method => $args) {
             if(is_callable($args)) {
                 $bool = $args($this->valid($value), $value);
@@ -43,12 +47,21 @@ class Test
                 "method" => $method,
                 "args" => $args,
                 "test" => $bool,
-                "message" => sprintf("Validation-error: %s", $method) . $msg,
+                "message" => $message,
                 "readableValue" => $readableValue,
             ];
         }
 
         return $this;
+    }
+
+    /**
+     * Will return the test results as an array
+     * @return array
+     */
+    public function getTestCases(): array
+    {
+        return $this->cases;
     }
 
     /**
@@ -73,6 +86,7 @@ class Test
      * Used to get a readable value
      * @param mixed $value
      * @return string
+     * @throws ErrorException
      */
     protected function getReadableValue(mixed $value): string {
         if (is_bool($value)) {
@@ -107,6 +121,7 @@ class Test
      * Used to get exception to the readable value
      * @param string $value
      * @return string
+     * @throws ErrorException
      */
     final protected function excerpt(string $value): string
     {
