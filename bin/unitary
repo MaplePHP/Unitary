@@ -11,9 +11,8 @@ use MaplePHP\Http\Environment;
 use MaplePHP\Http\ServerRequest;
 use MaplePHP\Http\Uri;
 use MaplePHP\Prompts\Command;
-use MaplePHP\Unitary\Unit;
+use MaplePHP\Unitary\FileIterator;
 
-$unit = new Unit();
 $command = new Command();
 $env = new Environment();
 $request = new ServerRequest(new Uri($env->getUriParts([
@@ -33,7 +32,7 @@ try {
     if(!is_dir($testDir)) {
         throw new Exception("Test directory '$testDir' does not exist");
     }
-    $unit->setArgs($data);
+    $unit = new FileIterator($data);
     $unit->executeAll($testDir);
 
 } catch (Exception $e) {

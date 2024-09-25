@@ -1,8 +1,19 @@
 # MaplePHP - Unitary
 
-PHP Unitary is a lightweight, user-friendly PHP unit testing library designed to make writing and running tests for your PHP code simple. With an intuitive interface and robust validation options, Unitary enables developers to ensure their code is reliable and functions as intended.
+PHP Unitary is a **user-friendly** and pretty unit testing library designed to make writing and running tests for your PHP code easy. With an intuitive CLI interface that work on all platforms and robust validation options, Unitary makes it easy for you as a developer to ensure your code is reliable and functions as intended.
 
-By following a simple setup process, you can create and execute tests quickly, making it easier to maintain high-quality code and catch potential issues early in the development cycle.
+
+### Syntax you will love 
+```php
+$unit->case("MaplePHP Request URI path test", function() use($request) {
+    $response = new Response(200);
+
+    $this->add($response->getStatusCode(), function() {
+        return $this->equal(200);
+    }, "HTTP Request method Type is not POST");
+});
+```
+
 
 ## Documentation
 The documentation is divided into several sections:
@@ -34,42 +45,58 @@ composer require --dev maplephp/unitary
 
 ### 1. Create a Test File
 
-Unitary will, by default, find all files prefixed with "unitary-" recursively from your project's root directory (where your "composer.json" file exists).
+Unitary will, by default, find all files prefixed with "unitary-" recursively from your project's root directory (where your "composer.json" file exists), the vendor directory will be excluded by default.
 
-Start by creating a test file with a name that starts with "unitary-", e.g., "unitary-lib-name.php". You can place the file inside `tests/unitary-lib-name.php` for example.
+Start by creating a test file with a name that starts with "unitary-", e.g., "unitary-request.php". You can place the file inside your library directory, for example like this `tests/unitary-request.php`.
 
-**Note: All of your library classes should be automatically be autoloaded if you are using composers autoloader inside your test file!** 
+**Note: All of your library classes will be automatically be autoloaded through the composers autoloader inside your test file!** 
+
+### 2. Create a test case
+Now that we have create a test file e.g. `tests/unitary-request.php`, we will need to add our test cases and tests. I will create a test for one a of my other libraries below, which is MaplePHP/HTTP and specifically the Request library that has full PSR-7 support.
+
+I will show you three different ways to test your application below.
 
 ```php
 <?php
-// If you add the argument "true" to the Unit class, it will run in quiet mode
-// and only report if it finds any errors.
+
 $unit = new MaplePHP\Unitary\Unit();
 
-// Add a title to your tests (optional)
-$unit->addTitle("Testing MaplePHP Unitary library!");
+// If you build your library right it will become very easy to mock, like I have below.
+$request = new MaplePHP\Http\Request(
+    "POST", // The HTTP Method (GET, POST, PUT, DELETE, PATCH)
+    "https://admin:mypass@example.com:65535/test.php?id=5221&place=stockholm", // The Request URI
+    ["Content-Type" => "application/x-www-form-urlencoded"], // Add Headers, empty array is allowed
+    ["email" => "john.doe@example.com"] // Post data
+);
 
 // Begin by adding a test
-$unit->add("Checking data type", function($inst) {
-    // My test; this could be your class and method here
-    $myStrVar = "Lorem ipsum dolor";
-    $myIntVar = 998;
-    
-    // Each array item is a test for "$myStrVar"
-    $inst->add($myStrVar, [
+$unit->case("MaplePHP Request URI path test", function() use($request) {
+
+    // Test 1
+    $this->add($request->getMethod(), function() {
+        return $this->equal("POST");
+
+    }, "HTTP Request method Type is not POST");
+    // Adding a error message is not required, but it is highly recommended
+
+    // Test 2
+    $this->add($request->getUri()->getPort(), [
+        "isInt" => [], // Has no arguments = empty array
+        "min" => [1], // Strict way is to pass each argument to array
+        "max" => 65535, // But if its only one argument then this it is acceptable
+        "length" => [1, 5]
+
+    ], "Is not a valid port number");
+
+    // Test 3
+    $this->add($request->getUri()->getUserInfo(), [
         "isString" => [],
-        "length" => [1, 200]
-    ]);
-    
-    // You can have multiple subtests in each test unit, but try to follow the unit's subject! 
-    $inst->add($myIntVar, [
-        "isInt" => [],
-        "equal" => 998,
-        "custom" => function($valid) use($myIntVar) {
-            return ($myIntVar === 998);
+        "User validation" => function($value) {
+            $arr = explode(":", $value);
+            return ($this->withValue($arr[0])->equal("admin") && $this->withValue($arr[1])->equal("mypass"));
         }
-    ]);
-    // Every test above will be successful!
+
+    ], "Is not a valid port number");
 });
 
 $unit->execute();
@@ -86,7 +113,9 @@ php vendor/bin/unitary
 
 And that is it. Your tests have been successfully executed.
 
-### 3. Configurations
+And with that you are ready to create you own test!
+
+## Configurations
 
 You can change the default root testing path and exclude files or whole directories from the tests.
 
@@ -97,7 +126,7 @@ You can change the default root testing path and exclude files or whole director
 The path argument takes both absolute and relative paths. The command below will find all tests recursively from the "tests" directory.
 
 ```bash
-php vendor/bin/unitary --path="./tests/"
+php vendor/bin/unitary --path="/tests/"
 ```
 
 #### 2. Exclude Specific Files or Directories
