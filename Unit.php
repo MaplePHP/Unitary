@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace MaplePHP\Unitary;
 
 use Closure;
+use ErrorException;
 use Exception;
 use RuntimeException;
 use MaplePHP\Unitary\Handlers\HandlerInterface;
@@ -16,9 +17,8 @@ class Unit
     private ?HandlerInterface $handler = null;
     private Command $command;
     private string $output = "";
-    private array $units;
     private int $index = 0;
-    private array $cases;
+    private array $cases = [];
     private bool $skip = false;
     private bool $executed = false;
     private static array $headers = [];
@@ -57,8 +57,9 @@ class Unit
     public function manual(string $key): self
     {
         if(isset(self::$manual[$key])) {
+            $file = (string)(self::$headers['file'] ?? "none");
             throw new RuntimeException("The manual key \"$key\" already exists.
-                Please set a unique key in the " . self::$headers['file'] . " file.");
+                Please set a unique key in the " . $file. " file.");
         }
         self::$manual[$key] = self::$headers['checksum'];
         return $this->skip(true);
@@ -115,13 +116,14 @@ class Unit
 
     /**
      * DEPRECATED: Name has been changed to case
-     * @param ...$args
+     * @param string $message
+     * @param Closure $callback
      * @return void
      */
-    public function add(...$args): void
+    public function add(string $message, Closure $callback): void
     {
         //trigger_error('Method ' . __METHOD__ . ' is deprecated', E_USER_DEPRECATED);
-        $this->case(...$args);
+        $this->case($message, $callback);
     }
 
     /**
@@ -143,26 +145,11 @@ class Unit
     /**
      * Execute tests suite
      * @return bool
+     * @throws ErrorException
      */
     public function execute(): bool
     {
-        if($this->executed) {
-            return false;
-        }
-
-        // Enable MaplePHP/Blunder, a pretty error handling library
-        /*
-         $cli = new CliHandler();
-        if(isset(self::$headers['args']['trace'])) {
-            $cli->enableTraceLines(true);
-        }
-        $run = new Run($cli);
-        $run->load();
-         */
-
-
-
-        if(!$this->validate()) {
+        if($this->executed || !$this->validate()) {
             return false;
         }
 
@@ -170,11 +157,15 @@ class Unit
         ob_start();
         foreach($this->cases as $row) {
 
+            if(!($row instanceof TestCase)) {
+                throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestCase.");
+            }
+
             try {
                 $tests = $row->dispatchTest();
             } catch (Throwable $e) {
-                $file = $this->formatFileTitle(self::$headers['file'], 5, false);
-                throw new RuntimeException($e->getMessage() . ". Error originated from: ". $file, $e->getCode(), $e);
+                $file = $this->formatFileTitle((string)(self::$headers['file'] ?? ""), 5, false);
+                throw new RuntimeException($e->getMessage() . ". Error originated from: ". $file, (int)$e->getCode(), $e);
             }
 
             $color = ($row->hasFailed() ? "red" : "blue");
@@ -186,22 +177,27 @@ class Unit
             $this->command->message("");
             $this->command->message(
                 $flag . " " .
-                $this->command->getAnsi()->style(["bold"],  $this->formatFileTitle(self::$headers['file'])) .
+                $this->command->getAnsi()->style(["bold"],  $this->formatFileTitle((string)(self::$headers['file'] ?? ""))) .
                 " - " .
-                $this->command->getAnsi()->style(["bold", $color],  $row->getMessage())
+                $this->command->getAnsi()->style(["bold", $color],  (string)$row->getMessage())
             );
             foreach($tests as $test) {
+
+                if(!($test instanceof TestUnit)) {
+                    throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestUnit.");
+                }
+
                 if(!$test->isValid()) {
+                    $msg = (string)$test->getMessage();
                     $this->command->message("");
-                    $this->command->message($this->command->getAnsi()->style(["bold", "red"], "Error: " . $test->getMessage()));
+                    $this->command->message($this->command->getAnsi()->style(["bold", "red"], "Error: " . $msg));
+                    /** @var array<string, string> $unit */
                     foreach($test->getUnits() as $unit) {
-                        if(is_string($unit['validation'])) {
-                            $this->command->message(
-                                $this->command->getAnsi()->bold("Validation: ") .
-                                $this->command->getAnsi()->style(((!$unit['valid']) ? "red" : null),
-                                    $unit['validation'] . ((!$unit['valid']) ? " (fail)" : ""))
-                            );
-                        }
+                        $this->command->message(
+                            $this->command->getAnsi()->bold("Validation: ") .
+                            $this->command->getAnsi()->style(((!$unit['valid']) ? "red" : null),
+                                $unit['validation'] . ((!$unit['valid']) ? " (fail)" : ""))
+                        );
                     }
                     $this->command->message($this->command->getAnsi()->bold("Value: ") . $test->getReadValue());
                 }
@@ -210,11 +206,13 @@ class Unit
             self::$totalPassedTests += $row->getCount();
             self::$totalTests += $row->getTotal();
 
+            $checksum = (string)(self::$headers['checksum'] ?? "");
             $this->command->message("");
+
             $this->command->message(
                 $this->command->getAnsi()->bold("Passed: ") .
                 $this->command->getAnsi()->style([$color], $row->getCount() . "/" . $row->getTotal()) .
-                $this->command->getAnsi()->style(["italic", "grey"], " - ". self::$headers['checksum'])
+                $this->command->getAnsi()->style(["italic", "grey"], " - ". $checksum)
             );
         }
         $this->output .= ob_get_clean();
@@ -251,9 +249,8 @@ class Unit
      */
     private function validate(): bool
     {
-        $args = self::$headers['args'];
-        $manual = $args['show'] ?? "";
-
+        $args = (array)(self::$headers['args'] ?? []);
+        $manual = isset($args['show']) ? (string)$args['show'] : "";
         if(isset($args['show'])) {
             return !((self::$manual[$manual] ?? "") !== self::$headers['checksum'] && $manual !== self::$headers['checksum']);
         }
@@ -294,7 +291,7 @@ class Unit
         $file = explode("/", $file);
         if ($removeSuffix) {
             $pop = array_pop($file);
-            $file[] = substr($pop, strpos($pop, 'unitary') + 8);
+            $file[] = substr($pop, (int)strpos($pop, 'unitary') + 8);
         }
 
         $file = array_chunk(array_reverse($file), $length);
@@ -345,10 +342,10 @@ class Unit
 
     /**
      * Used to get instance
-     * @return Unit
+     * @return ?Unit
      * @throws Exception
      */
-    public static function getUnit(): Unit
+    public static function getUnit(): ?Unit
     {
         if(is_null(self::hasUnit())) {
             throw new Exception("Unit has not been set yet. It needs to be set first.");
@@ -362,7 +359,7 @@ class Unit
      */
     public static function completed(): void
     {
-        if(is_null(self::$current->handler)) {
+        if(!is_null(self::$current) && is_null(self::$current->handler)) {
             self::$current->command->message("");
             self::$current->command->message(
                 self::$current->command->getAnsi()->style(["italic", "grey"],

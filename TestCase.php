@@ -4,19 +4,19 @@ declare(strict_types=1);
 namespace MaplePHP\Unitary;
 
 use BadMethodCallException;
-use Closure;
 use ErrorException;
-use MaplePHP\Validate\Inp;
 use RuntimeException;
+use Closure;
 use Throwable;
+use MaplePHP\Validate\Inp;
 
 class TestCase
 {
     private mixed $value;
     private ?string $message;
-    private array $test;
+    private array $test = [];
     private int $count = 0;
-    private Closure $bind;
+    private ?Closure $bind = null;
 
     function __construct(?string $message = null)
     {
@@ -40,7 +40,9 @@ class TestCase
     function dispatchTest(): array
     {
         $test = $this->bind;
-        $test($this);
+        if (!is_null($test)) {
+            $test($this);
+        }
         return $this->test;
     }
 
@@ -56,11 +58,11 @@ class TestCase
     {
         $this->value = $expect;
         $test = new TestUnit($this->value, $message);
-        if(is_callable($validation)) {
+        if($validation instanceof Closure) {
             $test->setUnit($this->buildClosureTest($validation));
         } else {
             foreach($validation as $method => $args) {
-                if(!is_callable($args) && !is_array($args)) {
+                if(!($args instanceof Closure) && !is_array($args)) {
                     $args = [$args];
                 }
                 $test->setUnit($this->buildArrayTest($method, $args), $method, (is_array($args) ? $args : []));
@@ -145,8 +147,11 @@ class TestCase
      */
     public function buildClosureTest(Closure $validation): bool
     {
+        $bool = false;
         $validation = $validation->bindTo($this->valid($this->value));
-        $bool = $validation($this->value);
+        if(!is_null($validation)) {
+            $bool = $validation($this->value);
+        }
         if(!is_bool($bool)) {
             throw new RuntimeException("A callable validation must return a boolean!");
         }
@@ -167,8 +172,11 @@ class TestCase
      */
     public function buildArrayTest(string $method, array|Closure $args): bool
     {
-        if(is_callable($args)) {
+        if($args instanceof Closure) {
             $args = $args->bindTo($this->valid($this->value));
+            if(is_null($args)) {
+                throw new ErrorException("The argument is not returning a callable Closure!");
+            }
             $bool = $args($this->value);
             if(!is_bool($bool)) {
                 throw new RuntimeException("A callable validation must return a boolean!");
@@ -177,17 +185,15 @@ class TestCase
             if(!method_exists(Inp::class, $method)) {
                 throw new BadMethodCallException("The validation $method does not exist!");
             }
-            if(!is_array($args)) {
-                $args = [];
-            }
+
             try {
                 $bool = call_user_func_array([$this->valid($this->value), $method], $args);
             } catch (Throwable $e) {
-                throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+                throw new RuntimeException($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
 
-        return $bool;
+        return (bool)$bool;
     }
 
     /**

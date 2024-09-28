@@ -9,6 +9,7 @@ use MaplePHP\Blunder\Handlers\CliHandler;
 use MaplePHP\Blunder\Run;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use SplFileInfo;
 
 class FileIterator
 {
@@ -31,7 +32,7 @@ class FileIterator
     {
         $files = $this->findFiles($directory);
         if (empty($files)) {
-            throw new RuntimeException("No files found matching the pattern \"" . static::PATTERN . "\" in directory \"$directory\" ");
+            throw new RuntimeException("No files found matching the pattern \"" . (string)(static::PATTERN ?? "") . "\" in directory \"$directory\" ");
         } else {
             foreach ($files as $file) {
                 extract($this->args, EXTR_PREFIX_SAME, "wddx");
@@ -39,10 +40,13 @@ class FileIterator
                 Unit::setHeaders([
                     "args" => $this->args,
                     "file" => $file,
-                    "checksum" => md5($file)
+                    "checksum" => md5((string)$file)
                 ]);
 
-                $this->requireUnitFile($file)();
+                $call = $this->requireUnitFile((string)$file);
+                if (!is_null($call)) {
+                    $call();
+                }
                 if(!Unit::hasUnit()) {
                     throw new RuntimeException("The Unitary Unit class has not been initiated inside \"$file\".");
                 }
@@ -54,19 +58,22 @@ class FileIterator
 
     /**
      * Will Scan and find all unitary test files
-     * @param $dir
+     * @param string $dir
      * @return array
      */
-    private function findFiles($dir): array
+    private function findFiles(string $dir): array
     {
         $files = [];
         $realDir = realpath($dir);
-        if(!$realDir) {
+        if($realDir === false) {
             throw new RuntimeException("Directory \"$dir\" does not exist. Try using a absolut path!");
         }
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir));
+
+        /** @var string $pattern */
+        $pattern = static::PATTERN;
         foreach ($iterator as $file) {
-            if (fnmatch(static::PATTERN, $file->getFilename()) &&
+            if (($file instanceof SplFileInfo) && fnmatch($pattern, $file->getFilename()) &&
                 (isset($this->args['path']) || !str_contains($file->getPathname(), DIRECTORY_SEPARATOR . "vendor" . DIRECTORY_SEPARATOR ))) {
                 if(!$this->findExcluded($this->exclude(), $dir, $file->getPathname())) {
                     $files[] = $file->getPathname();
@@ -83,7 +90,7 @@ class FileIterator
     function exclude(): array
     {
         $excl = array();
-        if(isset($this->args['exclude'])) {
+        if(isset($this->args['exclude']) && is_string($this->args['exclude'])) {
             $exclude = explode(',', $this->args['exclude']);
             foreach ($exclude as $file) {
                 $file = str_replace(['"', "'"], "", $file);
@@ -109,7 +116,7 @@ class FileIterator
     {
         $file = $this->getNaturalPath($file);
         foreach ($exclArr as $excl) {
-            $relativeExclPath = $this->getNaturalPath($relativeDir . DIRECTORY_SEPARATOR . $excl);
+            $relativeExclPath = $this->getNaturalPath($relativeDir . DIRECTORY_SEPARATOR . (string)$excl);
             if(fnmatch($relativeExclPath, $file)) {
                 return true;
             }
@@ -130,13 +137,13 @@ class FileIterator
     /**
      * Require file without inheriting any class information
      * @param string $file
-     * @return Closure
+     * @return Closure|null
      */
-    private function requireUnitFile(string $file): Closure
+    private function requireUnitFile(string $file): ?Closure
     {
-        $call = function() use ($file): void
+        $clone = clone $this;
+        $call = function() use ($file, $clone): void
         {
-
             $cli = new CliHandler();
             if(isset(self::$headers['args']['trace'])) {
                 $cli->enableTraceLines(true);
@@ -145,14 +152,32 @@ class FileIterator
             $run->load();
 
             ob_start();
+            if (!is_file($file)) {
+                throw new RuntimeException("File \"$file\" do not exists.");
+            }
             require_once ($file);
-            Unit::getUnit()->execute();
+
+            $clone->getUnit()->execute();
 
             $outputBuffer = ob_get_clean();
-            if($outputBuffer && Unit::hasUnit()) {
-                Unit::getUnit()->buildNotice("Note:", $outputBuffer, 80);
+            if (strlen($outputBuffer) && Unit::hasUnit()) {
+                $clone->getUnit()->buildNotice("Note:", $outputBuffer, 80);
             }
         };
         return $call->bindTo(null);
+    }
+
+    /**
+     * @return Unit
+     * @throws RuntimeException|\Exception
+     */
+    protected function getUnit(): Unit
+    {
+        $unit = Unit::getUnit();
+        if (is_null($unit)) {
+            throw new RuntimeException("The Unit instance has not been initiated.");
+        }
+        return $unit;
+
     }
 }

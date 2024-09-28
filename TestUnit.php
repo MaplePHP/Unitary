@@ -11,7 +11,7 @@ class TestUnit
     private bool $valid;
     private mixed $value;
     private ?string $message;
-    private array $unit;
+    private array $unit = [];
     private int $count = 0;
 
     /**
@@ -136,7 +136,7 @@ class TestUnit
     final protected function excerpt(string $value): string
     {
         $format = new Str($value);
-        return $format->excerpt(40)->get();
+        return (string)$format->excerpt(42)->get();
     }
 
 }

@@ -12,7 +12,7 @@ use MaplePHP\Unitary\Unit;
 //throw new \Exception("Test error handler");
 $unit = new Unit();
 
-$unit->add("Unitary test", function() {
+$unit->manual("unitary")->add("Unitary test", function() {
 
     $this->add("Lorem ipsum dolor", [
         "isInt" => [],

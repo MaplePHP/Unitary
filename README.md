@@ -63,10 +63,8 @@ $unit = new MaplePHP\Unitary\Unit();
 
 // If you build your library right it will become very easy to mock, like I have below.
 $request = new MaplePHP\Http\Request(
-    "POST", // The HTTP Method (GET, POST, PUT, DELETE, PATCH)
-    "https://admin:mypass@example.com:65535/test.php?id=5221&place=stockholm", // The Request URI
-    ["Content-Type" => "application/x-www-form-urlencoded"], // Add Headers, empty array is allowed
-    ["email" => "john.doe@example.com"] // Post data
+    "GET",
+    "https://admin:mypass@example.com:65535/test.php?id=5221&greeting=hello",
 );
 
 // Begin by adding a test
@@ -74,9 +72,9 @@ $unit->case("MaplePHP Request URI path test", function() use($request) {
 
     // Test 1
     $this->add($request->getMethod(), function() {
-        return $this->equal("POST");
+        return $this->equal("GET");
 
-    }, "HTTP Request method Type is not POST");
+    }, "HTTP Request method Type does not equal GET");
     // Adding a error message is not required, but it is highly recommended
 
     // Test 2
@@ -96,7 +94,7 @@ $unit->case("MaplePHP Request URI path test", function() use($request) {
             return ($this->withValue($arr[0])->equal("admin") && $this->withValue($arr[1])->equal("mypass"));
         }
 
-    ], "Is not a valid port number");
+    ], "Did not get the expected user Info credentials");
 });
 
 $unit->execute();
