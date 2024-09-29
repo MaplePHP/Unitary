@@ -1,5 +1,3 @@
-Here's your markdown guide with spelling and grammar corrections made:
-
 # MaplePHP - Unitary
 
 PHP Unitary is a **user-friendly** and robust unit testing library designed to make writing and running tests for your PHP code easy. With an intuitive CLI interface that works on all platforms and robust validation options, Unitary makes it easy for you as a developer to ensure your code is reliable and functions as intended.
@@ -348,7 +346,7 @@ Each prompt can have validation rules and custom error messages. Validation can 
     - **Usage**: `"oneOf" => [["length", [1, 200]], "email"]`
 
 44. **allOf**
-    - **Description**: Validates if all of the provided conditions are met.
+    - **Description**: Validates if all the provided conditions are met.
     - **Usage**: `"allOf" => [["length", [1, 200]], "email"]`
 
 ### Additional Validations
