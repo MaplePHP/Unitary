@@ -12,7 +12,7 @@ use MaplePHP\Unitary\Unit;
 //throw new \Exception("Test error handler");
 $unit = new Unit();
 
-$unit->manual("unitary")->add("Unitary test", function() {
+$unit->manual("unitary")->add("Unitary test", function () {
 
     $this->add("Lorem ipsum dolor", [
         "isInt" => [],
@@ -23,7 +23,7 @@ $unit->manual("unitary")->add("Unitary test", function() {
 
     ])->add("Lorem", [
         "isString" => [],
-        "length" => function() {
+        "length" => function () {
             return $this->length(1, 50);
         }
     ], "The length is not correct!");
@@ -32,4 +32,3 @@ $unit->manual("unitary")->add("Unitary test", function() {
 });
 
 $unit->execute();
-

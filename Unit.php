@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace MaplePHP\Unitary;
@@ -122,6 +123,7 @@ class Unit
      */
     public function add(string $message, Closure $callback): void
     {
+        // Might be trigger in future
         //trigger_error('Method ' . __METHOD__ . ' is deprecated', E_USER_DEPRECATED);
         $this->case($message, $callback);
     }
@@ -134,10 +136,8 @@ class Unit
      */
     public function case(string $message, Closure $callback): void
     {
-
         $testCase = new TestCase($message);
         $testCase->bind($callback);
-
         $this->cases[$this->index] = $testCase;
         $this->index++;
     }
@@ -168,21 +168,21 @@ class Unit
                 throw new RuntimeException($e->getMessage() . ". Error originated from: ". $file, (int)$e->getCode(), $e);
             }
 
-            $color = ($row->hasFailed() ? "red" : "blue");
-            $flag = $this->command->getAnsi()->style(['blueBg', 'white'],  " PASS ");
+            $color = ($row->hasFailed() ? "brightRed" : "brightBlue");
+            $flag = $this->command->getAnsi()->style(['blueBg', 'brightWhite'], " PASS ");
             if($row->hasFailed()) {
-                $flag = $this->command->getAnsi()->style(['redBg', 'white'],  " FAIL ");
+                $flag = $this->command->getAnsi()->style(['redBg', 'brightWhite'], " FAIL ");
             }
 
             $this->command->message("");
             $this->command->message(
                 $flag . " " .
-                $this->command->getAnsi()->style(["bold"],  $this->formatFileTitle((string)(self::$headers['file'] ?? ""))) .
+                $this->command->getAnsi()->style(["bold"], $this->formatFileTitle((string)(self::$headers['file'] ?? ""))) .
                 " - " .
-                $this->command->getAnsi()->style(["bold", $color],  (string)$row->getMessage())
+                $this->command->getAnsi()->style(["bold", $color], (string)$row->getMessage())
             );
-            foreach($tests as $test) {
 
+            foreach($tests as $test) {
                 if(!($test instanceof TestUnit)) {
                     throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestUnit.");
                 }
@@ -190,13 +190,15 @@ class Unit
                 if(!$test->isValid()) {
                     $msg = (string)$test->getMessage();
                     $this->command->message("");
-                    $this->command->message($this->command->getAnsi()->style(["bold", "red"], "Error: " . $msg));
+                    $this->command->message($this->command->getAnsi()->style(["bold", "brightRed"], "Error: " . $msg));
                     /** @var array<string, string> $unit */
                     foreach($test->getUnits() as $unit) {
                         $this->command->message(
                             $this->command->getAnsi()->bold("Validation: ") .
-                            $this->command->getAnsi()->style(((!$unit['valid']) ? "red" : null),
-                                $unit['validation'] . ((!$unit['valid']) ? " (fail)" : ""))
+                            $this->command->getAnsi()->style(
+                                ((!$unit['valid']) ? "brightRed" : null),
+                                $unit['validation'] . ((!$unit['valid']) ? " (fail)" : "")
+                            )
                         );
                     }
                     $this->command->message($this->command->getAnsi()->bold("Value: ") . $test->getReadValue());
@@ -362,7 +364,8 @@ class Unit
         if(!is_null(self::$current) && is_null(self::$current->handler)) {
             self::$current->command->message("");
             self::$current->command->message(
-                self::$current->command->getAnsi()->style(["italic", "grey"],
+                self::$current->command->getAnsi()->style(
+                    ["italic", "grey"],
                     "Total: " . self::$totalPassedTests . "/" . self::$totalTests
                 )
             );

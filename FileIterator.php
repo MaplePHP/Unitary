@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace MaplePHP\Unitary;
@@ -13,7 +14,7 @@ use SplFileInfo;
 
 class FileIterator
 {
-    const PATTERN = 'unitary-*.php';
+    public const PATTERN = 'unitary-*.php';
 
     private array $args;
 
@@ -74,7 +75,7 @@ class FileIterator
         $pattern = static::PATTERN;
         foreach ($iterator as $file) {
             if (($file instanceof SplFileInfo) && fnmatch($pattern, $file->getFilename()) &&
-                (isset($this->args['path']) || !str_contains($file->getPathname(), DIRECTORY_SEPARATOR . "vendor" . DIRECTORY_SEPARATOR ))) {
+                (isset($this->args['path']) || !str_contains($file->getPathname(), DIRECTORY_SEPARATOR . "vendor" . DIRECTORY_SEPARATOR))) {
                 if(!$this->findExcluded($this->exclude(), $dir, $file->getPathname())) {
                     $files[] = $file->getPathname();
                 }
@@ -87,9 +88,9 @@ class FileIterator
      * Get exclude parameter
      * @return array
      */
-    function exclude(): array
+    public function exclude(): array
     {
-        $excl = array();
+        $excl = [];
         if(isset($this->args['exclude']) && is_string($this->args['exclude'])) {
             $exclude = explode(',', $this->args['exclude']);
             foreach ($exclude as $file) {
@@ -112,7 +113,7 @@ class FileIterator
      * @param string $file
      * @return bool
      */
-    function findExcluded(array $exclArr, string $relativeDir, string $file): bool
+    public function findExcluded(array $exclArr, string $relativeDir, string $file): bool
     {
         $file = $this->getNaturalPath($file);
         foreach ($exclArr as $excl) {
@@ -129,7 +130,7 @@ class FileIterator
      * @param string $path
      * @return string
      */
-    function getNaturalPath(string $path): string
+    public function getNaturalPath(string $path): string
     {
         return str_replace("\\", "/", $path);
     }
@@ -142,8 +143,7 @@ class FileIterator
     private function requireUnitFile(string $file): ?Closure
     {
         $clone = clone $this;
-        $call = function() use ($file, $clone): void
-        {
+        $call = function () use ($file, $clone): void {
             $cli = new CliHandler();
             if(isset(self::$headers['args']['trace'])) {
                 $cli->enableTraceLines(true);
@@ -155,7 +155,7 @@ class FileIterator
             if (!is_file($file)) {
                 throw new RuntimeException("File \"$file\" do not exists.");
             }
-            require_once ($file);
+            require_once($file);
 
             $clone->getUnit()->execute();
 

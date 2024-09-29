@@ -11,10 +11,10 @@
 >
 
     <issueHandlers>
-        <!-- Is not applicable here -->
-        <PossiblyUnusedMethod errorLevel="suppress" />
-        <PossiblyUnusedReturnValue errorLevel="suppress" />
-        <UnusedClass errorLevel="suppress" />
+        <!-- Info warnings -->
+        <PossiblyUnusedMethod errorLevel="info" />
+        <PossiblyUnusedReturnValue errorLevel="info" />
+        <UnusedClass errorLevel="info" />
         <!-- I do not care for these at all -->
         <MixedAssignment errorLevel="suppress" />
         <MixedArgumentTypeCoercion errorLevel="suppress" />

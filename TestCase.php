@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace MaplePHP\Unitary;
@@ -18,7 +19,7 @@ class TestCase
     private int $count = 0;
     private ?Closure $bind = null;
 
-    function __construct(?string $message = null)
+    public function __construct(?string $message = null)
     {
         $this->message = $message;
     }
@@ -28,7 +29,7 @@ class TestCase
      * @param Closure $bind
      * @return void
      */
-    function bind(Closure $bind): void
+    public function bind(Closure $bind): void
     {
         $this->bind = $bind->bindTo($this);
     }
@@ -37,7 +38,7 @@ class TestCase
      * Will dispatch the case tests and return them as an array
      * @return array
      */
-    function dispatchTest(): array
+    public function dispatchTest(): array
     {
         $test = $this->bind;
         if (!is_null($test)) {
@@ -54,7 +55,7 @@ class TestCase
      * @return TestCase
      * @throws ErrorException
      */
-    function add(mixed $expect, array|Closure $validation, ?string $message = null): self
+    public function add(mixed $expect, array|Closure $validation, ?string $message = null): self
     {
         $this->value = $expect;
         $test = new TestUnit($this->value, $message);
@@ -202,7 +203,8 @@ class TestCase
      * @return Inp
      * @throws ErrorException
      */
-    protected function valid(mixed $value): Inp {
+    protected function valid(mixed $value): Inp
+    {
         return new Inp($value);
     }
 
