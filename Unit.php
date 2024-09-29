@@ -1,101 +1,98 @@
 <?php
+
 declare(strict_types=1);
 
 namespace MaplePHP\Unitary;
 
+use Closure;
+use ErrorException;
 use Exception;
-use MaplePHP\Blunder\Handlers\CliHandler;
-use MaplePHP\Blunder\Run;
+use RuntimeException;
+use MaplePHP\Unitary\Handlers\HandlerInterface;
+use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Prompts\Command;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
+use Throwable;
 
 class Unit
 {
-    const PATTERN = 'unitary-*.php';
+    private ?HandlerInterface $handler = null;
     private Command $command;
-    private bool $quite;
-    private ?string $title = null;
     private string $output = "";
-    private array $args = [];
-    private array $units;
     private int $index = 0;
-    private array $error;
+    private array $cases = [];
+    private bool $skip = false;
+    private bool $executed = false;
+    private static array $headers = [];
+    private static ?Unit $current;
+    private static array $manual = [];
+    public static int $totalPassedTests = 0;
+    public static int $totalTests = 0;
 
-    public function __construct(bool $quite = false)
+    public function __construct(HandlerInterface|StreamInterface|null $handler = null)
     {
-        $this->command = new Command();
-        $this->quite = $quite;
-    }
-
-    /**
-     * Add title to the test (optional)
-     * @param string $title
-     * @return void
-     */
-    public function addTitle(string $title): void
-    {
-        $this->title = $title;
-    }
-
-    /**
-     * Pass arguments to the testing script (optional)
-     * @param array $args
-     * @return void
-     */
-    public function setArgs(array $args): void
-    {
-        $this->args = $args;
-    }
-
-    /**
-     * Get passed arguments in the testing script
-     * @return array
-     */
-    public function getArgs(): array
-    {
-        return $this->args;
-    }
-
-    /**
-     * Add a test unit/group
-     * @param string $message
-     * @param callable $callback
-     * @return void
-     */
-    public function add(string $message, callable $callback): void
-    {
-        $hasError = false;
-        $test = $this->unitTest();
-        // Make the tests
-        ob_start();
-        $callback($test);
-        $this->output .= ob_get_clean();
-        // Get the tests results
-        $data = $test->getTestResult();
-        $index = $this->index-1;
-
-        $this->error[$index] = [
-            'message' => $message
-        ];
-        foreach($data as $key => $row) {
-            if(!$row['test']) {
-                $hasError = true;
-                $this->error[$index]['error'][$key] = $row;
-            }
+        if($handler instanceof HandlerInterface) {
+            $this->handler = $handler;
+            $this->command = $this->handler->getCommand();
+        } else {
+            $this->command = new Command($handler);
         }
-        if(!$hasError) {
-            unset($this->error[$index]);
+        self::$current = $this;
+    }
+
+    /**
+     * Skip you can add this if you want to turn of validation of a unit case
+     * @param bool $skip
+     * @return $this
+     */
+    public function skip(bool $skip): self
+    {
+        $this->skip = $skip;
+        return $this;
+    }
+
+    /**
+     * Make script manually callable
+     * @param string $key
+     * @return $this
+     */
+    public function manual(string $key): self
+    {
+        if(isset(self::$manual[$key])) {
+            $file = (string)(self::$headers['file'] ?? "none");
+            throw new RuntimeException("The manual key \"$key\" already exists.
+                Please set a unique key in the " . $file. " file.");
         }
+        self::$manual[$key] = self::$headers['checksum'];
+        return $this->skip(true);
     }
 
     /**
      * Access command instance
      * @return Command
      */
-    public function command(): Command
+    public function getCommand(): Command
     {
         return $this->command;
+    }
+
+    /**
+     * Access command instance
+     * @return StreamInterface
+     */
+    public function getStream(): StreamInterface
+    {
+        return $this->command->getStream();
+    }
+
+    /**
+     * Disable ANSI
+     * @param bool $disableAnsi
+     * @return self
+     */
+    public function disableAnsi(bool $disableAnsi): self
+    {
+        $this->command->getAnsi()->disableAnsi($disableAnsi);
+        return $this;
     }
 
     /**
@@ -119,133 +116,268 @@ class Unit
     }
 
     /**
-     * Execute tests suite
+     * DEPRECATED: Name has been changed to case
+     * @param string $message
+     * @param Closure $callback
      * @return void
      */
-    public function execute(): void
+    public function add(string $message, Closure $callback): void
     {
-        $run = new Run(new CliHandler());
-        $run->load();
-
-        if(!is_null($this->title) && (!$this->quite || count($this->error) > 0)) {
-            $this->command->title("\n--------- $this->title ---------");
-        }
-        if(count($this->error) > 0) {
-            foreach($this->error as $error) {
-                //$tests = [];
-                $this->command->title("\n{$error['message']}");
-                foreach($error['error'] as $row) {
-                    //$tests[] = $row['method'];
-                    $this->command->error("Test-value {$row['readableValue']}");
-                    $this->command->error("{$row['message']}\n");
-                }
-            }
-
-        } elseif(!$this->quite) {
-            $this->command->approve("Every test has been successfully run!");
-        }
-
-        $this->command->message($this->output);
+        // Might be trigger in future
+        //trigger_error('Method ' . __METHOD__ . ' is deprecated', E_USER_DEPRECATED);
+        $this->case($message, $callback);
     }
 
     /**
-     * Will Execute all unitary test files.
-     * @param string $directory
+     * Add a test unit/group
+     * @param string $message
+     * @param Closure $callback
      * @return void
-     * @throws Exception
      */
-    public function executeAll(string $directory): void
+    public function case(string $message, Closure $callback): void
     {
-        $files = $this->findFiles($directory);
-        if (empty($files)) {
-            throw new Exception("No files found matching the pattern \"" . static::PATTERN . "\" in directory \"$directory\" ");
-        } else {
-            foreach ($files as $file) {
-                extract($this->args, EXTR_PREFIX_SAME, "wddx");
-                require_once ($file);
-            }
-        }
-    }
-
-    /**
-     * Init immutable validation test instance
-     * @return Test
-     */
-    protected function unitTest(): Test
-    {
-        $test = $this->units[$this->index] = new Test();
+        $testCase = new TestCase($message);
+        $testCase->bind($callback);
+        $this->cases[$this->index] = $testCase;
         $this->index++;
-        return $test;
     }
 
     /**
-     * Will Scan and find all unitary test files
-     * @param $dir
-     * @return array
+     * Execute tests suite
+     * @return bool
+     * @throws ErrorException
      */
-    private function findFiles($dir): array
+    public function execute(): bool
     {
-        $files = [];
-        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir));
-        foreach ($iterator as $file) {
-            if (fnmatch(static::PATTERN, $file->getFilename()) &&
-                (isset($this->args['path']) || !str_contains($file->getPathname(), DIRECTORY_SEPARATOR . "vendor" . DIRECTORY_SEPARATOR ))) {
-                if(!$this->findExcluded($this->exclude(), $dir, $file->getPathname())) {
-                    $files[] = $file->getPathname();
+        if($this->executed || !$this->validate()) {
+            return false;
+        }
+
+        // LOOP through each case
+        ob_start();
+        foreach($this->cases as $row) {
+
+            if(!($row instanceof TestCase)) {
+                throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestCase.");
+            }
+
+            try {
+                $tests = $row->dispatchTest();
+            } catch (Throwable $e) {
+                $file = $this->formatFileTitle((string)(self::$headers['file'] ?? ""), 5, false);
+                throw new RuntimeException($e->getMessage() . ". Error originated from: ". $file, (int)$e->getCode(), $e);
+            }
+
+            $color = ($row->hasFailed() ? "brightRed" : "brightBlue");
+            $flag = $this->command->getAnsi()->style(['blueBg', 'brightWhite'], " PASS ");
+            if($row->hasFailed()) {
+                $flag = $this->command->getAnsi()->style(['redBg', 'brightWhite'], " FAIL ");
+            }
+
+            $this->command->message("");
+            $this->command->message(
+                $flag . " " .
+                $this->command->getAnsi()->style(["bold"], $this->formatFileTitle((string)(self::$headers['file'] ?? ""))) .
+                " - " .
+                $this->command->getAnsi()->style(["bold", $color], (string)$row->getMessage())
+            );
+
+            foreach($tests as $test) {
+                if(!($test instanceof TestUnit)) {
+                    throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestUnit.");
+                }
+
+                if(!$test->isValid()) {
+                    $msg = (string)$test->getMessage();
+                    $this->command->message("");
+                    $this->command->message($this->command->getAnsi()->style(["bold", "brightRed"], "Error: " . $msg));
+                    /** @var array<string, string> $unit */
+                    foreach($test->getUnits() as $unit) {
+                        $this->command->message(
+                            $this->command->getAnsi()->bold("Validation: ") .
+                            $this->command->getAnsi()->style(
+                                ((!$unit['valid']) ? "brightRed" : null),
+                                $unit['validation'] . ((!$unit['valid']) ? " (fail)" : "")
+                            )
+                        );
+                    }
+                    $this->command->message($this->command->getAnsi()->bold("Value: ") . $test->getReadValue());
                 }
             }
+
+            self::$totalPassedTests += $row->getCount();
+            self::$totalTests += $row->getTotal();
+
+            $checksum = (string)(self::$headers['checksum'] ?? "");
+            $this->command->message("");
+
+            $this->command->message(
+                $this->command->getAnsi()->bold("Passed: ") .
+                $this->command->getAnsi()->style([$color], $row->getCount() . "/" . $row->getTotal()) .
+                $this->command->getAnsi()->style(["italic", "grey"], " - ". $checksum)
+            );
         }
-        return $files;
+        $this->output .= ob_get_clean();
+
+        if($this->output) {
+            $this->buildNotice("Note:", $this->output, 80);
+        }
+        if(!is_null($this->handler)) {
+            $this->handler->execute();
+        }
+        $this->executed = true;
+        return true;
     }
 
     /**
-     * Get exclude parameter
-     * @return array
-     */
-    function exclude(): array
-    {
-        $excl = array();
-        if(isset($this->args['exclude'])) {
-            $exclude = explode(',', $this->args['exclude']);
-            foreach ($exclude as $file) {
-                $file = str_replace(['"', "'"], "", $file);
-                $new = trim($file);
-                $lastChar = substr($new, -1);
-                if($lastChar === DIRECTORY_SEPARATOR) {
-                    $new .= "*";
-                }
-                $excl[] = trim($new);
-            }
-        }
-        return $excl;
-    }
-
-    /**
-     * Validate a exclude path
-     * @param array $exclArr
-     * @param string $relativeDir
-     * @param string $file
+     * Will reset the execute and stream if is a seekable stream.
      * @return bool
      */
-    function findExcluded(array $exclArr, string $relativeDir, string $file): bool
+    public function resetExecute(): bool
     {
-        $file = $this->getNaturalPath($file);
-        foreach ($exclArr as $excl) {
-            $relativeExclPath = $this->getNaturalPath($relativeDir . DIRECTORY_SEPARATOR . $excl);
-            if(fnmatch($relativeExclPath, $file)) {
-                return true;
+        if($this->executed) {
+            if($this->getStream()->isSeekable()) {
+                $this->getStream()->rewind();
             }
+            $this->executed = false;
+            return true;
         }
         return false;
     }
 
     /**
-     * Get path as natural path
-     * @param string $path
+     * Validate before execute test
+     * @return bool
+     */
+    private function validate(): bool
+    {
+        $args = (array)(self::$headers['args'] ?? []);
+        $manual = isset($args['show']) ? (string)$args['show'] : "";
+        if(isset($args['show'])) {
+            return !((self::$manual[$manual] ?? "") !== self::$headers['checksum'] && $manual !== self::$headers['checksum']);
+        }
+        if($this->skip) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Build the notification stream
+     * @param string $title
+     * @param string $output
+     * @param int $lineLength
+     * @return void
+     */
+    public function buildNotice(string $title, string $output, int $lineLength): void
+    {
+        $this->output = wordwrap($output, $lineLength);
+        $line = $this->command->getAnsi()->line($lineLength);
+
+        $this->command->message("");
+        $this->command->message($this->command->getAnsi()->style(["bold"], $title));
+        $this->command->message($line);
+        $this->command->message($this->output);
+        $this->command->message($line);
+    }
+
+    /**
+     * Make file path into a title
+     * @param string $file
+     * @param int $length
+     * @param bool $removeSuffix
      * @return string
      */
-    function getNaturalPath(string $path): string
+    private function formatFileTitle(string $file, int $length = 3, bool $removeSuffix = true): string
     {
-        return str_replace("\\", "/", $path);
+        $file = explode("/", $file);
+        if ($removeSuffix) {
+            $pop = array_pop($file);
+            $file[] = substr($pop, (int)strpos($pop, 'unitary') + 8);
+        }
+
+        $file = array_chunk(array_reverse($file), $length);
+        $file = implode("\\", array_reverse($file[0]));
+        $exp = explode('.', $file);
+        $file = reset($exp);
+        return ".." . $file;
+    }
+
+    /**
+     * Global header information
+     * @param array $headers
+     * @return void
+     */
+    public static function setHeaders(array $headers): void
+    {
+        self::$headers = $headers;
+    }
+
+    /**
+     * Append to global header
+     * @param string $key
+     * @param mixed $value
+     * @return void
+     */
+    public static function appendHeader(string $key, mixed $value): void
+    {
+        self::$headers[$key] = $value;
+    }
+
+    /**
+     * Used to reset current instance
+     * @return void
+     */
+    public static function resetUnit(): void
+    {
+        self::$current = null;
+    }
+
+    /**
+     * Used to check if instance is set
+     * @return bool
+     */
+    public static function hasUnit(): bool
+    {
+        return !is_null(self::$current);
+    }
+
+    /**
+     * Used to get instance
+     * @return ?Unit
+     * @throws Exception
+     */
+    public static function getUnit(): ?Unit
+    {
+        if(is_null(self::hasUnit())) {
+            throw new Exception("Unit has not been set yet. It needs to be set first.");
+        }
+        return self::$current;
+    }
+
+    /**
+     * This will be called when every test has been run by the FileIterator
+     * @return void
+     */
+    public static function completed(): void
+    {
+        if(!is_null(self::$current) && is_null(self::$current->handler)) {
+            self::$current->command->message("");
+            self::$current->command->message(
+                self::$current->command->getAnsi()->style(
+                    ["italic", "grey"],
+                    "Total: " . self::$totalPassedTests . "/" . self::$totalTests
+                )
+            );
+        }
+    }
+
+    /**
+     * DEPRECATED: Not used anymore
+     * @return $this
+     */
+    public function addTitle(): self
+    {
+        return $this;
     }
 }
