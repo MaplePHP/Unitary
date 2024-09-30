@@ -11,7 +11,7 @@ $unit->case("MaplePHP Request URI path test", function() {
 
     $this->add($response->getStatusCode(), function() {
         return $this->equal(200);
-    }, "HTTP Request method type is not POST");
+    }, "Did not return HTTP status code 200");
 });
 ```
 
@@ -132,7 +132,7 @@ php vendor/bin/unitary --show=b0620ca8ef6ea7598eaed56a530b1983
 You can also mark a test case to run manually, excluding it from the main test batch.
 
 ```php
-$unit->manual('maplePHPRequest')->case("MaplePHP Request URI path test", function() use($request) {
+$unit->manual('maplePHPRequest')->case("MaplePHP Request URI path test", function() {
     ...
 });
 ```
