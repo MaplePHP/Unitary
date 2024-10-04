@@ -151,7 +151,7 @@ class FileIterator
             $run = new Run($cli);
             $run->load();
 
-            ob_start();
+            //ob_start();
             if (!is_file($file)) {
                 throw new RuntimeException("File \"$file\" do not exists.");
             }
@@ -159,10 +159,12 @@ class FileIterator
 
             $clone->getUnit()->execute();
 
+            /*
             $outputBuffer = ob_get_clean();
             if (strlen($outputBuffer) && Unit::hasUnit()) {
                 $clone->getUnit()->buildNotice("Note:", $outputBuffer, 80);
             }
+             */
         };
         return $call->bindTo(null);
     }

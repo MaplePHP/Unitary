@@ -1,21 +1,12 @@
-#!/usr/bin/env php
 <?php
-/**
- * This is how a template test file should look like but
- * when used in MaplePHP framework you can skip the "bash code" at top and the "autoload file"!
- */
 use MaplePHP\Unitary\Unit;
 
-// If you add true to Unit it will run in quite mode
-// and only report if it finds any errors!
-
-//throw new \Exception("Test error handler");
 $unit = new Unit();
 
-$unit->manual("unitary")->add("Unitary test", function () {
+$unit->add("Unitary test", function () {
 
     $this->add("Lorem ipsum dolor", [
-        "isInt" => [],
+        "isString" => [],
         "length" => [1,200]
 
     ])->add(92928, [
@@ -28,7 +19,4 @@ $unit->manual("unitary")->add("Unitary test", function () {
         }
     ], "The length is not correct!");
 
-
 });
-
-$unit->execute();
