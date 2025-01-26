@@ -142,6 +142,35 @@ class Unit
         $this->index++;
     }
 
+    public function performance(Closure $func, ?string $title = null): void
+    {
+        $start = new TestMem();
+        $func = $func->bindTo($this);
+        if(!is_null($func)) {
+            $func();
+        }
+        $line = $this->command->getAnsi()->line(80);
+        $this->command->message("");
+        $this->command->message($this->command->getAnsi()->style(["bold", "yellow"], "Performance" . (!is_null($title) ? " - $title:" : ":")));
+
+        $this->command->message($line);
+        $this->command->message(
+            $this->command->getAnsi()->style(["bold"], "Execution time: ") .
+            (round($start->getExecutionTime(), 3) . " seconds")
+        );
+        $this->command->message(
+            $this->command->getAnsi()->style(["bold"], "Memory Usage: ") .
+            (round($start->getMemoryUsage(), 2) . " KB")
+        );
+        /*
+         $this->command->message(
+            $this->command->getAnsi()->style(["bold", "grey"], "Peak Memory Usage: ") .
+            $this->command->getAnsi()->blue(round($start->getMemoryPeakUsage(), 2) . " KB")
+        );
+         */
+        $this->command->message($line);
+    }
+
     /**
      * Execute tests suite
      * @return bool
@@ -314,6 +343,16 @@ class Unit
     }
 
     /**
+     * Get global header
+     * @param string $key
+     * @return mixed
+     */
+    public static function getArgs(string $key): mixed
+    {
+        return (self::$headers['args'][$key] ?? false);
+    }
+
+    /**
      * Append to global header
      * @param string $key
      * @param mixed $value
@@ -362,14 +401,26 @@ class Unit
     public static function completed(): void
     {
         if(!is_null(self::$current) && is_null(self::$current->handler)) {
+            $dot = self::$current->command->getAnsi()->middot();
+
             self::$current->command->message("");
             self::$current->command->message(
                 self::$current->command->getAnsi()->style(
                     ["italic", "grey"],
-                    "Total: " . self::$totalPassedTests . "/" . self::$totalTests
+                    "Total: " . self::$totalPassedTests . "/" . self::$totalTests . " $dot " .
+                    "Peak memory usage: " . round(memory_get_peak_usage() / 1024, 2) . " KB"
                 )
             );
         }
+    }
+
+    /**
+     * Check if successful
+     * @return bool
+     */
+    public static function isSuccessful(): bool
+    {
+        return (self::$totalPassedTests !== self::$totalTests);
     }
 
     /**
