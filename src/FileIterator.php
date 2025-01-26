@@ -52,8 +52,8 @@ class FileIterator
                     throw new RuntimeException("The Unitary Unit class has not been initiated inside \"$file\".");
                 }
             }
-
             Unit::completed();
+            exit((int)Unit::isSuccessful());
         }
     }
 
@@ -145,7 +145,8 @@ class FileIterator
         $clone = clone $this;
         $call = function () use ($file, $clone): void {
             $cli = new CliHandler();
-            if(isset(self::$headers['args']['trace'])) {
+
+            if(Unit::getArgs('trace') !== false) {
                 $cli->enableTraceLines(true);
             }
             $run = new Run($cli);
