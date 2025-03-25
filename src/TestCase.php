@@ -76,6 +76,12 @@ class TestCase
         return $this;
     }
 
+    public function wrapper($className): TestWrapper
+    {
+        return new class($className) extends TestWrapper {
+        };
+    }
+
 
     /**
      * Get failed test counts

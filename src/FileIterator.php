@@ -150,6 +150,7 @@ class FileIterator
                 $cli->enableTraceLines(true);
             }
             $run = new Run($cli);
+            $run->setExitCode(1);
             $run->load();
 
             //ob_start();

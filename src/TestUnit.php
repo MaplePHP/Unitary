@@ -137,7 +137,7 @@ class TestUnit
     final protected function excerpt(string $value): string
     {
         $format = new Str($value);
-        return (string)$format->excerpt(42)->get();
+        return (string)$format->excerpt(70)->get();
     }
 
 }

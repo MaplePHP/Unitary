@@ -185,18 +185,10 @@ class Unit
         // LOOP through each case
         ob_start();
         foreach($this->cases as $row) {
-
             if(!($row instanceof TestCase)) {
                 throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestCase.");
             }
-
-            try {
-                $tests = $row->dispatchTest();
-            } catch (Throwable $e) {
-                $file = $this->formatFileTitle((string)(self::$headers['file'] ?? ""), 5, false);
-                throw new RuntimeException($e->getMessage() . ". Error originated from: ". $file, (int)$e->getCode(), $e);
-            }
-
+            $tests = $row->dispatchTest();
             $color = ($row->hasFailed() ? "brightRed" : "brightBlue");
             $flag = $this->command->getAnsi()->style(['blueBg', 'brightWhite'], " PASS ");
             if($row->hasFailed()) {
@@ -211,7 +203,7 @@ class Unit
                 $this->command->getAnsi()->style(["bold", $color], (string)$row->getMessage())
             );
 
-            foreach($tests as $test) {
+            if(isset($tests)) foreach($tests as $test) {
                 if(!($test instanceof TestUnit)) {
                     throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestUnit.");
                 }

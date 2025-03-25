@@ -117,6 +117,70 @@ php vendor/bin/unitary
 
 With that, you are ready to create your own tests!
 
+
+## Integration tests: Test Wrapper
+The TestWrapper allows you to wrap an existing class, override its methods, and inject dependencies dynamically. 
+It is useful for integration testing, debugging, and extending existing functionality without the need of 
+modifying the original class.
+
+### The problem
+Imagine we have a PaymentProcessor class that communicates with an external payment gateway to 
+capture a customer's payment. We would like to test this with its own functionallity to keep the test useful
+but avoid making any charges to customer.
+```php
+class PaymentProcessor
+{
+    public function __construct(
+        private OrderService $orderService,
+        private PaymentGateway $gateway,
+        private Logger $logger
+    ) {}
+
+    public function capture(string $orderID)
+    {
+        $order = $this->orderService->getOrder($orderID);
+
+        if (!$order) {
+            throw new Exception("Order not found: $orderID");
+        }
+
+        $this->logger->info("Capturing payment for Order ID: " . $order->id);
+
+        $response = $this->gateway->capture($order->id);
+
+        if ($response['status'] !== 'success') {
+            throw new Exception("Payment capture failed: " . $response['message']);
+        }
+
+        return "Transaction ID: " . $response['transaction_id'];
+    }
+}
+
+```
+
+### Use the Test Wrapper
+Use wrapper()->bind() to Mock API Calls but Keep Business Logic
+
+With TestWrapper, we can simulate an order and intercept the payment capture while keeping access to $this inside the closure.
+
+```php
+$dispatch = $this->wrapper(PaymentProcessor::class)->bind(function ($orderID) use ($inst) {
+    // Simulate order retrieval
+    $order = $this->orderService->getOrder($orderID);
+    $response = $inst->mock('gatewayCapture')->capture($order->id);
+    if ($response['status'] !== 'success') {
+        // Log action within the PaymentProcessor instance
+        $this->logger->info("Mocked: Capturing payment for Order ID: " . $order->id ?? 0);
+        // Has successfully found order and logged message
+        return true;
+    }
+    // Failed to find order
+    return false;
+});
+```
+
+
+
 ## Configurations
 
 ### Select a Test File to Run
