@@ -8,6 +8,7 @@ use BadMethodCallException;
 use ErrorException;
 use RuntimeException;
 use Closure;
+use stdClass;
 use Throwable;
 use MaplePHP\Validate\Inp;
 
@@ -76,10 +77,30 @@ class TestCase
         return $this;
     }
 
-    public function wrapper($className): TestWrapper
+    /**
+     * Init a test wrapper
+     *
+     * @param string $className
+     * @return TestWrapper
+     */
+    public function wrapper(string $className): TestWrapper
     {
         return new class($className) extends TestWrapper {
         };
+    }
+
+    public function mock(string $className, null|array|Closure $validate = null): object
+    {
+
+        $mocker = new TestMocker($className);
+        if(is_array($validate)) {
+            $mocker->validate($validate);
+        }
+        if(is_callable($validate)) {
+            $fn = $validate->bindTo($mocker);
+            $fn($mocker);
+        }
+        return $mocker->execute();
     }
 
 

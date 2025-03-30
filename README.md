@@ -63,7 +63,6 @@ I will show you three different ways to test your application below.
 
 $unit = new MaplePHP\Unitary\Unit();
 
-// If you build your library correctly, it will become very easy to mock, as I have below.
 $request = new MaplePHP\Http\Request(
     "GET",
     "https://admin:mypass@example.com:65535/test.php?id=5221&greeting=hello",

@@ -16,6 +16,7 @@ use MaplePHP\Container\Reflection;
 
 abstract class TestWrapper
 {
+    protected Reflection $ref;
     protected object $instance;
     private array $methods = [];
 
@@ -31,7 +32,8 @@ abstract class TestWrapper
         if (!class_exists($className)) {
             throw new Exception("Class $className does not exist.");
         }
-        $this->instance = $this->createInstance($className, $args);
+        $this->ref = new Reflection($className);
+        $this->instance = $this->createInstance($this->ref, $args);
     }
 
     /**
@@ -108,17 +110,16 @@ abstract class TestWrapper
     /**
      * Will create the main instance with dependency injection support
      *
-     * @param string $className
+     * @param Reflection $ref
      * @param array $args
      * @return mixed|object
      * @throws \ReflectionException
      */
-    final protected function createInstance(string $className, array $args)
+    final protected function createInstance(Reflection $ref, array $args)
     {
         if(count($args) === 0) {
-            $ref = new Reflection($className);
             return $ref->dependencyInjector();
         }
-        return new $className(...$args);
+        return $ref->getReflect()->newInstanceArgs($args);
     }
 }
