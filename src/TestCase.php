@@ -6,9 +6,9 @@ namespace MaplePHP\Unitary;
 
 use BadMethodCallException;
 use ErrorException;
+use MaplePHP\Validate\ValidatePool;
 use RuntimeException;
 use Closure;
-use stdClass;
 use Throwable;
 use MaplePHP\Validate\Inp;
 
@@ -48,6 +48,12 @@ class TestCase
         return $this->test;
     }
 
+    public function validate($expect, Closure $validation): self
+    {
+        $this->add($expect, $validation);
+        return $this;
+    }
+
     /**
      * Create a test
      * @param mixed $expect
@@ -61,7 +67,10 @@ class TestCase
         $this->value = $expect;
         $test = new TestUnit($this->value, $message);
         if($validation instanceof Closure) {
-            $test->setUnit($this->buildClosureTest($validation));
+            $list = $this->buildClosureTest($validation);
+            foreach($list as $method => $valid) {
+                $test->setUnit(!$list, $method, []);
+            }
         } else {
             foreach($validation as $method => $args) {
                 if(!($args instanceof Closure) && !is_array($args)) {
@@ -91,7 +100,6 @@ class TestCase
 
     public function mock(string $className, null|array|Closure $validate = null): object
     {
-
         $mocker = new TestMocker($className);
         if(is_array($validate)) {
             $mocker->validate($validate);
@@ -169,30 +177,35 @@ class TestCase
 
     /**
      * This will build the closure test
+     *
      * @param Closure $validation
-     * @return bool
-     * @throws ErrorException
+     * @return array
      */
-    public function buildClosureTest(Closure $validation): bool
+    public function buildClosureTest(Closure $validation): array
     {
         $bool = false;
-        $validation = $validation->bindTo($this->valid($this->value));
+        $validPool = new ValidatePool($this->value);
+        $validation = $validation->bindTo($validPool);
+
+        $error = [];
         if(!is_null($validation)) {
-            $bool = $validation($this->value);
-        }
-        if(!is_bool($bool)) {
-            throw new RuntimeException("A callable validation must return a boolean!");
+            $bool = $validation($validPool, $this->value);
+            $error = $validPool->getError();
+            if(is_bool($bool) && !$bool) {
+                $error['customError'] = $bool;
+            }
         }
 
         if(is_null($this->message)) {
             throw new RuntimeException("When testing with closure the third argument message is required");
         }
 
-        return $bool;
+        return $error;
     }
 
     /**
      * This will build the array test
+     *
      * @param string $method
      * @param array|Closure $args
      * @return bool
@@ -235,6 +248,32 @@ class TestCase
         return new Inp($value);
     }
 
+    /**
+     * This is a helper function that will list all inherited proxy methods
+     *
+     * @param string $class
+     * @return void
+     * @throws \ReflectionException
+     */
+    public function listAllProxyMethods(string $class, ?string $prefixMethods = null): void
+    {
+        $reflection = new \ReflectionClass($class);
+        foreach ($reflection->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
+            if ($method->isConstructor()) continue;
+            $params = array_map(function($param) {
+                $type = $param->hasType() ? $param->getType() . ' ' : '';
+                return $type . '$' . $param->getName();
+            }, $method->getParameters());
 
+            $name = $method->getName();
+
+            if(!$method->isStatic() && !str_starts_with($name, '__')) {
+                if(!is_null($prefixMethods)) {
+                    $name = $prefixMethods . ucfirst($name);
+                }
+                echo "@method self $name(" . implode(', ', $params) . ")\n";
+            }
+        }
+    }
 
 }

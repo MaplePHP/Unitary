@@ -1,7 +1,10 @@
 <?php
 
+use MaplePHP\Unitary\TestCase;
 use MaplePHP\Unitary\TestWrapper;
 use MaplePHP\Unitary\Unit;
+use MaplePHP\Validate\Inp;
+use MaplePHP\Validate\ValidatePool;
 
 
 class Mailer
@@ -26,15 +29,43 @@ class UserService {
 
 $unit = new Unit();
 
-$unit->add("Unitary test", function () {
+$unit->group("Unitary test", function (TestCase $inst) {
 
 
-    $mock = $this->mock(Mailer::class, function ($mock) {
-        //$mock->method("sendEmail")->return("SENT2121");
+    // Example 1
+    /*
+     $mock = $this->mock(Mailer::class, function ($mock) {
+        $mock->method("testMethod1")->count(1)->return("lorem1");
+        $mock->method("testMethod2")->count(1)->return("lorem1");
     });
     $service = new UserService($mock);
 
+    // Example 2
+    $mock = $this->mock(Mailer::class, [
+        "testMethod1" => [
+            "count" => 1,
+            "validate" => [
+                "equal" => "lorem1",
+                "contains" => "lorem",
+                "length" => [1,6]
+            ]
+        ]
+    ]);
+    $service = new UserService($mock);
     $service->registerUser('user@example.com');
+     */
+
+    $inst->validate("yourTestValue", function(ValidatePool $inst, mixed $value) {
+        $inst->isBool();
+        $inst->isInt();
+        $inst->isJson();
+
+        return ($value === "yourTestValue1");
+    });
+
+    //$inst->listAllProxyMethods(Inp::class);
+//->error("Failed to validate yourTestValue (optional error message)")
+
 
 
     /*
@@ -50,7 +81,7 @@ echo "ww";
 
     $this->add("Lorem ipsum dolor", [
         "isString" => [],
-        "length" => [1,200]
+        "length" => [1,300]
 
     ])->add(92928, [
         "isInt" => []

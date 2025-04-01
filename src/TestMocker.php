@@ -59,8 +59,6 @@ class TestMocker
 
     function return(mixed $returnValue): self
     {
-
-
         self::$return = $returnValue;
         return $this;
     }

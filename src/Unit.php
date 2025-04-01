@@ -130,8 +130,9 @@ class Unit
 
     /**
      * Add a test unit/group
+     *
      * @param string $message
-     * @param Closure $callback
+     * @param Closure(TestCase):void $callback
      * @return void
      */
     public function case(string $message, Closure $callback): void
@@ -140,6 +141,11 @@ class Unit
         $testCase->bind($callback);
         $this->cases[$this->index] = $testCase;
         $this->index++;
+    }
+
+    public function group(string $message, Closure $callback): void
+    {
+        $this->case($message, $callback);
     }
 
     public function performance(Closure $func, ?string $title = null): void
