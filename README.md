@@ -158,7 +158,7 @@ class PaymentProcessor
 ```
 
 ### Use the Test Wrapper
-Use wrapper()->bind() to Mock API Calls but Keep Business Logic
+Use wrapper()->bind() to make integration tests easier. Test wrapper will bind a callable to specified class in wrapper, in this case to PaymentProcessor and will be accessible with `$dispatch("OR827262")`.
 
 With TestWrapper, we can simulate an order and intercept the payment capture while keeping access to $this inside the closure.
 
@@ -179,8 +179,12 @@ $dispatch = $this->wrapper(PaymentProcessor::class)->bind(function ($orderID) us
 ```
 
 
-
 ## Configurations
+
+### Show only errors
+```bash
+php vendor/bin/unitary --errors-only
+```
 
 ### Select a Test File to Run
 

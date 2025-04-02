@@ -59,12 +59,14 @@ $unit->group("Unitary test", function (TestCase $inst) {
         $inst->isBool();
         $inst->isInt();
         $inst->isJson();
-
+        $inst->isString();
         return ($value === "yourTestValue1");
     });
 
+    $inst->validate("yourTestValue", fn(ValidatePool $inst) => $inst->isfloat());
+
     //$inst->listAllProxyMethods(Inp::class);
-//->error("Failed to validate yourTestValue (optional error message)")
+    //->error("Failed to validate yourTestValue (optional error message)")
 
 
 

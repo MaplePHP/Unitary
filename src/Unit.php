@@ -194,11 +194,17 @@ class Unit
             if(!($row instanceof TestCase)) {
                 throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestCase.");
             }
+
+            $errArg = self::getArgs("errors-only");
             $tests = $row->dispatchTest();
             $color = ($row->hasFailed() ? "brightRed" : "brightBlue");
             $flag = $this->command->getAnsi()->style(['blueBg', 'brightWhite'], " PASS ");
             if($row->hasFailed()) {
                 $flag = $this->command->getAnsi()->style(['redBg', 'brightWhite'], " FAIL ");
+            }
+
+            if($errArg !== false && !$row->hasFailed()) {
+                continue;
             }
 
             $this->command->message("");
@@ -217,17 +223,30 @@ class Unit
                 if(!$test->isValid()) {
                     $msg = (string)$test->getMessage();
                     $this->command->message("");
-                    $this->command->message($this->command->getAnsi()->style(["bold", "brightRed"], "Error: " . $msg));
+                    $this->command->message(
+                        $this->command->getAnsi()->style(["bold", "brightRed"], "Error: ") .
+                        $this->command->getAnsi()->bold($msg)
+                    );
+                    $this->command->message("");
+
+                    $trace = $test->getCodeLine();
+                    if(!empty($trace['code'])) {
+                        $this->command->message($this->command->getAnsi()->style(["bold", "grey"], "Failed on line {$trace['line']}: "));
+                        $this->command->message($this->command->getAnsi()->style(["grey"], " → {$trace['code']}"));
+
+                    }
+
                     /** @var array<string, string> $unit */
                     foreach($test->getUnits() as $unit) {
+                        $title = str_pad($unit['validation'], $test->getValidationLength() + 1);
                         $this->command->message(
-                            $this->command->getAnsi()->bold("Validation: ") .
                             $this->command->getAnsi()->style(
                                 ((!$unit['valid']) ? "brightRed" : null),
-                                $unit['validation'] . ((!$unit['valid']) ? " (fail)" : "")
+                                "   " .$title . ((!$unit['valid']) ? " → failed" : "")
                             )
                         );
                     }
+                    $this->command->message("");
                     $this->command->message($this->command->getAnsi()->bold("Value: ") . $test->getReadValue());
                 }
             }
@@ -322,11 +341,10 @@ class Unit
             $pop = array_pop($file);
             $file[] = substr($pop, (int)strpos($pop, 'unitary') + 8);
         }
-
         $file = array_chunk(array_reverse($file), $length);
         $file = implode("\\", array_reverse($file[0]));
-        $exp = explode('.', $file);
-        $file = reset($exp);
+        //$exp = explode('.', $file);
+        //$file = reset($exp);
         return ".." . $file;
     }
 

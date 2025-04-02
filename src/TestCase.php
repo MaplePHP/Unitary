@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace MaplePHP\Unitary;
 
+use MaplePHP\Validate\ValidatePool;
+use MaplePHP\Validate\Inp;
 use BadMethodCallException;
 use ErrorException;
-use MaplePHP\Validate\ValidatePool;
 use RuntimeException;
 use Closure;
 use Throwable;
-use MaplePHP\Validate\Inp;
 
 class TestCase
 {
@@ -19,7 +19,14 @@ class TestCase
     private array $test = [];
     private int $count = 0;
     private ?Closure $bind = null;
+    private ?string $errorMessage = null;
 
+
+    /**
+     * Initialize a new TestCase instance with an optional message.
+     *
+     * @param string|null $message A message to associate with the test case.
+     */
     public function __construct(?string $message = null)
     {
         $this->message = $message;
@@ -27,6 +34,7 @@ class TestCase
 
     /**
      * Bind the test case to the Closure
+     * 
      * @param Closure $bind
      * @return void
      */
@@ -37,6 +45,7 @@ class TestCase
 
     /**
      * Will dispatch the case tests and return them as an array
+     * 
      * @return array
      */
     public function dispatchTest(): array
@@ -48,21 +57,59 @@ class TestCase
         return $this->test;
     }
 
-    public function validate($expect, Closure $validation): self
+    /**
+     * Add custom error message if validation fails
+     * 
+     * @param string $message
+     * @return $this
+     */
+    public function error(string $message): self
     {
-        $this->add($expect, $validation);
+        $this->errorMessage = $message;
         return $this;
     }
 
     /**
+     * Add a test unit validation using the provided expectation and validation logic
+     *
+     * @param mixed $expect The expected value
+     * @param Closure(ValidatePool, mixed): bool $validation The validation logic
+     * @return $this
+     * @throws ErrorException
+     */
+    public function validate(mixed $expect, Closure $validation): self
+    {
+        $this->addTestUnit($expect, function(mixed $value, ValidatePool $inst) use($validation) {
+            return $validation($inst, $value);
+        }, $this->errorMessage);
+
+        return $this;
+    }
+    
+    /**
+     * Same as "addTestUnit" but is public and will make sure the validation can be
+     * properly registered and traceable
+     *
+     * @param mixed $expect The expected value
+     * @param array|Closure $validation The validation logic
+     * @param string|null $message An optional descriptive message for the test
+     * @return $this
+     * @throws ErrorException
+     */
+    public function add(mixed $expect, array|Closure $validation, ?string $message = null) {
+        return $this->addTestUnit($expect, $validation, $message);
+    }
+
+    /**
      * Create a test
+     * 
      * @param mixed $expect
      * @param array|Closure $validation
      * @param string|null $message
      * @return TestCase
      * @throws ErrorException
      */
-    public function add(mixed $expect, array|Closure $validation, ?string $message = null): self
+    protected function addTestUnit(mixed $expect, array|Closure $validation, ?string $message = null): self
     {
         $this->value = $expect;
         $test = new TestUnit($this->value, $message);
@@ -80,11 +127,15 @@ class TestCase
             }
         }
         if(!$test->isValid()) {
+            $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1];
+            $test->setCodeLine($trace);
             $this->count++;
         }
         $this->test[] = $test;
+        $this->errorMessage = null;
         return $this;
     }
+
 
     /**
      * Init a test wrapper
@@ -114,6 +165,7 @@ class TestCase
 
     /**
      * Get failed test counts
+     *
      * @return int
      */
     public function getTotal(): int
@@ -123,6 +175,7 @@ class TestCase
 
     /**
      * Get failed test counts
+     *
      * @return int
      */
     public function getCount(): int
@@ -132,6 +185,7 @@ class TestCase
 
     /**
      * Get failed test counts
+     *
      * @return int
      */
     public function getFailedCount(): int
@@ -141,6 +195,7 @@ class TestCase
 
     /**
      * Check if it has failed tests
+     *
      * @return bool
      */
     public function hasFailed(): bool
@@ -150,6 +205,7 @@ class TestCase
 
     /**
      * Get original value
+     *
      * @return mixed
      */
     public function getValue(): mixed
@@ -159,6 +215,7 @@ class TestCase
 
     /**
      * Get user added message
+     *
      * @return string|null
      */
     public function getMessage(): ?string
@@ -168,6 +225,7 @@ class TestCase
 
     /**
      * Get test array object
+     *
      * @return array
      */
     public function getTest(): array
@@ -189,7 +247,7 @@ class TestCase
 
         $error = [];
         if(!is_null($validation)) {
-            $bool = $validation($validPool, $this->value);
+            $bool = $validation($this->value, $validPool);
             $error = $validPool->getError();
             if(is_bool($bool) && !$bool) {
                 $error['customError'] = $bool;
@@ -239,6 +297,7 @@ class TestCase
 
     /**
      * Init MaplePHP validation
+     *
      * @param mixed $value
      * @return Inp
      * @throws ErrorException
@@ -252,6 +311,7 @@ class TestCase
      * This is a helper function that will list all inherited proxy methods
      *
      * @param string $class
+     * @param string|null $prefixMethods
      * @return void
      * @throws \ReflectionException
      */
@@ -275,5 +335,4 @@ class TestCase
             }
         }
     }
-
 }
