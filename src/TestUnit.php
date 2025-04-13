@@ -10,7 +10,8 @@ use MaplePHP\DTO\Format\Str;
 class TestUnit
 {
     private bool $valid;
-    private mixed $value;
+    private mixed $value = null;
+    private bool $hasValue = false;
     private ?string $message;
     private array $unit = [];
     private int $count = 0;
@@ -23,37 +24,70 @@ class TestUnit
      * @param mixed $value
      * @param string|null $message
      */
-    public function __construct(mixed $value, ?string $message = null)
+    public function __construct(?string $message = null)
     {
         $this->valid = true;
-        $this->value = $value;
         $this->message = is_null($message) ? "Could not validate" : $message;
+    }
+
+    /**
+     * Check if value should be presented
+     *
+     * @return bool
+     */
+    public function hasValue(): bool
+    {
+        return $this->hasValue;
+    }
+
+    /**
+     * Set a test value
+     *
+     * @param mixed $value
+     * @return void
+     */
+    public function setTestValue(mixed $value)
+    {
+        $this->value = $value;
+        $this->hasValue = true;
     }
 
     /**
      * Set the test unit
      *
-     * @param bool $valid
-     * @param string|null $validation
+     * @param bool|null $valid can be null if validation should execute later
+     * @param string|null|\Closure $validation
      * @param array $args
+     * @param array $compare
      * @return $this
+     * @throws ErrorException
      */
-    public function setUnit(bool $valid, ?string $validation = null, array $args = []): self
+    public function setUnit(
+        bool|null $valid,
+        null|string|\Closure $validation = null,
+        array $args = [],
+        array $compare = []): self
     {
         if(!$valid) {
             $this->valid = false;
             $this->count++;
         }
         
-        $valLength = strlen((string)$validation);
-        if($validation && $this->valLength < $valLength) {
-            $this->valLength = $valLength;
+        if(!is_callable($validation)) {
+            $valLength = strlen((string)$validation);
+            if($validation && $this->valLength < $valLength) {
+                $this->valLength = $valLength;
+            }
         }
-        
+
+        if($compare && count($compare) > 0) {
+            $compare = array_map(fn($value) => $this->getReadValue($value, true), $compare);
+        }
         $this->unit[] = [
             'valid' => $valid,
             'validation' => $validation,
-            'args' => $args
+            'args' => $args,
+            'compare' => $compare
         ];
         return $this;
     }
@@ -159,34 +193,37 @@ class TestUnit
     /**
      * Used to get a readable value
      *
-     * @return string
+     * @param mixed|null $value
+     * @param bool $minify
+     * @return string|bool
      * @throws ErrorException
      */
-    public function getReadValue(): string
+    public function getReadValue(mixed $value = null, bool $minify = false): string|bool
     {
-        if (is_bool($this->value)) {
-            return '"' . ($this->value ? "true" : "false") . '"' . " (type: bool)";
+        $value = is_null($value) ? $this->value : $value;
+        if (is_bool($value)) {
+            return '"' . ($value ? "true" : "false") . '"' . ($minify ? "" : " (type: bool)");
         }
-        if (is_int($this->value)) {
-            return '"' . $this->excerpt((string)$this->value) . '"' . " (type: int)";
+        if (is_int($value)) {
+            return '"' . $this->excerpt((string)$value) . '"' . ($minify ? "" : " (type: int)");
         }
-        if (is_float($this->value)) {
-            return '"' . $this->excerpt((string)$this->value) . '"' . " (type: float)";
+        if (is_float($value)) {
+            return '"' . $this->excerpt((string)$value) . '"' . ($minify ? "" : " (type: float)");
         }
-        if (is_string($this->value)) {
-            return '"' . $this->excerpt($this->value) . '"' . " (type: string)";
+        if (is_string($value)) {
+            return '"' . $this->excerpt($value) . '"' . ($minify ? "" : " (type: string)");
         }
-        if (is_array($this->value)) {
-            return '"' . $this->excerpt(json_encode($this->value)) . '"' . " (type: array)";
+        if (is_array($value)) {
+            return '"' . $this->excerpt(json_encode($value)) . '"' . ($minify ? "" : " (type: array)");
         }
-        if (is_object($this->value)) {
-            return '"' . $this->excerpt(get_class($this->value)) . '"' . " (type: object)";
+        if (is_object($value)) {
+            return '"' . $this->excerpt(get_class($value)) . '"' . ($minify ? "" : " (type: object)");
         }
-        if (is_null($this->value)) {
-            return '"null"  (type: null)';
+        if (is_null($value)) {
+            return '"null"'. ($minify ? '' : ' (type: null)');
         }
-        if (is_resource($this->value)) {
-            return '"' . $this->excerpt(get_resource_type($this->value)) . '"' . " (type: resource)";
+        if (is_resource($value)) {
+            return '"' . $this->excerpt(get_resource_type($value)) . '"' . ($minify ? "" : " (type: resource)");
         }
 
         return "(unknown type)";

@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace MaplePHP\Unitary;
 
-use MaplePHP\Validate\ValidatePool;
-use MaplePHP\Validate\Inp;
 use BadMethodCallException;
-use ErrorException;
-use RuntimeException;
 use Closure;
+use ErrorException;
+use MaplePHP\Unitary\Mocker\Mocker;
+use MaplePHP\Unitary\Mocker\MockerController;
+use MaplePHP\Validate\Inp;
+use MaplePHP\Validate\ValidatePool;
+use RuntimeException;
 use Throwable;
 
 class TestCase
@@ -20,6 +22,8 @@ class TestCase
     private int $count = 0;
     private ?Closure $bind = null;
     private ?string $errorMessage = null;
+
+    private array $deferredValidation = [];
 
 
     /**
@@ -79,40 +83,35 @@ class TestCase
      */
     public function validate(mixed $expect, Closure $validation): self
     {
-        $this->addTestUnit($expect, function(mixed $value, ValidatePool $inst) use($validation) {
+        $this->expectAndValidate($expect, function(mixed $value, ValidatePool $inst) use($validation) {
             return $validation($inst, $value);
         }, $this->errorMessage);
 
         return $this;
     }
-    
-    /**
-     * Same as "addTestUnit" but is public and will make sure the validation can be
-     * properly registered and traceable
-     *
-     * @param mixed $expect The expected value
-     * @param array|Closure $validation The validation logic
-     * @param string|null $message An optional descriptive message for the test
-     * @return $this
-     * @throws ErrorException
-     */
-    public function add(mixed $expect, array|Closure $validation, ?string $message = null) {
-        return $this->addTestUnit($expect, $validation, $message);
-    }
 
     /**
-     * Create a test
-     * 
-     * @param mixed $expect
-     * @param array|Closure $validation
-     * @param string|null $message
-     * @return TestCase
-     * @throws ErrorException
+     * Executes a test case at runtime by validating the expected value.
+     *
+     * Accepts either a validation array (method => arguments) or a Closure
+     * containing multiple inline assertions. If any validation fails, the test
+     * is marked as invalid and added to the list of failed tests.
+     *
+     * @param mixed $expect The value to test.
+     * @param array|Closure $validation A list of validation methods with arguments,
+     *                                   or a closure defining the test logic.
+     * @param string|null $message Optional custom message for test reporting.
+     * @return $this
+     * @throws ErrorException If validation fails during runtime execution.
      */
-    protected function addTestUnit(mixed $expect, array|Closure $validation, ?string $message = null): self
-    {
+    protected function expectAndValidate(
+        mixed $expect,
+        array|Closure $validation,
+        ?string $message = null
+    ): self {
         $this->value = $expect;
-        $test = new TestUnit($this->value, $message);
+        $test = new TestUnit($message);
+        $test->setTestValue($this->value);
         if($validation instanceof Closure) {
             $list = $this->buildClosureTest($validation);
             foreach($list as $method => $valid) {
@@ -136,6 +135,38 @@ class TestCase
         return $this;
     }
 
+    /**
+     * Adds a deferred validation to be executed after all immediate tests.
+     *
+     * Use this to queue up validations that depend on external factors or should
+     * run after the main test suite. These will be executed in the order they were added.
+     *
+     * @param Closure $validation A closure containing the deferred test logic.
+     * @return void
+     */
+    public function deferValidation(Closure $validation)
+    {
+        // This will add a cursor to the possible line and file where error occurred
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1];
+        $this->deferredValidation[] = [
+            "trace" => $trace,
+            "call" => $validation
+        ];
+    }
+    
+    /**
+     * Same as "addTestUnit" but is public and will make sure the validation can be
+     * properly registered and traceable
+     *
+     * @param mixed $expect The expected value
+     * @param array|Closure $validation The validation logic
+     * @param string|null $message An optional descriptive message for the test
+     * @return $this
+     * @throws ErrorException
+     */
+    public function add(mixed $expect, array|Closure $validation, ?string $message = null) {
+        return $this->expectAndValidate($expect, $validation, $message);
+    }
 
     /**
      * Init a test wrapper
@@ -143,23 +174,110 @@ class TestCase
      * @param string $className
      * @return TestWrapper
      */
-    public function wrapper(string $className): TestWrapper
+    public function wrap(string $className): TestWrapper
     {
         return new class($className) extends TestWrapper {
         };
     }
 
-    public function mock(string $className, null|array|Closure $validate = null): object
+    /**
+     * Creates and returns an instance of a dynamically generated mock class.
+     *
+     * The mock class is based on the provided class name and optional constructor arguments.
+     * A validation closure can also be provided to define mock expectations. These
+     * validations are deferred and will be executed later via runDeferredValidations().
+     *
+     * @param string|array $classArg Either the class name as a string,
+     *                                or an array with [className, constructorArgs].
+     * @param Closure|null $validate Optional closure to define expectations on the mock.
+     * @return object An instance of the dynamically created mock class.
+     * @throws \ReflectionException If the class or constructor cannot be reflected.
+     */
+    public function mock(string|array $classArg, null|Closure $validate = null): object
     {
-        $mocker = new TestMocker($className);
-        if(is_array($validate)) {
-            $mocker->validate($validate);
+        $args = [];
+        $className = $classArg;
+        if(is_array($classArg)) {
+            $className = $classArg[0];
+            $args = ($classArg[1] ?? []);
         }
+
+        $mocker = new Mocker($className, $args);
         if(is_callable($validate)) {
-            $fn = $validate->bindTo($mocker);
-            $fn($mocker);
+            $pool = $mocker->getMethodPool();
+            $fn = $validate->bindTo($pool);
+            $fn($pool);
+
+            $this->deferValidation(function() use($mocker, $pool) {
+                $error = [];
+                $data = MockerController::getData($mocker->getMockedClassName());
+
+                foreach($data as $row) {
+                    $item = $pool->get($row->name);
+                    if($item) {
+                        foreach (get_object_vars($item) as $property => $value) {
+                            if(!is_null($value)) {
+
+
+                                $currentValue = $row->{$property};
+                                if(is_array($value)) {
+                                    $validPool = new ValidatePool($currentValue);
+                                    foreach($value as $method => $args) {
+                                        $validPool->{$method}(...$args);
+                                    }
+                                    $valid = $validPool->isValid();
+                                } else {
+                                    $valid = Inp::value($currentValue)->equal($value);
+                                }
+
+                                $error[$row->name][] = [
+                                    "property" => $property,
+                                    "currentValue" => $currentValue,
+                                    "expectedValue" => $value,
+                                    "valid" => $valid
+                                ];
+                            }
+                        }
+                    }
+                }
+                return $error;
+            });
         }
         return $mocker->execute();
+    }
+
+    /**
+     * Executes all deferred validations that were registered earlier using deferValidation().
+     *
+     * This method runs each queued validation closure, collects their results,
+     * and converts them into individual TestUnit instances. If a validation fails,
+     * it increases the internal failure count and stores the test details for later reporting.
+     *
+     * @return TestUnit[] A list of TestUnit results from the deferred validations.
+     * @throws ErrorException If any validation logic throws an error during execution.
+     */
+    public function runDeferredValidations()
+    {
+        foreach($this->deferredValidation as $row) {
+            $error = $row['call']();
+            foreach($error as $method => $arr) {
+                $test = new TestUnit("Mock method \"{$method}\" failed");
+                if(is_array($row['trace'] ?? "")) {
+                    $test->setCodeLine($row['trace']);
+                }
+                foreach($arr as $data) {
+                    $test->setUnit($data['valid'], $data['property'], [], [
+                        $data['expectedValue'], $data['currentValue']
+                    ]);
+                    if (!$data['valid']) {
+                        $this->count++;
+                    }
+                }
+                $this->test[] = $test;
+            }
+        }
+
+        return $this->test;
     }
 
 
@@ -239,9 +357,9 @@ class TestCase
      * @param Closure $validation
      * @return array
      */
-    public function buildClosureTest(Closure $validation): array
+    protected function buildClosureTest(Closure $validation): array
     {
-        $bool = false;
+        //$bool = false;
         $validPool = new ValidatePool($this->value);
         $validation = $validation->bindTo($validPool);
 
@@ -269,7 +387,7 @@ class TestCase
      * @return bool
      * @throws ErrorException
      */
-    public function buildArrayTest(string $method, array|Closure $args): bool
+    protected function buildArrayTest(string $method, array|Closure $args): bool
     {
         if($args instanceof Closure) {
             $args = $args->bindTo($this->valid($this->value));

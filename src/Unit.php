@@ -7,6 +7,7 @@ namespace MaplePHP\Unitary;
 use Closure;
 use ErrorException;
 use Exception;
+use MaplePHP\Unitary\Mocker\MockerController;
 use RuntimeException;
 use MaplePHP\Unitary\Handlers\HandlerInterface;
 use MaplePHP\Http\Interfaces\StreamInterface;
@@ -153,7 +154,7 @@ class Unit
         $start = new TestMem();
         $func = $func->bindTo($this);
         if(!is_null($func)) {
-            $func();
+            $func($this);
         }
         $line = $this->command->getAnsi()->line(80);
         $this->command->message("");
@@ -179,6 +180,7 @@ class Unit
 
     /**
      * Execute tests suite
+     *
      * @return bool
      * @throws ErrorException
      */
@@ -196,7 +198,8 @@ class Unit
             }
 
             $errArg = self::getArgs("errors-only");
-            $tests = $row->dispatchTest();
+            $row->dispatchTest();
+            $tests = $row->runDeferredValidations();
             $color = ($row->hasFailed() ? "brightRed" : "brightBlue");
             $flag = $this->command->getAnsi()->style(['blueBg', 'brightWhite'], " PASS ");
             if($row->hasFailed()) {
@@ -233,21 +236,41 @@ class Unit
                     if(!empty($trace['code'])) {
                         $this->command->message($this->command->getAnsi()->style(["bold", "grey"], "Failed on line {$trace['line']}: "));
                         $this->command->message($this->command->getAnsi()->style(["grey"], " → {$trace['code']}"));
-
                     }
 
                     /** @var array<string, string> $unit */
                     foreach($test->getUnits() as $unit) {
-                        $title = str_pad($unit['validation'], $test->getValidationLength() + 1);
-                        $this->command->message(
-                            $this->command->getAnsi()->style(
-                                ((!$unit['valid']) ? "brightRed" : null),
-                                "   " .$title . ((!$unit['valid']) ? " → failed" : "")
-                            )
-                        );
+                        if(is_string($unit['validation']) && !$unit['valid']) {
+                            $lengthA = $test->getValidationLength() + 1;
+                            $title = str_pad($unit['validation'], $lengthA);
+
+                            $compare = "";
+                            if($unit['compare']) {
+                                $expectedValue = array_shift($unit['compare']);
+                                $compare = "Expected: {$expectedValue} | Actual: " . implode(":", $unit['compare']);
+                            }
+
+                            $failedMsg = "   " .$title . ((!$unit['valid']) ? " → failed" : "");
+                            $this->command->message(
+                                $this->command->getAnsi()->style(
+                                    ((!$unit['valid']) ? "brightRed" : null),
+                                    $failedMsg
+                                )
+                            );
+
+                            if(!$unit['valid'] && $compare) {
+                                $lengthB = (strlen($compare) + strlen($failedMsg) - 8);
+                                $comparePad = str_pad($compare, $lengthB, " ", STR_PAD_LEFT);
+                                $this->command->message(
+                                    $this->command->getAnsi()->style("brightRed", $comparePad)
+                                );
+                            }
+                        }
                     }
-                    $this->command->message("");
-                    $this->command->message($this->command->getAnsi()->bold("Value: ") . $test->getReadValue());
+                    if($test->hasValue()) {
+                        $this->command->message("");
+                        $this->command->message($this->command->getAnsi()->bold("Value: ") . $test->getReadValue());
+                    }
                 }
             }
 
@@ -276,7 +299,8 @@ class Unit
     }
 
     /**
-     * Will reset the execute and stream if is a seekable stream.
+     * Will reset the execute and stream if is a seekable stream
+     *
      * @return bool
      */
     public function resetExecute(): bool
@@ -293,6 +317,7 @@ class Unit
 
     /**
      * Validate before execute test
+     *
      * @return bool
      */
     private function validate(): bool

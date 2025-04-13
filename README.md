@@ -117,53 +117,93 @@ php vendor/bin/unitary
 With that, you are ready to create your own tests!
 
 
-## Integration tests: Test Wrapper
-The TestWrapper allows you to wrap an existing class, override its methods, and inject dependencies dynamically. 
-It is useful for integration testing, debugging, and extending existing functionality without the need of 
-modifying the original class.
+## Mocking
+Unitary comes with a built-in mocker that makes it super simple for you to mock classes.
 
-### The problem
-Imagine we have a PaymentProcessor class that communicates with an external payment gateway to 
-capture a customer's payment. We would like to test this with its own functionallity to keep the test useful
-but avoid making any charges to customer.
+
+### Auto mocking
+What is super cool with Unitary Mocker will try to automatically mock the class that you pass and 
+it will do it will do it quite accurate as long as the class and its methods that you are mocking is 
+using data type in arguments and return type. 
+
 ```php
-class PaymentProcessor
-{
-    public function __construct(
-        private OrderService $orderService,
-        private PaymentGateway $gateway,
-        private Logger $logger
-    ) {}
+$unit->group("Testing user service", function (TestCase $inst) {
+    
+    // Just call the unitary mock and pass in class name
+    $mock = $inst->mock(Mailer::class);
+    // Mailer class is not mocked!
+    
+    // Pass argument to Mailer constructor e.g. new Mailer('john.doe@gmail.com', 'John Doe');
+    //$mock = $inst->mock([Mailer::class, ['john.doe@gmail.com', 'John Doe']);
+    // Mailer class is not mocked again!
 
-    public function capture(string $orderID)
-    {
-        $order = $this->orderService->getOrder($orderID);
+    // Then just pass the mocked library to what ever service or controller you wish
+    $service = new UserService($mock);
+});
+```
+_Why? Sometimes you just want to quick mock so that a Mailer library will not send a mail_ 
 
-        if (!$order) {
-            throw new Exception("Order not found: $orderID");
-        }
+### Custom mocking
+As I said Unitary mocker will try to automatically mock every method but might not successes in some user-cases
+then you can just tell Unitary how those failed methods should load. 
 
-        $this->logger->info("Capturing payment for Order ID: " . $order->id);
+```php
+use MaplePHP\Validate\ValidatePool;
+use \MaplePHP\Unitary\Mocker\MethodPool;
 
-        $response = $this->gateway->capture($order->id);
+$unit->group("Testing user service", function (TestCase $inst) {
+    $mock = $inst->mock(Mailer::class, function (MethodPool $pool) use($inst) {
+        // Quick way to tell Unitary that this method should return 'john.doe'
+        $pool->method("getFromEmail")->return('john.doe@gmail.com');
 
-        if ($response['status'] !== 'success') {
-            throw new Exception("Payment capture failed: " . $response['message']);
-        }
-
-        return "Transaction ID: " . $response['transaction_id'];
-    }
-}
-
+        // Or we can acctually pass a callable to it and tell it what it should return 
+        // But we can also validate the argumnets!
+        $pool->method("addFromEmail")->wrap(function($email) use($inst) {
+            $inst->validate($email, function(ValidatePool $valid) {
+                $valid->email();
+                $valid->isString();
+            });
+            return true;
+        });
+    });
+    
+    // Then just pass the mocked library to what ever service or controller you wish
+    $service = new UserService($mock);
+});
 ```
 
-### Use the Test Wrapper
-Use wrapper()->bind() to make integration tests easier. Test wrapper will bind a callable to specified class in wrapper, in this case to PaymentProcessor and will be accessible with `$dispatch("OR827262")`.
-
-With TestWrapper, we can simulate an order and intercept the payment capture while keeping access to $this inside the closure.
+### Mocking: Add Consistency validation
+What is really cool is that you can also use Unitary mocker to make sure consistencies is followed and 
+validate that the method is built and loaded correctly. 
 
 ```php
-$dispatch = $this->wrapper(PaymentProcessor::class)->bind(function ($orderID) use ($inst) {
+use \MaplePHP\Unitary\Mocker\MethodPool;
+
+$unit->group("Unitary test", function (TestCase $inst) {
+    $mock = $inst->mock(Mailer::class, function (MethodPool $pool) use($inst) {
+        $pool->method("addFromEmail")
+            ->isPublic()
+            ->hasDocComment()
+            ->hasReturnType()
+            ->count(1);
+        
+        $pool->method("addBCC")
+            ->isPublic()
+            ->count(3);
+    });
+    $service = new UserService($mock);
+});
+```
+
+
+### Integration tests: Test Wrapper
+Test wrapper is great to make integration test easier.
+
+Most libraries or services has a method that executes the service and runs all the logic. The test wrapper we 
+can high-jack that execution method and overwrite it with our own logic.
+
+```php
+$dispatch = $this->wrap(PaymentProcessor::class)->bind(function ($orderID) use ($inst) {
     // Simulate order retrieval
     $order = $this->orderService->getOrder($orderID);
     $response = $inst->mock('gatewayCapture')->capture($order->id);

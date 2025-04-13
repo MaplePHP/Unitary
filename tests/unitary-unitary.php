@@ -1,43 +1,96 @@
+
 <?php
 
 use MaplePHP\Unitary\TestCase;
-use MaplePHP\Unitary\TestWrapper;
 use MaplePHP\Unitary\Unit;
-use MaplePHP\Validate\Inp;
 use MaplePHP\Validate\ValidatePool;
+use MaplePHP\Unitary\Mocker\MethodPool;
 
 
 class Mailer
 {
-    function sendEmail(string $email): string
+    public $from = "";
+    public $bcc = "";
+    public function sendEmail(string $email, string $name = "daniel"): string
     {
-        echo "Sent email to $email";
-        return "SENT!!";
+        if(!$this->isValidEmail($email)) {
+            throw new \Exception("Invalid email");
+        }
+        return "Sent email";
     }
+
+    public function isValidEmail(string $email): bool
+    {
+        return filter_var($email, FILTER_VALIDATE_EMAIL);
+    }
+
+    public function getFromEmail(string $email): string
+    {
+        return $this->from;
+    }
+
+    /**
+     * Add from email address
+     *
+     * @param string $email
+     * @return void
+     */
+    public function addFromEmail(string $email): void
+    {
+        $this->from = $email;
+    }
+
+    public function addBCC(string $email): void
+    {
+        $this->bcc = $email;
+    }
+
 }
 
 class UserService {
     public function __construct(private Mailer $mailer) {}
 
-    public function registerUser(string $email): void {
+    public function registerUser(string $email, string $name = "Daniel"): void {
         // register user logic...
-        echo $this->mailer->sendEmail($email)."\n";
-        echo $this->mailer->sendEmail($email);
+
+        if(!$this->mailer->isValidEmail($email)) {
+            throw new \Exception("Invalid email");
+        }
+        echo $this->mailer->sendEmail($email, $name)."\n";
+        echo $this->mailer->sendEmail($email, $name);
     }
 }
 
 
 $unit = new Unit();
+$unit->group("Unitary test 2", function (TestCase $inst) {
 
-$unit->group("Unitary test", function (TestCase $inst) {
+    $mock = $inst->mock(Mailer::class, function (MethodPool $pool) use($inst) {
+        $pool->method("addFromEmail")
+            ->isPublic()
+            ->hasDocComment()
+            ->hasReturnType()
+            ->count(0);
 
+        $pool->method("addBCC")
+            ->isPublic()
+            ->hasDocComment()
+            ->count(0);
+    });
+    $service = new UserService($mock);
+
+
+    $inst->validate("yourTestValue", function(ValidatePool $inst) {
+        $inst->isBool();
+        $inst->isInt();
+        $inst->isJson();
+        $inst->isString();
+        $inst->isResource();
+    });
 
     // Example 1
     /*
-     $mock = $this->mock(Mailer::class, function ($mock) {
-        $mock->method("testMethod1")->count(1)->return("lorem1");
-        $mock->method("testMethod2")->count(1)->return("lorem1");
-    });
+
     $service = new UserService($mock);
 
     // Example 2
@@ -55,15 +108,18 @@ $unit->group("Unitary test", function (TestCase $inst) {
     $service->registerUser('user@example.com');
      */
 
-    $inst->validate("yourTestValue", function(ValidatePool $inst, mixed $value) {
+    /*
+     $inst->validate("yourTestValue", function(ValidatePool $inst, mixed $value) {
         $inst->isBool();
         $inst->isInt();
         $inst->isJson();
         $inst->isString();
+        $inst->isResource();
         return ($value === "yourTestValue1");
     });
 
     $inst->validate("yourTestValue", fn(ValidatePool $inst) => $inst->isfloat());
+     */
 
     //$inst->listAllProxyMethods(Inp::class);
     //->error("Failed to validate yourTestValue (optional error message)")
@@ -96,3 +152,4 @@ echo "ww";
     ], "The length is not correct!");
 
 });
+
