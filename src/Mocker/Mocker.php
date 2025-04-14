@@ -222,6 +222,11 @@ class Mocker
             if ($param->isDefaultValueAvailable()) {
                 $paramStr .= ' = ' . var_export($param->getDefaultValue(), true);
             }
+
+            if ($param->isVariadic()) {
+                $paramStr = "...{$paramStr}";
+            }
+
             $params[] = $paramStr;
         }
         return implode(', ', $params);
@@ -233,7 +238,7 @@ class Mocker
      * @param ReflectionMethod $method The reflection object for the method to inspect.
      * @return array An array of the expected return types for the given method.
      */
-    protected function getReturnType($method): array
+    protected function getReturnType(ReflectionMethod $method): array
     {
         $types = [];
         $returnType = $method->getReturnType();
@@ -321,7 +326,7 @@ class Mocker
                 'type'        => $param->hasType() ? $param->getType()->__toString() : null,
                 'isOptional'  => $param->isOptional(),
                 'isVariadic'  => $param->isVariadic(),
-                'isPassedByReference' => $param->isPassedByReference(),
+                'isReference' => $param->isPassedByReference(),
                 'default'     => $param->isDefaultValueAvailable() ? $param->getDefaultValue() : null,
             ];
         }

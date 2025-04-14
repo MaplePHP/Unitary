@@ -243,18 +243,101 @@ class MethodItem
     }
 
     /**
-     * Not yet working
-     * Set the parameters of the method.
+     * Check parameter type for method
      *
-     * @param array $parameters
-     * @return self
+     * @param int $paramPosition
+     * @param string $dataType
+     * @return $this
      */
-    public function parameters(array $parameters): self
+    public function paramType(int $paramPosition, string $dataType): self
     {
-        throw new \BadMethodCallException('Method Item::parameters() does not "YET" exist.');
         $inst = $this;
-        $inst->parameters = $parameters;
+        $inst->parameters = [
+            "validateInData" => ["{$paramPosition}.type", "equal", [$dataType]],
+        ];
         return $inst;
+    }
+
+    /**
+     * Check parameter default value for method
+     *
+     * @param int $paramPosition
+     * @param string $defaultArgValue
+     * @return $this
+     */
+    public function paramDefault(int $paramPosition, string $defaultArgValue): self
+    {
+        $inst = $this;
+        $inst->parameters = [
+            "validateInData" => ["{$paramPosition}.default", "equal", [$defaultArgValue]],
+        ];
+        return $inst;
+    }
+
+    /**
+     * Check parameter type for method
+     *
+     * @param int $paramPosition
+     * @return $this
+     */
+    public function paramHasType(int $paramPosition): self
+    {
+        $inst = $this;
+        $inst->parameters = [
+            "validateInData" => ["{$paramPosition}.hasType", "equal", [true]],
+        ];
+        return $inst;
+    }
+
+    /**
+     * Check parameter type for method
+     *
+     * @param int $paramPosition
+     * @return $this
+     */
+    public function paramIsOptional(int $paramPosition): self
+    {
+        $inst = $this;
+        $inst->parameters = [
+            "validateInData" => ["{$paramPosition}.isOptional", "equal", [true]],
+        ];
+        return $inst;
+    }
+
+    /**
+     * Check parameter is Reference for method
+     *
+     * @param int $paramPosition
+     * @return $this
+     */
+    public function paramIsReference(int $paramPosition): self
+    {
+        $inst = $this;
+        $inst->parameters = [
+            "validateInData" => ["{$paramPosition}.isReference", "equal", [true]],
+        ];
+        return $inst;
+    }
+
+    /**
+     * Check parameter is variadic (spread) for method
+     *
+     * @param int $paramPosition
+     * @return $this
+     */
+    public function paramIsVariadic(int $paramPosition): self
+    {
+        $inst = $this;
+        $inst->parameters = [
+            "validateInData" => ["{$paramPosition}.isVariadic", "equal", [true]],
+        ];
+        return $inst;
+    }
+
+    // Symlink to paramIsVariadic
+    public function paramIsSpread(int $paramPosition): self
+    {
+        return $this->paramIsVariadic($paramPosition);
     }
 
     /**

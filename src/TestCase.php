@@ -217,8 +217,6 @@ class TestCase
                     if($item) {
                         foreach (get_object_vars($item) as $property => $value) {
                             if(!is_null($value)) {
-
-
                                 $currentValue = $row->{$property};
                                 if(is_array($value)) {
                                     $validPool = new ValidatePool($currentValue);
@@ -226,6 +224,8 @@ class TestCase
                                         $validPool->{$method}(...$args);
                                     }
                                     $valid = $validPool->isValid();
+                                    $currentValue = $validPool->getValue();
+
                                 } else {
                                     $valid = Inp::value($currentValue)->equal($value);
                                 }

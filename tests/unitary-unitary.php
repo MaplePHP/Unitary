@@ -35,14 +35,19 @@ class Mailer
      * @param string $email
      * @return void
      */
-    public function addFromEmail(string $email): void
+    public function addFromEmail($email): void
     {
         $this->from = $email;
     }
 
-    public function addBCC(string $email): void
+    public function addBCC(string $email, &$name = "Daniel"): void
     {
         $this->bcc = $email;
+    }
+
+    public function test(...$params): void
+    {
+
     }
 
 }
@@ -65,6 +70,7 @@ class UserService {
 $unit = new Unit();
 $unit->group("Unitary test 2", function (TestCase $inst) {
 
+
     $mock = $inst->mock(Mailer::class, function (MethodPool $pool) use($inst) {
         $pool->method("addFromEmail")
             ->isPublic()
@@ -75,6 +81,15 @@ $unit->group("Unitary test 2", function (TestCase $inst) {
         $pool->method("addBCC")
             ->isPublic()
             ->hasDocComment()
+            ->paramHasType(0)
+            ->paramType(0, "string")
+            ->paramDefault(1, "Daniel")
+            ->paramIsOptional(1)
+            ->paramIsReference(1)
+            ->count(0);
+
+        $pool->method("test")
+            ->paramIsSpread(0) // Same as ->paramIsVariadic()
             ->count(0);
     });
     $service = new UserService($mock);
