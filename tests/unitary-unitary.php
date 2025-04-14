@@ -11,6 +11,13 @@ class Mailer
 {
     public $from = "";
     public $bcc = "";
+
+
+    public function __construct(string $arg1)
+    {
+
+    }
+
     public function sendEmail(string $email, string $name = "daniel"): string
     {
         if(!$this->isValidEmail($email)) {
@@ -47,7 +54,6 @@ class Mailer
 
     public function test(...$params): void
     {
-
     }
 
 }
@@ -70,7 +76,6 @@ class UserService {
 $unit = new Unit();
 $unit->group("Unitary test 2", function (TestCase $inst) {
 
-
     $mock = $inst->mock(Mailer::class, function (MethodPool $pool) use($inst) {
         $pool->method("addFromEmail")
             ->isPublic()
@@ -90,9 +95,22 @@ $unit->group("Unitary test 2", function (TestCase $inst) {
 
         $pool->method("test")
             ->paramIsSpread(0) // Same as ->paramIsVariadic()
-            ->count(0);
-    });
+            ->wrap(function($args) use($inst) {
+                echo "World -> $args\n";
+            })
+            ->count(1);
+
+    }, ["Arg 1"]);
+
+    $mock->test("Hello");
     $service = new UserService($mock);
+
+
+
+
+    // Example 1
+    /*
+
 
 
     $inst->validate("yourTestValue", function(ValidatePool $inst) {
@@ -103,8 +121,18 @@ $unit->group("Unitary test 2", function (TestCase $inst) {
         $inst->isResource();
     });
 
-    // Example 1
-    /*
+    $arr = [
+        "user" => [
+            "name" => "John Doe",
+            "email" => "john.doe@gmail.com",
+        ]
+    ];
+
+    $inst->validate($arr, function(ValidatePool $inst) {
+        $inst->validateInData("user.name", "email");
+        $inst->validateInData("user.email", "length", [1, 200]);
+    });
+
 
     $service = new UserService($mock);
 
@@ -152,19 +180,6 @@ echo "ww";
     $service->registerUser('user@example.com');
      */
 
-    $this->add("Lorem ipsum dolor", [
-        "isString" => [],
-        "length" => [1,300]
-
-    ])->add(92928, [
-        "isInt" => []
-
-    ])->add("Lorem", [
-        "isString" => [],
-        "length" => function () {
-            return $this->length(1, 50);
-        }
-    ], "The length is not correct!");
 
 });
 

@@ -43,6 +43,14 @@ class Mocker
     {
         $this->className = $className;
         $this->reflection = new ReflectionClass($className);
+
+        /*
+        // Auto fill the Constructor args!
+        $test = $this->reflection->getConstructor();
+        $test = $this->generateMethodSignature($test);
+        $param = $test->getParameters();
+         */
+
         $this->methods = $this->reflection->getMethods();
         $this->constructorArgs = $args;
     }
@@ -50,6 +58,11 @@ class Mocker
     public function getClassName(): string
     {
         return $this->className;
+    }
+
+    public function getClassArgs(): array
+    {
+        return $this->constructorArgs;
     }
 
     /**
@@ -73,10 +86,10 @@ class Mocker
     /**
      * Executes the creation of a dynamic mock class and returns an instance of the mock.
      *
-     * @return object An instance of the dynamically created mock class.
+     * @return mixed An instance of the dynamically created mock class.
      * @throws \ReflectionException
      */
-    public function execute(): object
+    public function execute(?callable $call = null): mixed
     {
         $className = $this->reflection->getName();
 
@@ -173,7 +186,7 @@ class Mocker
             $info = json_encode($arr);
             MockerController::getInstance()->buildMethodData($info);
 
-            if($methodItem && !in_array("void", $types)) {
+            if($methodItem) {
                 $returnValue = $this->generateWrapperReturn($methodItem->getWrap(), $methodName, $returnValue);
             }
 
@@ -191,11 +204,20 @@ class Mocker
     }
 
 
+    /**
+     * Will build the wrapper return
+     *
+     * @param \Closure|null $wrapper
+     * @param string $methodName
+     * @param string $returnValue
+     * @return string
+     */
     protected function generateWrapperReturn(?\Closure $wrapper, string $methodName, string $returnValue) {
         MockerController::addData($this->mockClassName, $methodName, 'wrapper', $wrapper);
+        $return = ($returnValue) ? "return " : "";
         return "
             if (isset(\$data->wrapper) && \$data->wrapper instanceof \\Closure) {
-                return call_user_func_array(\$data->wrapper, func_get_args());
+                {$return}call_user_func_array(\$data->wrapper, func_get_args());
             }
             {$returnValue}
             ";

@@ -7,7 +7,7 @@ use MaplePHP\Unitary\TestWrapper;
 
 class MethodItem
 {
-    private ?Mocker $mocker = null;
+    private ?Mocker $mocker;
     public mixed $return = null;
     public ?int $count = null;
 
@@ -37,21 +37,41 @@ class MethodItem
         $this->mocker = $mocker;
     }
 
+    /**
+     * Will create a method wrapper making it possible to mock
+     *
+     * @param $call
+     * @return $this
+     */
     public function wrap($call): self
     {
         $inst = $this;
-        $wrap = new class($this->mocker->getClassName()) extends TestWrapper {
+        $wrap = new class($this->mocker->getClassName(), $this->mocker->getClassArgs()) extends TestWrapper {
+            function __construct(string $class, array $args = [])
+            {
+                parent::__construct($class, $args);
+            }
         };
         $call->bindTo($this->mocker);
         $this->wrapper = $wrap->bind($call);
         return $inst;
     }
 
+    /**
+     * Get the wrapper if added as Closure else null
+     *
+     * @return Closure|null
+     */
     public function getWrap(): ?Closure
     {
         return $this->wrapper;
     }
 
+    /**
+     * Check if a return value has been added
+     *
+     * @return bool
+     */
     public function hasReturn(): bool
     {
         return $this->hasReturn;
@@ -253,7 +273,7 @@ class MethodItem
     {
         $inst = $this;
         $inst->parameters = [
-            "validateInData" => ["{$paramPosition}.type", "equal", [$dataType]],
+            "validateInData" => ["$paramPosition.type", "equal", [$dataType]],
         ];
         return $inst;
     }
@@ -269,7 +289,7 @@ class MethodItem
     {
         $inst = $this;
         $inst->parameters = [
-            "validateInData" => ["{$paramPosition}.default", "equal", [$defaultArgValue]],
+            "validateInData" => ["$paramPosition.default", "equal", [$defaultArgValue]],
         ];
         return $inst;
     }
@@ -284,7 +304,7 @@ class MethodItem
     {
         $inst = $this;
         $inst->parameters = [
-            "validateInData" => ["{$paramPosition}.hasType", "equal", [true]],
+            "validateInData" => ["$paramPosition.hasType", "equal", [true]],
         ];
         return $inst;
     }
@@ -299,7 +319,7 @@ class MethodItem
     {
         $inst = $this;
         $inst->parameters = [
-            "validateInData" => ["{$paramPosition}.isOptional", "equal", [true]],
+            "validateInData" => ["$paramPosition.isOptional", "equal", [true]],
         ];
         return $inst;
     }
@@ -314,7 +334,7 @@ class MethodItem
     {
         $inst = $this;
         $inst->parameters = [
-            "validateInData" => ["{$paramPosition}.isReference", "equal", [true]],
+            "validateInData" => ["$paramPosition.isReference", "equal", [true]],
         ];
         return $inst;
     }
@@ -329,7 +349,7 @@ class MethodItem
     {
         $inst = $this;
         $inst->parameters = [
-            "validateInData" => ["{$paramPosition}.isVariadic", "equal", [true]],
+            "validateInData" => ["$paramPosition.isVariadic", "equal", [true]],
         ];
         return $inst;
     }

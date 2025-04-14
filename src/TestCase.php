@@ -171,12 +171,17 @@ class TestCase
     /**
      * Init a test wrapper
      *
-     * @param string $className
+     * @param string $class
+     * @param array $args
      * @return TestWrapper
      */
-    public function wrap(string $className): TestWrapper
+    public function wrap(string $class, array $args = []): TestWrapper
     {
-        return new class($className) extends TestWrapper {
+        return new class($class, $args) extends TestWrapper {
+            function __construct(string $class, array $args = [])
+            {
+                parent::__construct($class, $args);
+            }
         };
     }
 
@@ -187,22 +192,16 @@ class TestCase
      * A validation closure can also be provided to define mock expectations. These
      * validations are deferred and will be executed later via runDeferredValidations().
      *
-     * @param string|array $classArg Either the class name as a string,
-     *                                or an array with [className, constructorArgs].
-     * @param Closure|null $validate Optional closure to define expectations on the mock.
-     * @return object An instance of the dynamically created mock class.
-     * @throws \ReflectionException If the class or constructor cannot be reflected.
+     * @template T of object
+     * @param class-string<T> $class
+     * @param Closure|null $validate
+     * @param array $args
+     * @return T
+     * @throws \ReflectionException
      */
-    public function mock(string|array $classArg, null|Closure $validate = null): object
+    public function mock(string $class, ?Closure $validate = null, array $args = []): mixed
     {
-        $args = [];
-        $className = $classArg;
-        if(is_array($classArg)) {
-            $className = $classArg[0];
-            $args = ($classArg[1] ?? []);
-        }
-
-        $mocker = new Mocker($className, $args);
+        $mocker = new Mocker($class, $args);
         if(is_callable($validate)) {
             $pool = $mocker->getMethodPool();
             $fn = $validate->bindTo($pool);
