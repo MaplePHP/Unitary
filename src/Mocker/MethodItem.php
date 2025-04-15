@@ -263,13 +263,70 @@ class MethodItem
     }
 
     /**
+     * Check if parameter exists
+     *
+     * @return $this
+     */
+    public function hasParams(): self
+    {
+        $inst = $this;
+        $inst->parameters = [
+            "isCountMoreThan" => [0],
+        ];
+        return $inst;
+    }
+
+    /**
+     * Check if all parameters has a data type
+     *
+     * @return $this
+     */
+    public function hasParamsTypes(): self
+    {
+        $inst = $this;
+        $inst->parameters = [
+            "itemsAreTruthy" => ['hasType', true],
+        ];
+        return $inst;
+    }
+
+    /**
+     * Check if parameter do not exist
+     *
+     * @return $this
+     */
+    public function hasNotParams(): self
+    {
+        $inst = $this;
+        $inst->parameters = [
+            "isArrayEmpty" => [],
+        ];
+        return $inst;
+    }
+
+    /**
+     * Check parameter type for method
+     *
+     * @param int $length
+     * @return $this
+     */
+    public function hasParamsCount(int $length): self
+    {
+        $inst = $this;
+        $inst->parameters = [
+            "isCountEqualTo" => [$length],
+        ];
+        return $inst;
+    }
+
+    /**
      * Check parameter type for method
      *
      * @param int $paramPosition
      * @param string $dataType
      * @return $this
      */
-    public function paramType(int $paramPosition, string $dataType): self
+    public function paramIsType(int $paramPosition, string $dataType): self
     {
         $inst = $this;
         $inst->parameters = [
@@ -285,7 +342,7 @@ class MethodItem
      * @param string $defaultArgValue
      * @return $this
      */
-    public function paramDefault(int $paramPosition, string $defaultArgValue): self
+    public function paramHasDefault(int $paramPosition, string $defaultArgValue): self
     {
         $inst = $this;
         $inst->parameters = [

@@ -42,7 +42,7 @@ class Mailer
      * @param string $email
      * @return void
      */
-    public function addFromEmail($email): void
+    public function addFromEmail(string $email, string $name = ""): void
     {
         $this->from = $email;
     }
@@ -53,6 +53,10 @@ class Mailer
     }
 
     public function test(...$params): void
+    {
+    }
+
+    public function test2(): void
     {
     }
 
@@ -78,6 +82,7 @@ $unit->group("Unitary test 2", function (TestCase $inst) {
 
     $mock = $inst->mock(Mailer::class, function (MethodPool $pool) use($inst) {
         $pool->method("addFromEmail")
+            ->hasParamsTypes()
             ->isPublic()
             ->hasDocComment()
             ->hasReturnType()
@@ -86,19 +91,25 @@ $unit->group("Unitary test 2", function (TestCase $inst) {
         $pool->method("addBCC")
             ->isPublic()
             ->hasDocComment()
+            ->hasParams()
             ->paramHasType(0)
-            ->paramType(0, "string")
-            ->paramDefault(1, "Daniel")
+            ->paramIsType(0, "string")
+            ->paramHasDefault(1, "Daniel")
             ->paramIsOptional(1)
             ->paramIsReference(1)
             ->count(0);
 
         $pool->method("test")
+            ->hasParams()
             ->paramIsSpread(0) // Same as ->paramIsVariadic()
             ->wrap(function($args) use($inst) {
                 echo "World -> $args\n";
             })
             ->count(1);
+
+        $pool->method("test2")
+            ->hasNotParams()
+            ->count(0);
 
     }, ["Arg 1"]);
 
