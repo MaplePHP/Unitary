@@ -7,10 +7,14 @@ namespace MaplePHP\Unitary;
 use BadMethodCallException;
 use Closure;
 use ErrorException;
+use MaplePHP\DTO\Traverse;
 use MaplePHP\Unitary\Mocker\Mocker;
 use MaplePHP\Unitary\Mocker\MockerController;
 use MaplePHP\Validate\Inp;
 use MaplePHP\Validate\ValidatePool;
+use ReflectionClass;
+use ReflectionException;
+use ReflectionMethod;
 use RuntimeException;
 use Throwable;
 
@@ -115,7 +119,7 @@ class TestCase
         if($validation instanceof Closure) {
             $list = $this->buildClosureTest($validation);
             foreach($list as $method => $valid) {
-                $test->setUnit(!$list, $method, []);
+                $test->setUnit(!$list, $method);
             }
         } else {
             foreach($validation as $method => $args) {
@@ -144,7 +148,7 @@ class TestCase
      * @param Closure $validation A closure containing the deferred test logic.
      * @return void
      */
-    public function deferValidation(Closure $validation)
+    public function deferValidation(Closure $validation): void
     {
         // This will add a cursor to the possible line and file where error occurred
         $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1];
@@ -164,7 +168,8 @@ class TestCase
      * @return $this
      * @throws ErrorException
      */
-    public function add(mixed $expect, array|Closure $validation, ?string $message = null) {
+    public function add(mixed $expect, array|Closure $validation, ?string $message = null): static
+    {
         return $this->expectAndValidate($expect, $validation, $message);
     }
 
@@ -197,7 +202,7 @@ class TestCase
      * @param Closure|null $validate
      * @param array $args
      * @return T
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function mock(string $class, ?Closure $validate = null, array $args = []): mixed
     {
@@ -206,11 +211,9 @@ class TestCase
             $pool = $mocker->getMethodPool();
             $fn = $validate->bindTo($pool);
             $fn($pool);
-
             $this->deferValidation(function() use($mocker, $pool) {
                 $error = [];
                 $data = MockerController::getData($mocker->getMockedClassName());
-
                 foreach($data as $row) {
                     $item = $pool->get($row->name);
                     if($item) {
@@ -220,13 +223,29 @@ class TestCase
                                 if(is_array($value)) {
                                     $validPool = new ValidatePool($currentValue);
                                     foreach($value as $method => $args) {
-                                        $validPool->{$method}(...$args);
+                                        if(is_int($method)) {
+                                            foreach($args as $methodB => $argsB) {
+                                                $validPool
+                                                    ->mapErrorToKey($argsB[0])
+                                                    ->mapErrorValidationName($argsB[1])
+                                                    ->{$methodB}(...$argsB);
+                                            }
+                                        } else {
+                                            $validPool->{$method}(...$args);
+                                        }
                                     }
                                     $valid = $validPool->isValid();
-                                    $currentValue = $validPool->getValue();
 
                                 } else {
                                     $valid = Inp::value($currentValue)->equal($value);
+                                }
+
+                                if(is_array($value)) {
+                                    $this->compareFromValidCollection(
+                                        $validPool,
+                                        $value,
+                                        $currentValue
+                                    );
                                 }
 
                                 $error[$row->name][] = [
@@ -246,6 +265,44 @@ class TestCase
     }
 
     /**
+     * Create a comparison from a validation collection
+     *
+     * @param ValidatePool $validPool
+     * @param array $value
+     * @param array $currentValue
+     * @return void
+     */
+    protected function compareFromValidCollection(ValidatePool $validPool, array &$value, array &$currentValue): void
+    {
+        $new = [];
+        $error = $validPool->getError();
+        $value = $this->mapValueToCollectionError($error, $value);
+        foreach($value as $eqIndex => $validator) {
+            $new[] = Traverse::value($currentValue)->eq($eqIndex)->get();
+        }
+        $currentValue = $new;
+    }
+
+    /**
+     * Will map collection value to error
+     *
+     * @param array $error
+     * @param array $value
+     * @return array
+     */
+    protected function mapValueToCollectionError(array $error, array $value): array
+    {
+        foreach($value as $item) {
+            foreach($item as $value) {
+                if(isset($error[$value[0]])) {
+                    $error[$value[0]] = $value[2];
+                }
+            }
+        }
+        return $error;
+    }
+
+    /**
      * Executes all deferred validations that were registered earlier using deferValidation().
      *
      * This method runs each queued validation closure, collects their results,
@@ -255,12 +312,12 @@ class TestCase
      * @return TestUnit[] A list of TestUnit results from the deferred validations.
      * @throws ErrorException If any validation logic throws an error during execution.
      */
-    public function runDeferredValidations()
+    public function runDeferredValidations(): array
     {
         foreach($this->deferredValidation as $row) {
             $error = $row['call']();
             foreach($error as $method => $arr) {
-                $test = new TestUnit("Mock method \"{$method}\" failed");
+                $test = new TestUnit("Mock method \"$method\" failed");
                 if(is_array($row['trace'] ?? "")) {
                     $test->setCodeLine($row['trace']);
                 }
@@ -367,7 +424,7 @@ class TestCase
             $bool = $validation($this->value, $validPool);
             $error = $validPool->getError();
             if(is_bool($bool) && !$bool) {
-                $error['customError'] = $bool;
+                $error['customError'] = false;
             }
         }
 
@@ -430,12 +487,12 @@ class TestCase
      * @param string $class
      * @param string|null $prefixMethods
      * @return void
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function listAllProxyMethods(string $class, ?string $prefixMethods = null): void
     {
-        $reflection = new \ReflectionClass($class);
-        foreach ($reflection->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
+        $reflection = new ReflectionClass($class);
+        foreach ($reflection->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
             if ($method->isConstructor()) continue;
             $params = array_map(function($param) {
                 $type = $param->hasType() ? $param->getType() . ' ' : '';

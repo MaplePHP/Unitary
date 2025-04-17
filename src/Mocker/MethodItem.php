@@ -270,7 +270,7 @@ class MethodItem
     public function hasParams(): self
     {
         $inst = $this;
-        $inst->parameters = [
+        $inst->parameters[] = [
             "isCountMoreThan" => [0],
         ];
         return $inst;
@@ -284,7 +284,7 @@ class MethodItem
     public function hasParamsTypes(): self
     {
         $inst = $this;
-        $inst->parameters = [
+        $inst->parameters[] = [
             "itemsAreTruthy" => ['hasType', true],
         ];
         return $inst;
@@ -298,7 +298,7 @@ class MethodItem
     public function hasNotParams(): self
     {
         $inst = $this;
-        $inst->parameters = [
+        $inst->parameters[] = [
             "isArrayEmpty" => [],
         ];
         return $inst;
@@ -313,7 +313,7 @@ class MethodItem
     public function hasParamsCount(int $length): self
     {
         $inst = $this;
-        $inst->parameters = [
+        $inst->parameters[] = [
             "isCountEqualTo" => [$length],
         ];
         return $inst;
@@ -329,7 +329,7 @@ class MethodItem
     public function paramIsType(int $paramPosition, string $dataType): self
     {
         $inst = $this;
-        $inst->parameters = [
+        $inst->parameters[] = [
             "validateInData" => ["$paramPosition.type", "equal", [$dataType]],
         ];
         return $inst;
@@ -345,7 +345,7 @@ class MethodItem
     public function paramHasDefault(int $paramPosition, string $defaultArgValue): self
     {
         $inst = $this;
-        $inst->parameters = [
+        $inst->parameters[] = [
             "validateInData" => ["$paramPosition.default", "equal", [$defaultArgValue]],
         ];
         return $inst;
@@ -360,7 +360,7 @@ class MethodItem
     public function paramHasType(int $paramPosition): self
     {
         $inst = $this;
-        $inst->parameters = [
+        $inst->parameters[] = [
             "validateInData" => ["$paramPosition.hasType", "equal", [true]],
         ];
         return $inst;
@@ -375,7 +375,7 @@ class MethodItem
     public function paramIsOptional(int $paramPosition): self
     {
         $inst = $this;
-        $inst->parameters = [
+        $inst->parameters[] = [
             "validateInData" => ["$paramPosition.isOptional", "equal", [true]],
         ];
         return $inst;
@@ -390,7 +390,7 @@ class MethodItem
     public function paramIsReference(int $paramPosition): self
     {
         $inst = $this;
-        $inst->parameters = [
+        $inst->parameters[] = [
             "validateInData" => ["$paramPosition.isReference", "equal", [true]],
         ];
         return $inst;
@@ -405,7 +405,7 @@ class MethodItem
     public function paramIsVariadic(int $paramPosition): self
     {
         $inst = $this;
-        $inst->parameters = [
+        $inst->parameters[] = [
             "validateInData" => ["$paramPosition.isVariadic", "equal", [true]],
         ];
         return $inst;

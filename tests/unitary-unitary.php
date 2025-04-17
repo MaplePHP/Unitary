@@ -76,6 +76,20 @@ class UserService {
     }
 }
 
+$unit = new Unit();
+$unit->group("Unitary test 2", function (TestCase $inst) {
+
+    $mock = $inst->mock(Mailer::class, function (MethodPool $pool) use($inst) {
+        $pool->method("addBCC")
+            ->paramIsType(0, "striwng")
+            ->paramHasDefault(1, "Daniwel")
+            ->paramIsReference(1)
+            ->count(1);
+    }, ["Arg 1"]);
+    $mock->addBCC("World");
+});
+
+/*
 
 $unit = new Unit();
 $unit->group("Unitary test 2", function (TestCase $inst) {
@@ -116,13 +130,12 @@ $unit->group("Unitary test 2", function (TestCase $inst) {
     $mock->test("Hello");
     $service = new UserService($mock);
 
-
-
-
-    // Example 1
-    /*
-
-
+    $validPool = new ValidatePool("dwqdqw");
+    $validPool
+        ->isEmail()
+        ->length(1, 200)
+        ->endsWith(".com");
+    $isValid = $validPool->isValid();
 
     $inst->validate("yourTestValue", function(ValidatePool $inst) {
         $inst->isBool();
@@ -132,65 +145,7 @@ $unit->group("Unitary test 2", function (TestCase $inst) {
         $inst->isResource();
     });
 
-    $arr = [
-        "user" => [
-            "name" => "John Doe",
-            "email" => "john.doe@gmail.com",
-        ]
-    ];
-
-    $inst->validate($arr, function(ValidatePool $inst) {
-        $inst->validateInData("user.name", "email");
-        $inst->validateInData("user.email", "length", [1, 200]);
-    });
-
-
-    $service = new UserService($mock);
-
-    // Example 2
-    $mock = $this->mock(Mailer::class, [
-        "testMethod1" => [
-            "count" => 1,
-            "validate" => [
-                "equal" => "lorem1",
-                "contains" => "lorem",
-                "length" => [1,6]
-            ]
-        ]
-    ]);
-    $service = new UserService($mock);
-    $service->registerUser('user@example.com');
-     */
-
-    /*
-     $inst->validate("yourTestValue", function(ValidatePool $inst, mixed $value) {
-        $inst->isBool();
-        $inst->isInt();
-        $inst->isJson();
-        $inst->isString();
-        $inst->isResource();
-        return ($value === "yourTestValue1");
-    });
-
-    $inst->validate("yourTestValue", fn(ValidatePool $inst) => $inst->isfloat());
-     */
-
-    //$inst->listAllProxyMethods(Inp::class);
-    //->error("Failed to validate yourTestValue (optional error message)")
-
-
-
-    /*
-     * $mock = $this->mock(Mailer::class);
-echo "ww";
-
-    $service = new UserService($test);
-    $service->registerUser('user@example.com');
-    var_dump($mock instanceof Mailer);
-    $service = new UserService($mock);
-    $service->registerUser('user@example.com');
-     */
-
-
 });
+
+*/
 
