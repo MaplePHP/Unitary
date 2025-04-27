@@ -7,6 +7,7 @@ namespace MaplePHP\Unitary;
 use BadMethodCallException;
 use Closure;
 use ErrorException;
+use MaplePHP\DTO\Format\Str;
 use MaplePHP\DTO\Traverse;
 use MaplePHP\Unitary\Mocker\Mocker;
 use MaplePHP\Unitary\Mocker\MockerController;
@@ -494,13 +495,14 @@ class TestCase
         $reflection = new ReflectionClass($class);
         foreach ($reflection->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
             if ($method->isConstructor()) continue;
+
             $params = array_map(function($param) {
                 $type = $param->hasType() ? $param->getType() . ' ' : '';
-                return $type . '$' . $param->getName();
+                $value = $param->isDefaultValueAvailable() ? ' = ' . Str::value($param->getDefaultValue())->exportReadableValue()->get() : null;
+                return $type . '$' . $param->getName() . $value;
             }, $method->getParameters());
 
             $name = $method->getName();
-
             if(!$method->isStatic() && !str_starts_with($name, '__')) {
                 if(!is_null($prefixMethods)) {
                     $name = $prefixMethods . ucfirst($name);
