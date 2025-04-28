@@ -11,8 +11,8 @@ use MaplePHP\DTO\Format\Str;
 use MaplePHP\DTO\Traverse;
 use MaplePHP\Unitary\Mocker\Mocker;
 use MaplePHP\Unitary\Mocker\MockerController;
-use MaplePHP\Validate\Inp;
-use MaplePHP\Validate\ValidatePool;
+use MaplePHP\Validate\Validator;
+use MaplePHP\Validate\ValidationChain;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionMethod;
@@ -82,13 +82,13 @@ class TestCase
      * Add a test unit validation using the provided expectation and validation logic
      *
      * @param mixed $expect The expected value
-     * @param Closure(ValidatePool, mixed): bool $validation The validation logic
+     * @param Closure(ValidationChain, mixed): bool $validation The validation logic
      * @return $this
      * @throws ErrorException
      */
     public function validate(mixed $expect, Closure $validation): self
     {
-        $this->expectAndValidate($expect, function(mixed $value, ValidatePool $inst) use($validation) {
+        $this->expectAndValidate($expect, function(mixed $value, ValidationChain $inst) use($validation) {
             return $validation($inst, $value);
         }, $this->errorMessage);
 
@@ -222,7 +222,7 @@ class TestCase
                             if(!is_null($value)) {
                                 $currentValue = $row->{$property};
                                 if(is_array($value)) {
-                                    $validPool = new ValidatePool($currentValue);
+                                    $validPool = new ValidationChain($currentValue);
                                     foreach($value as $method => $args) {
                                         if(is_int($method)) {
                                             foreach($args as $methodB => $argsB) {
@@ -238,7 +238,7 @@ class TestCase
                                     $valid = $validPool->isValid();
 
                                 } else {
-                                    $valid = Inp::value($currentValue)->equal($value);
+                                    $valid = Validator::value($currentValue)->equal($value);
                                 }
 
                                 if(is_array($value)) {
@@ -268,12 +268,12 @@ class TestCase
     /**
      * Create a comparison from a validation collection
      *
-     * @param ValidatePool $validPool
+     * @param ValidationChain $validPool
      * @param array $value
      * @param array $currentValue
      * @return void
      */
-    protected function compareFromValidCollection(ValidatePool $validPool, array &$value, array &$currentValue): void
+    protected function compareFromValidCollection(ValidationChain $validPool, array &$value, array &$currentValue): void
     {
         $new = [];
         $error = $validPool->getError();
@@ -417,7 +417,7 @@ class TestCase
     protected function buildClosureTest(Closure $validation): array
     {
         //$bool = false;
-        $validPool = new ValidatePool($this->value);
+        $validPool = new ValidationChain($this->value);
         $validation = $validation->bindTo($validPool);
 
         $error = [];
@@ -456,7 +456,7 @@ class TestCase
                 throw new RuntimeException("A callable validation must return a boolean!");
             }
         } else {
-            if(!method_exists(Inp::class, $method)) {
+            if(!method_exists(Validator::class, $method)) {
                 throw new BadMethodCallException("The validation $method does not exist!");
             }
 
@@ -474,12 +474,12 @@ class TestCase
      * Init MaplePHP validation
      *
      * @param mixed $value
-     * @return Inp
+     * @return Validator
      * @throws ErrorException
      */
-    protected function valid(mixed $value): Inp
+    protected function valid(mixed $value): Validator
     {
-        return new Inp($value);
+        return new Validator($value);
     }
 
     /**
@@ -490,11 +490,23 @@ class TestCase
      * @return void
      * @throws ReflectionException
      */
-    public function listAllProxyMethods(string $class, ?string $prefixMethods = null): void
+    public function listAllProxyMethods(string $class, ?string $prefixMethods = null, bool $isolateClass = false): void
     {
         $reflection = new ReflectionClass($class);
+        $traitMethods = $isolateClass ? $this->getAllTraitMethods($reflection) : [];
+
         foreach ($reflection->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
-            if ($method->isConstructor()) continue;
+            if ($method->isConstructor()) {
+                continue;
+            }
+
+            if (in_array($method->getName(), $traitMethods, true)) {
+                continue;
+            }
+
+            if ($isolateClass && $method->getDeclaringClass()->getName() !== $class) {
+                continue;
+            }
 
             $params = array_map(function($param) {
                 $type = $param->hasType() ? $param->getType() . ' ' : '';
@@ -503,12 +515,24 @@ class TestCase
             }, $method->getParameters());
 
             $name = $method->getName();
-            if(!$method->isStatic() && !str_starts_with($name, '__')) {
-                if(!is_null($prefixMethods)) {
+            if (!$method->isStatic() && !str_starts_with($name, '__')) {
+                if (!is_null($prefixMethods)) {
                     $name = $prefixMethods . ucfirst($name);
                 }
                 echo "@method self $name(" . implode(', ', $params) . ")\n";
             }
         }
     }
+
+    public function getAllTraitMethods(ReflectionClass $reflection): array
+    {
+        $traitMethods = [];
+        foreach ($reflection->getTraits() as $trait) {
+            foreach ($trait->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
+                $traitMethods[] = $method->getName();
+            }
+        }
+        return $traitMethods;
+    }
+
 }

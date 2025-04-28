@@ -3,7 +3,7 @@
 
 use MaplePHP\Unitary\TestCase;
 use MaplePHP\Unitary\Unit;
-use MaplePHP\Validate\ValidatePool;
+use MaplePHP\Validate\ValidationChain;
 use MaplePHP\Unitary\Mocker\MethodPool;
 
 
@@ -130,14 +130,14 @@ $unit->group("Unitary test 2", function (TestCase $inst) {
     $mock->test("Hello");
     $service = new UserService($mock);
 
-    $validPool = new ValidatePool("dwqdqw");
+    $validPool = new ValidationChain("dwqdqw");
     $validPool
         ->isEmail()
         ->length(1, 200)
         ->endsWith(".com");
     $isValid = $validPool->isValid();
 
-    $inst->validate("yourTestValue", function(ValidatePool $inst) {
+    $inst->validate("yourTestValue", function(ValidationChain $inst) {
         $inst->isBool();
         $inst->isInt();
         $inst->isJson();

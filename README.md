@@ -145,10 +145,10 @@ _Why? Sometimes you just want to quick mock so that a Mailer library will not se
 
 ### Custom mocking
 As I said Unitary mocker will try to automatically mock every method but might not successes in some user-cases
-then you can just tell Unitary how those failed methods should load. 
+then you can just tell Unitary how those failed methods should load.
 
 ```php
-use MaplePHP\Validate\ValidatePool;
+use MaplePHP\Validate\ValidationChain;
 use \MaplePHP\Unitary\Mocker\MethodPool;
 
 $unit->group("Testing user service", function (TestCase $inst) {
@@ -159,7 +159,7 @@ $unit->group("Testing user service", function (TestCase $inst) {
         // Or we can acctually pass a callable to it and tell it what it should return 
         // But we can also validate the argumnets!
         $pool->method("addFromEmail")->wrap(function($email) use($inst) {
-            $inst->validate($email, function(ValidatePool $valid) {
+            $inst->validate($email, function(ValidationChain $valid) {
                 $valid->email();
                 $valid->isString();
             });
