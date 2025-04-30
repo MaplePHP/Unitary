@@ -118,9 +118,11 @@ class TestCase
         $test = new TestUnit($message);
         $test->setTestValue($this->value);
         if($validation instanceof Closure) {
-            $list = $this->buildClosureTest($validation);
-            foreach($list as $method => $valid) {
-                $test->setUnit(!$list, $method);
+            $listArr = $this->buildClosureTest($validation);
+            foreach($listArr as $list) {
+                foreach($list as $method => $valid) {
+                    $test->setUnit(!$list, $method);
+                }
             }
         } else {
             foreach($validation as $method => $args) {

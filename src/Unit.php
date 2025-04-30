@@ -186,7 +186,7 @@ class Unit
      */
     public function execute(): bool
     {
-        if($this->executed || !$this->validate()) {
+        if($this->executed || !$this->createValidate()) {
             return false;
         }
 
@@ -315,12 +315,25 @@ class Unit
         return false;
     }
 
+    
+    /**
+     * Validate method that must be called within a group method
+     * 
+     * @return self
+     * @throws RuntimeException When called outside a group method
+     */
+    public function validate(): self
+    {
+        throw new RuntimeException("The validate() method must be called inside a group() method! " .
+            "Move this validate() call inside your group() callback function.");
+    }
+
     /**
      * Validate before execute test
      *
      * @return bool
      */
-    private function validate(): bool
+    private function createValidate(): bool
     {
         $args = (array)(self::$headers['args'] ?? []);
         $manual = isset($args['show']) ? (string)$args['show'] : "";
