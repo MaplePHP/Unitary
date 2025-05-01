@@ -9,6 +9,7 @@ use Closure;
 use ErrorException;
 use MaplePHP\DTO\Format\Str;
 use MaplePHP\DTO\Traverse;
+use MaplePHP\Unitary\Mocker\MethodPool;
 use MaplePHP\Unitary\Mocker\Mocker;
 use MaplePHP\Unitary\Mocker\MockerController;
 use MaplePHP\Validate\Validator;
@@ -121,7 +122,7 @@ class TestCase
             $listArr = $this->buildClosureTest($validation);
             foreach($listArr as $list) {
                 foreach($list as $method => $valid) {
-                    $test->setUnit(!$list, $method);
+                    $test->setUnit(false, $method);
                 }
             }
         } else {
@@ -153,7 +154,7 @@ class TestCase
      */
     public function deferValidation(Closure $validation): void
     {
-        // This will add a cursor to the possible line and file where error occurred
+        // This will add a cursor to the possible line and file where the error occurred
         $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1];
         $this->deferredValidation[] = [
             "trace" => $trace,
@@ -210,61 +211,130 @@ class TestCase
     public function mock(string $class, ?Closure $validate = null, array $args = []): mixed
     {
         $mocker = new Mocker($class, $args);
-        if(is_callable($validate)) {
-            $pool = $mocker->getMethodPool();
-            $fn = $validate->bindTo($pool);
-            $fn($pool);
-            $this->deferValidation(function() use($mocker, $pool) {
-                $error = [];
-                $data = MockerController::getData($mocker->getMockedClassName());
-                foreach($data as $row) {
-                    $item = $pool->get($row->name);
-                    if($item) {
-                        foreach (get_object_vars($item) as $property => $value) {
-                            if(!is_null($value)) {
-                                $currentValue = $row->{$property};
-                                if(is_array($value)) {
-                                    $validPool = new ValidationChain($currentValue);
-                                    foreach($value as $method => $args) {
-                                        if(is_int($method)) {
-                                            foreach($args as $methodB => $argsB) {
-                                                $validPool
-                                                    ->mapErrorToKey($argsB[0])
-                                                    ->mapErrorValidationName($argsB[1])
-                                                    ->{$methodB}(...$argsB);
-                                            }
-                                        } else {
-                                            $validPool->{$method}(...$args);
-                                        }
-                                    }
-                                    $valid = $validPool->isValid();
 
-                                } else {
-                                    $valid = Validator::value($currentValue)->equal($value);
-                                }
-
-                                if(is_array($value)) {
-                                    $this->compareFromValidCollection(
-                                        $validPool,
-                                        $value,
-                                        $currentValue
-                                    );
-                                }
-
-                                $error[$row->name][] = [
-                                    "property" => $property,
-                                    "currentValue" => $currentValue,
-                                    "expectedValue" => $value,
-                                    "valid" => $valid
-                                ];
-                            }
-                        }
-                    }
-                }
-                return $error;
-            });
+        if (is_callable($validate)) {
+            $this->prepareValidation($mocker, $validate);
         }
+
         return $mocker->execute();
+    }
+    
+    /**
+     * Prepares validation for a mock object by binding validation rules and deferring their execution
+     *
+     * This method takes a mocker instance and a validation closure, binds the validation
+     * to the method pool, and schedules the validation to run later via deferValidation.
+     * This allows for mock expectations to be defined and validated after the test execution.
+     *
+     * @param Mocker $mocker The mocker instance containing the mock object
+     * @param Closure $validate The closure containing validation rules
+     * @return void
+     */
+    private function prepareValidation(Mocker $mocker, Closure $validate): void
+    {
+        $pool = $mocker->getMethodPool();
+        $fn = $validate->bindTo($pool);
+        $fn($pool);
+
+        $this->deferValidation(fn() => $this->runValidation($mocker, $pool));
+    }
+
+    /**
+     * Executes validation for a mocked class by comparing actual method calls against expectations
+     *
+     * This method retrieves all method call data for a mocked class and validates each call
+     * against the expectations defined in the method pool. The validation results are collected
+     * and returned as an array of errors indexed by method name.
+     *
+     * @param Mocker $mocker The mocker instance containing the mocked class
+     * @param MethodPool $pool The pool containing method expectations
+     * @return array An array of validation errors indexed by method name
+     * @throws ErrorException
+     */
+    private function runValidation(Mocker $mocker, MethodPool $pool): array
+    {
+        $error = [];
+        $data = MockerController::getData($mocker->getMockedClassName());
+        foreach ($data as $row) {
+            $error[$row->name] = $this->validateRow($row, $pool);
+        }
+        return $error;
+    }
+
+    /**
+     * Validates a specific method row against the method pool expectations
+     *
+     * This method compares the actual method call data with the expected validation
+     * rules defined in the method pool. It handles both simple value comparisons
+     * and complex array validations.
+     *
+     * @param object $row The method call data to validate
+     * @param MethodPool $pool The pool containing validation expectations
+     * @return array Array of validation results containing property comparisons
+     * @throws ErrorException
+     */
+    private function validateRow(object $row, MethodPool $pool): array
+    {
+        $item = $pool->get($row->name);
+        if (!$item) {
+            return [];
+        }
+
+        $errors = [];
+
+        foreach (get_object_vars($item) as $property => $value) {
+            if (is_null($value)) {
+                continue;
+            }
+
+            $currentValue = $row->{$property};
+
+            if (is_array($value)) {
+                $validPool = $this->validateArrayValue($value, $currentValue);
+                $valid = $validPool->isValid();
+                $this->compareFromValidCollection($validPool, $value, $currentValue);
+            } else {
+                $valid = Validator::value($currentValue)->equal($value);
+            }
+
+            $errors[] = [
+                "property" => $property,
+                "currentValue" => $currentValue,
+                "expectedValue" => $value,
+                "valid" => $valid
+            ];
+        }
+
+        return $errors;
+    }
+    
+    /**
+     * Validates an array value against a validation chain configuration.
+     *
+     * This method processes an array of validation rules and applies them to the current value.
+     * It handles both direct method calls and nested validation configurations.
+     *
+     * @param array $value The validation configuration array
+     * @param mixed $currentValue The value to validate
+     * @return ValidationChain The validation chain instance with applied validations
+     */
+    private function validateArrayValue(array $value, mixed $currentValue): ValidationChain
+    {
+        $validPool = new ValidationChain($currentValue);
+        foreach ($value as $method => $args) {
+            if (is_int($method)) {
+                foreach ($args as $methodB => $argsB) {
+                    $validPool
+                        ->mapErrorToKey($argsB[0])
+                        ->mapErrorValidationName($argsB[1])
+                        ->{$methodB}(...$argsB);
+                }
+            } else {
+                $validPool->{$method}(...$args);
+            }
+        }
+
+        return $validPool;
     }
 
     /**
@@ -306,7 +376,7 @@ class TestCase
     }
 
     /**
-     * Executes all deferred validations that were registered earlier using deferValidation().
+     * Executes all deferred validations registered earlier using deferValidation().
      *
      * This method runs each queued validation closure, collects their results,
      * and converts them into individual TestUnit instances. If a validation fails,
@@ -401,7 +471,7 @@ class TestCase
     }
 
     /**
-     * Get test array object
+     * Get a test array object
      *
      * @return array
      */
@@ -489,6 +559,7 @@ class TestCase
      *
      * @param string $class
      * @param string|null $prefixMethods
+     * @param bool $isolateClass
      * @return void
      * @throws ReflectionException
      */

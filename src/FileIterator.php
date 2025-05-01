@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MaplePHP\Unitary;
 
 use Closure;
+use Exception;
 use RuntimeException;
 use MaplePHP\Blunder\Handlers\CliHandler;
 use MaplePHP\Blunder\Run;
@@ -33,7 +34,7 @@ class FileIterator
     {
         $files = $this->findFiles($directory);
         if (empty($files)) {
-            throw new RuntimeException("No files found matching the pattern \"" . (string)(static::PATTERN ?? "") . "\" in directory \"$directory\" ");
+            throw new RuntimeException("No files found matching the pattern \"" . (static::PATTERN ?? "") . "\" in directory \"$directory\" ");
         } else {
             foreach ($files as $file) {
                 extract($this->args, EXTR_PREFIX_SAME, "wddx");
@@ -107,7 +108,7 @@ class FileIterator
     }
 
     /**
-     * Validate a exclude path
+     * Validate an exclude path
      * @param array $exclArr
      * @param string $relativeDir
      * @param string $file
@@ -117,7 +118,7 @@ class FileIterator
     {
         $file = $this->getNaturalPath($file);
         foreach ($exclArr as $excl) {
-            $relativeExclPath = $this->getNaturalPath($relativeDir . DIRECTORY_SEPARATOR . (string)$excl);
+            $relativeExclPath = $this->getNaturalPath($relativeDir . DIRECTORY_SEPARATOR . $excl);
             if(fnmatch($relativeExclPath, $file)) {
                 return true;
             }
@@ -126,7 +127,7 @@ class FileIterator
     }
 
     /**
-     * Get path as natural path
+     * Get a path as a natural path
      * @param string $path
      * @return string
      */
@@ -136,7 +137,7 @@ class FileIterator
     }
 
     /**
-     * Require file without inheriting any class information
+     * Require a file without inheriting any class information
      * @param string $file
      * @return Closure|null
      */
@@ -173,7 +174,7 @@ class FileIterator
 
     /**
      * @return Unit
-     * @throws RuntimeException|\Exception
+     * @throws RuntimeException|Exception
      */
     protected function getUnit(): Unit
     {

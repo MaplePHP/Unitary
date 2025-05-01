@@ -115,7 +115,7 @@ abstract class TestWrapper
      * @return mixed|object
      * @throws \ReflectionException
      */
-    final protected function createInstance(Reflection $ref, array $args)
+    final protected function createInstance(Reflection $ref, array $args): mixed
     {
         if(count($args) === 0) {
             return $ref->dependencyInjector();

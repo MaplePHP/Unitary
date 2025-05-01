@@ -29,6 +29,15 @@ class Unit
     public static int $totalPassedTests = 0;
     public static int $totalTests = 0;
 
+
+    /**
+     * Initialize Unit test instance with optional handler
+     *
+     * @param HandlerInterface|StreamInterface|null $handler Optional handler for test execution
+     *        If HandlerInterface is provided, uses its command
+     *        If StreamInterface is provided, creates a new Command with it
+     *        If null, creates a new Command without a stream
+     */
     public function __construct(HandlerInterface|StreamInterface|null $handler = null)
     {
         if($handler instanceof HandlerInterface) {

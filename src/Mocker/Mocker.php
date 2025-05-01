@@ -8,8 +8,10 @@
 
 namespace MaplePHP\Unitary\Mocker;
 
+use Closure;
 use Reflection;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionIntersectionType;
 use ReflectionMethod;
 use ReflectionNamedType;
@@ -18,8 +20,6 @@ use ReflectionUnionType;
 class Mocker
 {
     protected object $instance;
-
-    static private mixed $return;
 
     protected ReflectionClass $reflection;
 
@@ -37,7 +37,7 @@ class Mocker
     /**
      * @param string $className
      * @param array $args
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function __construct(string $className, array $args = [])
     {
@@ -87,9 +87,9 @@ class Mocker
      * Executes the creation of a dynamic mock class and returns an instance of the mock.
      *
      * @return mixed An instance of the dynamically created mock class.
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
-    public function execute(?callable $call = null): mixed
+    public function execute(): mixed
     {
         $className = $this->reflection->getName();
 
@@ -100,7 +100,7 @@ class Mocker
         $overrides = $this->generateMockMethodOverrides($this->mockClassName);
         $unknownMethod = $this->errorHandleUnknownMethod($className);
         $code = "
-            class {$this->mockClassName} extends {$className} {
+            class $this->mockClassName extends $className {
                 {$overrides}
                 {$unknownMethod}
             }
@@ -126,7 +126,7 @@ class Mocker
                     if (method_exists(get_parent_class(\$this), '__call')) {
                         return parent::__call(\$name, \$arguments);
                     }
-                    throw new \\BadMethodCallException(\"Method '\$name' does not exist in class '{$className}'.\");
+                    throw new \\BadMethodCallException(\"Method '\$name' does not exist in class '$className'.\");
                 }
             ";
         }
@@ -156,7 +156,7 @@ class Mocker
      * Each overridden method returns a predefined mock value or delegates to the original logic.
      *
      * @return string PHP code defining the overridden methods.
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     protected function generateMockMethodOverrides(string $mockClassName): string
     {
@@ -191,9 +191,9 @@ class Mocker
             }
 
             $overrides .= "
-                {$modifiers} function {$methodName}({$paramList}){$returnType}
+                $modifiers function $methodName($paramList){$returnType}
                 {
-                    \$obj = \\MaplePHP\\Unitary\\Mocker\\MockerController::getInstance()->buildMethodData('{$info}');
+                    \$obj = \\MaplePHP\\Unitary\\Mocker\\MockerController::getInstance()->buildMethodData('$info');
                     \$data = \\MaplePHP\\Unitary\\Mocker\\MockerController::getDataItem(\$obj->mocker, \$obj->name);
                     {$returnValue}
                 }
@@ -207,12 +207,13 @@ class Mocker
     /**
      * Will build the wrapper return
      *
-     * @param \Closure|null $wrapper
+     * @param Closure|null $wrapper
      * @param string $methodName
      * @param string $returnValue
      * @return string
      */
-    protected function generateWrapperReturn(?\Closure $wrapper, string $methodName, string $returnValue) {
+    protected function generateWrapperReturn(?Closure $wrapper, string $methodName, string $returnValue): string
+    {
         MockerController::addData($this->mockClassName, $methodName, 'wrapper', $wrapper);
         $return = ($returnValue) ? "return " : "";
         return "
@@ -246,7 +247,7 @@ class Mocker
             }
 
             if ($param->isVariadic()) {
-                $paramStr = "...{$paramStr}";
+                $paramStr = "...$paramStr";
             }
 
             $params[] = $paramStr;
@@ -272,7 +273,10 @@ class Mocker
             }
 
         } elseif ($returnType instanceof ReflectionIntersectionType) {
-            $intersect = array_map(fn($type) => $type->getName(), $returnType->getTypes());
+            $intersect = array_map(
+                fn($type) => method_exists($type, "getName") ? $type->getName() : null,
+                $returnType->getTypes()
+            );
             $types[] = $intersect;
         }
 
@@ -287,9 +291,9 @@ class Mocker
      *
      * @param string $typeName The name of the type for which to generate the mock value.
      * @param bool $nullable Indicates if the returned value can be nullable.
-     * @return mixed Returns a mock value corresponding to the given type, or null if nullable and conditions allow.
+     * @return string|null Returns a mock value corresponding to the given type, or null if nullable and conditions allow.
      */
-    protected function getMockValueForType(string $typeName, mixed $method, mixed $value = null, bool $nullable = false): mixed
+    protected function getMockValueForType(string $typeName, mixed $method, mixed $value = null, bool $nullable = false): ?string
     {
         $typeName = strtolower($typeName);
         if(!is_null($value)) {
@@ -297,13 +301,10 @@ class Mocker
         }
 
         $mock = match ($typeName) {
-            'int' => "return 123456;",
-            'integer' => "return 123456;",
-            'float' => "return 3.14;",
-            'double' => "return 3.14;",
+            'int', 'integer' => "return 123456;",
+            'float', 'double' => "return 3.14;",
             'string' => "return 'mockString';",
-            'bool' => "return true;",
-            'boolean' => "return true;",
+            'bool', 'boolean' => "return true;",
             'array' => "return ['item'];",
             'object' => "return (object)['item'];",
             'resource' => "return fopen('php://memory', 'r+');",
@@ -312,7 +313,7 @@ class Mocker
             'null' => "return null;",
             'void' => "",
             'self' => ($method->isStatic()) ? 'return new self();' :  'return $this;',
-            default => (is_string($typeName) && class_exists($typeName))
+            default => (class_exists($typeName))
                 ? "return new class() extends " . $typeName . " {};"
                 : "return null;",
 
@@ -332,7 +333,7 @@ class Mocker
     }
 
     /**
-     * Build a method information array form ReflectionMethod instance
+     * Build a method information array from a ReflectionMethod instance
      *
      * @param ReflectionMethod $refMethod
      * @return array
