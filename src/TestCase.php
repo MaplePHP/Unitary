@@ -268,7 +268,7 @@ class TestCase
      * rules defined in the method pool. It handles both simple value comparisons
      * and complex array validations.
      *
-     * @param object $row The method call data to validate
+     * @param object $row The method calls data to validate
      * @param MethodPool $pool The pool containing validation expectations
      * @return array Array of validation results containing property comparisons
      * @throws ErrorException
@@ -597,6 +597,15 @@ class TestCase
         }
     }
 
+    /**
+     * Retrieves all public methods from the traits used by a given class.
+     *
+     * This method collects and returns the names of all public methods
+     * defined in the traits used by the provided ReflectionClass instance.
+     *
+     * @param ReflectionClass $reflection The reflection instance of the class to inspect
+     * @return array An array of method names defined in the traits
+     */
     public function getAllTraitMethods(ReflectionClass $reflection): array
     {
         $traitMethods = [];
