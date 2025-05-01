@@ -66,22 +66,22 @@ class TestUnit
         bool|null $valid,
         null|string|\Closure $validation = null,
         array $args = [],
-        array $compare = []): self
-    {
-        if(!$valid) {
+        array $compare = []
+    ): self {
+        if (!$valid) {
             $this->valid = false;
             $this->count++;
         }
-        
-        if(!is_callable($validation)) {
+
+        if (!is_callable($validation)) {
             $valLength = strlen((string)$validation);
-            if($validation && $this->valLength < $valLength) {
+            if ($validation && $this->valLength < $valLength) {
                 $this->valLength = $valLength;
             }
         }
 
-        if($compare && count($compare) > 0) {
-            $compare = array_map(fn($value) => $this->getReadValue($value, true), $compare);
+        if ($compare && count($compare) > 0) {
+            $compare = array_map(fn ($value) => $this->getReadValue($value, true), $compare);
         }
         $this->unit[] = [
             'valid' => $valid,
@@ -109,7 +109,7 @@ class TestUnit
      * @return $this
      * @throws ErrorException
      */
-    function setCodeLine(array $trace): self
+    public function setCodeLine(array $trace): self
     {
         $this->codeLine = [];
         $file = $trace['file'] ?? '';
@@ -117,7 +117,7 @@ class TestUnit
         if ($file && $line) {
             $lines = file($file);
             $code = trim($lines[$line - 1] ?? '');
-            if(str_starts_with($code, '->')) {
+            if (str_starts_with($code, '->')) {
                 $code = substr($code, 2);
             }
             $code = $this->excerpt($code);

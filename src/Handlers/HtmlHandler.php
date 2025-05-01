@@ -7,7 +7,7 @@ namespace MaplePHP\Unitary\Handlers;
 use MaplePHP\Http\Stream;
 use MaplePHP\Prompts\Command;
 
-class HtmlHandler implements HandlerInterface
+final class HtmlHandler implements HandlerInterface
 {
     private Stream $stream;
     private Command $command;

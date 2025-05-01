@@ -2,10 +2,14 @@
 
 namespace MaplePHP\Unitary\Mocker;
 
+use BadMethodCallException;
 use Closure;
 use MaplePHP\Unitary\TestWrapper;
 
-class MethodItem
+/**
+ * @psalm-suppress PossiblyUnusedProperty
+ */
+final class MethodItem
 {
     private ?Mocker $mocker;
     public mixed $return = null;
@@ -40,19 +44,22 @@ class MethodItem
     /**
      * Will create a method wrapper making it possible to mock
      *
-     * @param $call
+     * @param Closure $call
      * @return $this
      */
-    public function wrap($call): self
+    public function wrap(Closure $call): self
     {
+        if(is_null($this->mocker)) {
+            throw new BadMethodCallException('Mocker is not set. Use the method "mock" to set the mocker.');
+        }
+
         $inst = $this;
-        $wrap = new class($this->mocker->getClassName(), $this->mocker->getClassArgs()) extends TestWrapper {
-            function __construct(string $class, array $args = [])
+        $wrap = new class ($this->mocker->getClassName(), $this->mocker->getClassArgs()) extends TestWrapper {
+            public function __construct(string $class, array $args = [])
             {
                 parent::__construct($class, $args);
             }
         };
-        $call->bindTo($this->mocker);
         $this->wrapper = $wrap->bind($call);
         return $inst;
     }
@@ -78,7 +85,7 @@ class MethodItem
     }
 
     /**
-     * Check if method has been called x times
+     * Check if a method has been called x times
      * @param int $count
      * @return $this
      */
@@ -277,7 +284,7 @@ class MethodItem
     }
 
     /**
-     * Check if all parameters has a data type
+     * Check if all parameters have a data type
      *
      * @return $this
      */
@@ -291,7 +298,7 @@ class MethodItem
     }
 
     /**
-     * Check if parameter do not exist
+     * Check if parameter does not exist
      *
      * @return $this
      */
@@ -305,7 +312,7 @@ class MethodItem
     }
 
     /**
-     * Check parameter type for method
+     * Check a parameter type for method
      *
      * @param int $length
      * @return $this
@@ -320,7 +327,7 @@ class MethodItem
     }
 
     /**
-     * Check parameter type for method
+     * Check a parameter type for method
      *
      * @param int $paramPosition
      * @param string $dataType
@@ -352,7 +359,7 @@ class MethodItem
     }
 
     /**
-     * Check parameter type for method
+     * Check a parameter type for method
      *
      * @param int $paramPosition
      * @return $this
@@ -367,7 +374,7 @@ class MethodItem
     }
 
     /**
-     * Check parameter type for method
+     * Check a parameter type for method
      *
      * @param int $paramPosition
      * @return $this
@@ -397,7 +404,7 @@ class MethodItem
     }
 
     /**
-     * Check parameter is variadic (spread) for method
+     * Check the parameter is variadic (spread) for a method
      *
      * @param int $paramPosition
      * @return $this

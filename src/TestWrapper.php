@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @Package:    MaplePHP - Lightweight test wrapper for class method overrides.
  *              Extend this class to a new mock class or anonymous class
@@ -56,7 +57,7 @@ abstract class TestWrapper
      */
     public function override(string $method, Closure $call): self
     {
-        if( !method_exists($this->instance, $method)) {
+        if (!method_exists($this->instance, $method)) {
             throw new \BadMethodCallException(
                 "Method '$method' does not exist in the class '" . get_class($this->instance) .
                 "' and therefore cannot be overridden or called."
@@ -76,7 +77,7 @@ abstract class TestWrapper
      */
     public function add(string $method, Closure $call): self
     {
-        if(method_exists($this->instance, $method)) {
+        if (method_exists($this->instance, $method)) {
             throw new \BadMethodCallException(
                 "Method '$method' already exists in the class '" . get_class($this->instance) .
                 "'. Use the 'override' method in TestWrapper instead."
@@ -117,7 +118,7 @@ abstract class TestWrapper
      */
     final protected function createInstance(Reflection $ref, array $args): mixed
     {
-        if(count($args) === 0) {
+        if (count($args) === 0) {
             return $ref->dependencyInjector();
         }
         return $ref->getReflect()->newInstanceArgs($args);

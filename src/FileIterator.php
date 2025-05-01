@@ -13,7 +13,7 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 
-class FileIterator
+final class FileIterator
 {
     public const PATTERN = 'unitary-*.php';
 
@@ -34,6 +34,7 @@ class FileIterator
     {
         $files = $this->findFiles($directory);
         if (empty($files)) {
+            /* @var string static::PATTERN */
             throw new RuntimeException("No files found matching the pattern \"" . (static::PATTERN ?? "") . "\" in directory \"$directory\" ");
         } else {
             foreach ($files as $file) {
@@ -49,7 +50,7 @@ class FileIterator
                 if (!is_null($call)) {
                     $call();
                 }
-                if(!Unit::hasUnit()) {
+                if (!Unit::hasUnit()) {
                     throw new RuntimeException("The Unitary Unit class has not been initiated inside \"$file\".");
                 }
             }
@@ -67,7 +68,7 @@ class FileIterator
     {
         $files = [];
         $realDir = realpath($dir);
-        if($realDir === false) {
+        if ($realDir === false) {
             throw new RuntimeException("Directory \"$dir\" does not exist. Try using a absolut path!");
         }
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir));
@@ -77,7 +78,7 @@ class FileIterator
         foreach ($iterator as $file) {
             if (($file instanceof SplFileInfo) && fnmatch($pattern, $file->getFilename()) &&
                 (isset($this->args['path']) || !str_contains($file->getPathname(), DIRECTORY_SEPARATOR . "vendor" . DIRECTORY_SEPARATOR))) {
-                if(!$this->findExcluded($this->exclude(), $dir, $file->getPathname())) {
+                if (!$this->findExcluded($this->exclude(), $dir, $file->getPathname())) {
                     $files[] = $file->getPathname();
                 }
             }
@@ -92,13 +93,13 @@ class FileIterator
     public function exclude(): array
     {
         $excl = [];
-        if(isset($this->args['exclude']) && is_string($this->args['exclude'])) {
+        if (isset($this->args['exclude']) && is_string($this->args['exclude'])) {
             $exclude = explode(',', $this->args['exclude']);
             foreach ($exclude as $file) {
                 $file = str_replace(['"', "'"], "", $file);
                 $new = trim($file);
                 $lastChar = substr($new, -1);
-                if($lastChar === DIRECTORY_SEPARATOR) {
+                if ($lastChar === DIRECTORY_SEPARATOR) {
                     $new .= "*";
                 }
                 $excl[] = trim($new);
@@ -118,8 +119,9 @@ class FileIterator
     {
         $file = $this->getNaturalPath($file);
         foreach ($exclArr as $excl) {
-            $relativeExclPath = $this->getNaturalPath($relativeDir . DIRECTORY_SEPARATOR . $excl);
-            if(fnmatch($relativeExclPath, $file)) {
+            /* @var string $excl */
+            $relativeExclPath = $this->getNaturalPath($relativeDir . DIRECTORY_SEPARATOR . (string)$excl);
+            if (fnmatch($relativeExclPath, $file)) {
                 return true;
             }
         }
@@ -147,7 +149,7 @@ class FileIterator
         $call = function () use ($file, $clone): void {
             $cli = new CliHandler();
 
-            if(Unit::getArgs('trace') !== false) {
+            if (Unit::getArgs('trace') !== false) {
                 $cli->enableTraceLines(true);
             }
             $run = new Run($cli);

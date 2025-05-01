@@ -5,6 +5,7 @@ namespace MaplePHP\Unitary\Mocker;
 class MethodPool
 {
     private ?Mocker $mocker = null;
+    /** @var array<string, MethodItem> */
     private array $methods = [];
 
     public function __construct(?Mocker $mocker = null)

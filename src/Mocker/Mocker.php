@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @Package:    MaplePHP - Lightweight test mocker
  * @Author:     Daniel Ronkainen
@@ -9,39 +10,37 @@
 namespace MaplePHP\Unitary\Mocker;
 
 use Closure;
+use Exception;
 use Reflection;
 use ReflectionClass;
-use ReflectionException;
 use ReflectionIntersectionType;
 use ReflectionMethod;
 use ReflectionNamedType;
 use ReflectionUnionType;
+use RuntimeException;
 
-class Mocker
+final class Mocker
 {
-    protected object $instance;
-
+    //protected object $instance;
+    //protected array $overrides = [];
     protected ReflectionClass $reflection;
-
     protected string $className;
-    protected string $mockClassName;
+    /** @var class-string|null */
+    protected ?string $mockClassName = null;
+    /** @var array<array-key, mixed> */
     protected array $constructorArgs = [];
-
-    protected array $overrides = [];
-
     protected array $methods;
     protected array $methodList = [];
-
     protected static ?MethodPool $methodPool = null;
 
     /**
      * @param string $className
      * @param array $args
-     * @throws ReflectionException
      */
     public function __construct(string $className, array $args = [])
     {
         $this->className = $className;
+        /** @var class-string $className */
         $this->reflection = new ReflectionClass($className);
 
         /*
@@ -72,14 +71,20 @@ class Mocker
      */
     public function getMethodPool(): MethodPool
     {
-        if(is_null(self::$methodPool)) {
+        if (is_null(self::$methodPool)) {
             self::$methodPool = new MethodPool($this);
         }
         return self::$methodPool;
     }
 
+    /**
+     * @throws Exception
+     */
     public function getMockedClassName(): string
     {
+        if(!$this->mockClassName) {
+            throw new Exception("Mock class name is not set");
+        }
         return $this->mockClassName;
     }
 
@@ -87,7 +92,7 @@ class Mocker
      * Executes the creation of a dynamic mock class and returns an instance of the mock.
      *
      * @return mixed An instance of the dynamically created mock class.
-     * @throws ReflectionException
+     * @throws Exception
      */
     public function execute(): mixed
     {
@@ -96,6 +101,10 @@ class Mocker
         $shortClassName = explode("\\", $className);
         $shortClassName = end($shortClassName);
 
+        /**
+         * @var class-string $shortClassName
+         * @psalm-suppress PropertyTypeCoercion
+         */
         $this->mockClassName = 'Unitary_' . uniqid() . "_Mock_" . $shortClassName;
         $overrides = $this->generateMockMethodOverrides($this->mockClassName);
         $unknownMethod = $this->errorHandleUnknownMethod($className);
@@ -107,6 +116,11 @@ class Mocker
         ";
 
         eval($code);
+
+        /**
+         * @psalm-suppress MixedMethodCall
+         * @psalm-suppress InvalidStringClass
+         */
         return new $this->mockClassName(...$this->constructorArgs);
     }
 
@@ -120,7 +134,7 @@ class Mocker
      */
     private function errorHandleUnknownMethod(string $className): string
     {
-        if(!in_array('__call', $this->methodList)) {
+        if (!in_array('__call', $this->methodList)) {
             return "
                 public function __call(string \$name, array \$arguments) {
                     if (method_exists(get_parent_class(\$this), '__call')) {
@@ -142,11 +156,11 @@ class Mocker
     protected function getReturnValue(array $types, mixed $method, ?MethodItem $methodItem = null): string
     {
         // Will overwrite the auto generated value
-        if($methodItem && $methodItem->hasReturn()) {
+        if ($methodItem && $methodItem->hasReturn()) {
             return "return " . var_export($methodItem->return, true) . ";";
         }
         if ($types) {
-            return $this->getMockValueForType($types[0], $method);
+            return (string)$this->getMockValueForType((string)$types[0], $method);
         }
         return "return 'MockedValue';";
     }
@@ -155,13 +169,19 @@ class Mocker
      * Builds and returns PHP code that overrides all public methods in the class being mocked.
      * Each overridden method returns a predefined mock value or delegates to the original logic.
      *
+     * @param string $mockClassName
      * @return string PHP code defining the overridden methods.
-     * @throws ReflectionException
+     * @throws Exception
      */
     protected function generateMockMethodOverrides(string $mockClassName): string
     {
         $overrides = '';
         foreach ($this->methods as $method) {
+
+            if(!($method instanceof ReflectionMethod)) {
+                throw new Exception("Method is not a ReflectionMethod");
+            }
+
             if ($method->isConstructor() || $method->isFinal()) {
                 continue;
             }
@@ -184,9 +204,12 @@ class Mocker
             $arr['return'] = $return;
 
             $info = json_encode($arr);
+            if ($info === false) {
+                throw new RuntimeException('JSON encoding failed: ' . json_last_error_msg(), json_last_error());
+            }
             MockerController::getInstance()->buildMethodData($info);
 
-            if($methodItem) {
+            if ($methodItem) {
                 $returnValue = $this->generateWrapperReturn($methodItem->getWrap(), $methodName, $returnValue);
             }
 
@@ -214,7 +237,7 @@ class Mocker
      */
     protected function generateWrapperReturn(?Closure $wrapper, string $methodName, string $returnValue): string
     {
-        MockerController::addData($this->mockClassName, $methodName, 'wrapper', $wrapper);
+        MockerController::addData((string)$this->mockClassName, $methodName, 'wrapper', $wrapper);
         $return = ($returnValue) ? "return " : "";
         return "
             if (isset(\$data->wrapper) && \$data->wrapper instanceof \\Closure) {
@@ -236,7 +259,8 @@ class Mocker
         foreach ($method->getParameters() as $param) {
             $paramStr = '';
             if ($param->hasType()) {
-                $paramStr .= $param->getType() . ' ';
+                $getType = (string)$param->getType();
+                $paramStr .= $getType . ' ';
             }
             if ($param->isPassedByReference()) {
                 $paramStr .= '&';
@@ -269,18 +293,19 @@ class Mocker
             $types[] = $returnType->getName();
         } elseif ($returnType instanceof ReflectionUnionType) {
             foreach ($returnType->getTypes() as $type) {
-                $types[] = $type->getName();
+                if(method_exists($type, "getName")) {
+                    $types[] = $type->getName();
+                }
             }
 
         } elseif ($returnType instanceof ReflectionIntersectionType) {
             $intersect = array_map(
-                fn($type) => method_exists($type, "getName") ? $type->getName() : null,
-                $returnType->getTypes()
+                fn ($type) => $type->getName(), $returnType->getTypes()
             );
             $types[] = $intersect;
         }
 
-        if(!in_array("mixed", $types) && $returnType && $returnType->allowsNull()) {
+        if (!in_array("mixed", $types) && $returnType && $returnType->allowsNull()) {
             $types[] = "null";
         }
         return $types;
@@ -295,12 +320,12 @@ class Mocker
      */
     protected function getMockValueForType(string $typeName, mixed $method, mixed $value = null, bool $nullable = false): ?string
     {
-        $typeName = strtolower($typeName);
-        if(!is_null($value)) {
+        $dataTypeName = strtolower($typeName);
+        if (!is_null($value)) {
             return "return " . var_export($value, true) . ";";
         }
 
-        $mock = match ($typeName) {
+        $mock = match ($dataTypeName) {
             'int', 'integer' => "return 123456;",
             'float', 'double' => "return 3.14;",
             'string' => "return 'mockString';",
@@ -312,7 +337,8 @@ class Mocker
             'iterable' => "return new ArrayIterator(['a', 'b']);",
             'null' => "return null;",
             'void' => "",
-            'self' => ($method->isStatic()) ? 'return new self();' :  'return $this;',
+            'self' => (is_object($method) && method_exists($method, "isStatic") && $method->isStatic()) ? 'return new self();' : 'return $this;',
+            /** @var class-string $typeName */
             default => (class_exists($typeName))
                 ? "return new class() extends " . $typeName . " {};"
                 : "return null;",
@@ -323,12 +349,15 @@ class Mocker
 
     /**
      * Will return a streamable content
-     * 
-     * @param $resourceValue
+     *
+     * @param mixed $resourceValue
      * @return string|null
      */
-    protected function handleResourceContent($resourceValue): ?string
+    protected function handleResourceContent(mixed $resourceValue): ?string
     {
+        if (!is_resource($resourceValue)) {
+            return null;
+        }
         return var_export(stream_get_contents($resourceValue), true);
     }
 
@@ -338,7 +367,7 @@ class Mocker
      * @param ReflectionMethod $refMethod
      * @return array
      */
-    function getMethodInfoAsArray(ReflectionMethod $refMethod): array
+    public function getMethodInfoAsArray(ReflectionMethod $refMethod): array
     {
         $params = [];
         foreach ($refMethod->getParameters() as $param) {

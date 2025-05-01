@@ -2,17 +2,17 @@
 
 namespace MaplePHP\Unitary\Mocker;
 
-class MockerController extends MethodPool
+final class MockerController extends MethodPool
 {
     private static ?MockerController $instance = null;
 
     private static array $data = [];
 
-    private array $methods = [];
+    //private array $methods = [];
 
     public static function getInstance(): self
     {
-        if(is_null(self::$instance)) {
+        if (is_null(self::$instance)) {
             self::$instance = new self();
         }
         return self::$instance;
@@ -26,7 +26,11 @@ class MockerController extends MethodPool
      */
     public static function getData(string $mockIdentifier): array|bool
     {
-        return (self::$data[$mockIdentifier] ?? false);
+        $data = isset(self::$data[$mockIdentifier]) ? self::$data[$mockIdentifier] : false;
+        if(!is_array($data)) {
+            return false;
+        }
+        return $data;
     }
 
     public static function getDataItem(string $mockIdentifier, string $method): mixed
@@ -42,7 +46,7 @@ class MockerController extends MethodPool
     public function buildMethodData(string $method): object
     {
         $data = json_decode($method);
-        if(empty(self::$data[$data->mocker][$data->name])) {
+        if (empty(self::$data[$data->mocker][$data->name])) {
             $data->count = 0;
             self::$data[$data->mocker][$data->name] = $data;
         } else {

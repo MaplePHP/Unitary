@@ -8,7 +8,7 @@ use MaplePHP\Http\Stream;
 use MaplePHP\Http\UploadedFile;
 use MaplePHP\Prompts\Command;
 
-class FileHandler implements HandlerInterface
+final class FileHandler implements HandlerInterface
 {
     private string $file;
     private Stream $stream;

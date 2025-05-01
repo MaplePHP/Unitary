@@ -40,7 +40,7 @@ class Unit
      */
     public function __construct(HandlerInterface|StreamInterface|null $handler = null)
     {
-        if($handler instanceof HandlerInterface) {
+        if ($handler instanceof HandlerInterface) {
             $this->handler = $handler;
             $this->command = $this->handler->getCommand();
         } else {
@@ -67,7 +67,7 @@ class Unit
      */
     public function manual(string $key): self
     {
-        if(isset(self::$manual[$key])) {
+        if (isset(self::$manual[$key])) {
             $file = (string)(self::$headers['file'] ?? "none");
             throw new RuntimeException("The manual key \"$key\" already exists.
                 Please set a unique key in the " . $file. " file.");
@@ -145,7 +145,7 @@ class Unit
      * @param Closure(TestCase):void $callback
      * @return void
      */
-    public function case(string $message, Closure $callback): void
+    public function group(string $message, Closure $callback): void
     {
         $testCase = new TestCase($message);
         $testCase->bind($callback);
@@ -153,16 +153,17 @@ class Unit
         $this->index++;
     }
 
-    public function group(string $message, Closure $callback): void
+    // Alias to group
+    public function case(string $message, Closure $callback): void
     {
-        $this->case($message, $callback);
+        $this->group($message, $callback);
     }
 
     public function performance(Closure $func, ?string $title = null): void
     {
         $start = new TestMem();
         $func = $func->bindTo($this);
-        if(!is_null($func)) {
+        if (!is_null($func)) {
             $func($this);
         }
         $line = $this->command->getAnsi()->line(80);
@@ -195,14 +196,14 @@ class Unit
      */
     public function execute(): bool
     {
-        if($this->executed || !$this->createValidate()) {
+        if ($this->executed || !$this->createValidate()) {
             return false;
         }
 
         // LOOP through each case
         ob_start();
-        foreach($this->cases as $row) {
-            if(!($row instanceof TestCase)) {
+        foreach ($this->cases as $row) {
+            if (!($row instanceof TestCase)) {
                 throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestCase.");
             }
 
@@ -211,11 +212,11 @@ class Unit
             $tests = $row->runDeferredValidations();
             $color = ($row->hasFailed() ? "brightRed" : "brightBlue");
             $flag = $this->command->getAnsi()->style(['blueBg', 'brightWhite'], " PASS ");
-            if($row->hasFailed()) {
+            if ($row->hasFailed()) {
                 $flag = $this->command->getAnsi()->style(['redBg', 'brightWhite'], " FAIL ");
             }
 
-            if($errArg !== false && !$row->hasFailed()) {
+            if ($errArg !== false && !$row->hasFailed()) {
                 continue;
             }
 
@@ -227,58 +228,60 @@ class Unit
                 $this->command->getAnsi()->style(["bold", $color], (string)$row->getMessage())
             );
 
-            if(isset($tests)) foreach($tests as $test) {
-                if(!($test instanceof TestUnit)) {
-                    throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestUnit.");
-                }
-
-                if(!$test->isValid()) {
-                    $msg = (string)$test->getMessage();
-                    $this->command->message("");
-                    $this->command->message(
-                        $this->command->getAnsi()->style(["bold", "brightRed"], "Error: ") .
-                        $this->command->getAnsi()->bold($msg)
-                    );
-                    $this->command->message("");
-
-                    $trace = $test->getCodeLine();
-                    if(!empty($trace['code'])) {
-                        $this->command->message($this->command->getAnsi()->style(["bold", "grey"], "Failed on line {$trace['line']}: "));
-                        $this->command->message($this->command->getAnsi()->style(["grey"], " → {$trace['code']}"));
+            if (isset($tests)) {
+                foreach ($tests as $test) {
+                    if (!($test instanceof TestUnit)) {
+                        throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestUnit.");
                     }
 
-                    /** @var array<string, string> $unit */
-                    foreach($test->getUnits() as $unit) {
-                        if(is_string($unit['validation']) && !$unit['valid']) {
-                            $lengthA = $test->getValidationLength() + 1;
-                            $title = str_pad($unit['validation'], $lengthA);
+                    if (!$test->isValid()) {
+                        $msg = (string)$test->getMessage();
+                        $this->command->message("");
+                        $this->command->message(
+                            $this->command->getAnsi()->style(["bold", "brightRed"], "Error: ") .
+                            $this->command->getAnsi()->bold($msg)
+                        );
+                        $this->command->message("");
 
-                            $compare = "";
-                            if($unit['compare']) {
-                                $expectedValue = array_shift($unit['compare']);
-                                $compare = "Expected: {$expectedValue} | Actual: " . implode(":", $unit['compare']);
-                            }
+                        $trace = $test->getCodeLine();
+                        if (!empty($trace['code'])) {
+                            $this->command->message($this->command->getAnsi()->style(["bold", "grey"], "Failed on line {$trace['line']}: "));
+                            $this->command->message($this->command->getAnsi()->style(["grey"], " → {$trace['code']}"));
+                        }
 
-                            $failedMsg = "   " .$title . ((!$unit['valid']) ? " → failed" : "");
-                            $this->command->message(
-                                $this->command->getAnsi()->style(
-                                    ((!$unit['valid']) ? "brightRed" : null),
-                                    $failedMsg
-                                )
-                            );
+                        /** @var array<string, string> $unit */
+                        foreach ($test->getUnits() as $unit) {
+                            if (is_string($unit['validation']) && !$unit['valid']) {
+                                $lengthA = $test->getValidationLength() + 1;
+                                $title = str_pad($unit['validation'], $lengthA);
 
-                            if(!$unit['valid'] && $compare) {
-                                $lengthB = (strlen($compare) + strlen($failedMsg) - 8);
-                                $comparePad = str_pad($compare, $lengthB, " ", STR_PAD_LEFT);
+                                $compare = "";
+                                if ($unit['compare']) {
+                                    $expectedValue = array_shift($unit['compare']);
+                                    $compare = "Expected: {$expectedValue} | Actual: " . implode(":", $unit['compare']);
+                                }
+
+                                $failedMsg = "   " .$title . ((!$unit['valid']) ? " → failed" : "");
                                 $this->command->message(
-                                    $this->command->getAnsi()->style("brightRed", $comparePad)
+                                    $this->command->getAnsi()->style(
+                                        ((!$unit['valid']) ? "brightRed" : null),
+                                        $failedMsg
+                                    )
                                 );
+
+                                if (!$unit['valid'] && $compare) {
+                                    $lengthB = (strlen($compare) + strlen($failedMsg) - 8);
+                                    $comparePad = str_pad($compare, $lengthB, " ", STR_PAD_LEFT);
+                                    $this->command->message(
+                                        $this->command->getAnsi()->style("brightRed", $comparePad)
+                                    );
+                                }
                             }
                         }
-                    }
-                    if($test->hasValue()) {
-                        $this->command->message("");
-                        $this->command->message($this->command->getAnsi()->bold("Value: ") . $test->getReadValue());
+                        if ($test->hasValue()) {
+                            $this->command->message("");
+                            $this->command->message($this->command->getAnsi()->bold("Value: ") . $test->getReadValue());
+                        }
                     }
                 }
             }
@@ -297,10 +300,10 @@ class Unit
         }
         $this->output .= ob_get_clean();
 
-        if($this->output) {
+        if ($this->output) {
             $this->buildNotice("Note:", $this->output, 80);
         }
-        if(!is_null($this->handler)) {
+        if (!is_null($this->handler)) {
             $this->handler->execute();
         }
         $this->executed = true;
@@ -314,8 +317,8 @@ class Unit
      */
     public function resetExecute(): bool
     {
-        if($this->executed) {
-            if($this->getStream()->isSeekable()) {
+        if ($this->executed) {
+            if ($this->getStream()->isSeekable()) {
                 $this->getStream()->rewind();
             }
             $this->executed = false;
@@ -324,10 +327,10 @@ class Unit
         return false;
     }
 
-    
+
     /**
      * Validate method that must be called within a group method
-     * 
+     *
      * @return self
      * @throws RuntimeException When called outside a group method
      */
@@ -346,10 +349,10 @@ class Unit
     {
         $args = (array)(self::$headers['args'] ?? []);
         $manual = isset($args['show']) ? (string)$args['show'] : "";
-        if(isset($args['show'])) {
+        if (isset($args['show'])) {
             return !((self::$manual[$manual] ?? "") !== self::$headers['checksum'] && $manual !== self::$headers['checksum']);
         }
-        if($this->skip) {
+        if ($this->skip) {
             return false;
         }
         return true;
@@ -451,7 +454,7 @@ class Unit
      */
     public static function getUnit(): ?Unit
     {
-        if(is_null(self::hasUnit())) {
+        if (is_null(self::hasUnit())) {
             throw new Exception("Unit has not been set yet. It needs to be set first.");
         }
         return self::$current;
@@ -463,7 +466,7 @@ class Unit
      */
     public static function completed(): void
     {
-        if(!is_null(self::$current) && is_null(self::$current->handler)) {
+        if (!is_null(self::$current) && is_null(self::$current->handler)) {
             $dot = self::$current->command->getAnsi()->middot();
 
             self::$current->command->message("");

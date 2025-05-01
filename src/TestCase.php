@@ -44,7 +44,7 @@ class TestCase
 
     /**
      * Bind the test case to the Closure
-     * 
+     *
      * @param Closure $bind
      * @return void
      */
@@ -55,7 +55,7 @@ class TestCase
 
     /**
      * Will dispatch the case tests and return them as an array
-     * 
+     *
      * @return array
      */
     public function dispatchTest(): array
@@ -69,7 +69,7 @@ class TestCase
 
     /**
      * Add custom error message if validation fails
-     * 
+     *
      * @param string $message
      * @return $this
      */
@@ -89,7 +89,7 @@ class TestCase
      */
     public function validate(mixed $expect, Closure $validation): self
     {
-        $this->expectAndValidate($expect, function(mixed $value, ValidationChain $inst) use($validation) {
+        $this->expectAndValidate($expect, function (mixed $value, ValidationChain $inst) use ($validation) {
             return $validation($inst, $value);
         }, $this->errorMessage);
 
@@ -118,22 +118,22 @@ class TestCase
         $this->value = $expect;
         $test = new TestUnit($message);
         $test->setTestValue($this->value);
-        if($validation instanceof Closure) {
+        if ($validation instanceof Closure) {
             $listArr = $this->buildClosureTest($validation);
-            foreach($listArr as $list) {
-                foreach($list as $method => $valid) {
+            foreach ($listArr as $list) {
+                foreach ($list as $method => $valid) {
                     $test->setUnit(false, $method);
                 }
             }
         } else {
-            foreach($validation as $method => $args) {
-                if(!($args instanceof Closure) && !is_array($args)) {
+            foreach ($validation as $method => $args) {
+                if (!($args instanceof Closure) && !is_array($args)) {
                     $args = [$args];
                 }
                 $test->setUnit($this->buildArrayTest($method, $args), $method, (is_array($args) ? $args : []));
             }
         }
-        if(!$test->isValid()) {
+        if (!$test->isValid()) {
             $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1];
             $test->setCodeLine($trace);
             $this->count++;
@@ -161,7 +161,7 @@ class TestCase
             "call" => $validation
         ];
     }
-    
+
     /**
      * Same as "addTestUnit" but is public and will make sure the validation can be
      * properly registered and traceable
@@ -186,8 +186,8 @@ class TestCase
      */
     public function wrap(string $class, array $args = []): TestWrapper
     {
-        return new class($class, $args) extends TestWrapper {
-            function __construct(string $class, array $args = [])
+        return new class ($class, $args) extends TestWrapper {
+            public function __construct(string $class, array $args = [])
             {
                 parent::__construct($class, $args);
             }
@@ -218,7 +218,7 @@ class TestCase
 
         return $mocker->execute();
     }
-    
+
     /**
      * Prepares validation for a mock object by binding validation rules and deferring their execution
      *
@@ -236,7 +236,7 @@ class TestCase
         $fn = $validate->bindTo($pool);
         $fn($pool);
 
-        $this->deferValidation(fn() => $this->runValidation($mocker, $pool));
+        $this->deferValidation(fn () => $this->runValidation($mocker, $pool));
     }
 
     /**
@@ -307,7 +307,7 @@ class TestCase
 
         return $errors;
     }
-    
+
     /**
      * Validates an array value against a validation chain configuration.
      *
@@ -350,7 +350,7 @@ class TestCase
         $new = [];
         $error = $validPool->getError();
         $value = $this->mapValueToCollectionError($error, $value);
-        foreach($value as $eqIndex => $validator) {
+        foreach ($value as $eqIndex => $validator) {
             $new[] = Traverse::value($currentValue)->eq($eqIndex)->get();
         }
         $currentValue = $new;
@@ -365,9 +365,9 @@ class TestCase
      */
     protected function mapValueToCollectionError(array $error, array $value): array
     {
-        foreach($value as $item) {
-            foreach($item as $value) {
-                if(isset($error[$value[0]])) {
+        foreach ($value as $item) {
+            foreach ($item as $value) {
+                if (isset($error[$value[0]])) {
                     $error[$value[0]] = $value[2];
                 }
             }
@@ -387,14 +387,14 @@ class TestCase
      */
     public function runDeferredValidations(): array
     {
-        foreach($this->deferredValidation as $row) {
+        foreach ($this->deferredValidation as $row) {
             $error = $row['call']();
-            foreach($error as $method => $arr) {
+            foreach ($error as $method => $arr) {
                 $test = new TestUnit("Mock method \"$method\" failed");
-                if(is_array($row['trace'] ?? "")) {
+                if (is_array($row['trace'] ?? "")) {
                     $test->setCodeLine($row['trace']);
                 }
-                foreach($arr as $data) {
+                foreach ($arr as $data) {
                     $test->setUnit($data['valid'], $data['property'], [], [
                         $data['expectedValue'], $data['currentValue']
                     ]);
@@ -493,15 +493,15 @@ class TestCase
         $validation = $validation->bindTo($validPool);
 
         $error = [];
-        if(!is_null($validation)) {
+        if (!is_null($validation)) {
             $bool = $validation($this->value, $validPool);
             $error = $validPool->getError();
-            if(is_bool($bool) && !$bool) {
+            if (is_bool($bool) && !$bool) {
                 $error['customError'] = false;
             }
         }
 
-        if(is_null($this->message)) {
+        if (is_null($this->message)) {
             throw new RuntimeException("When testing with closure the third argument message is required");
         }
 
@@ -518,17 +518,17 @@ class TestCase
      */
     protected function buildArrayTest(string $method, array|Closure $args): bool
     {
-        if($args instanceof Closure) {
+        if ($args instanceof Closure) {
             $args = $args->bindTo($this->valid($this->value));
-            if(is_null($args)) {
+            if (is_null($args)) {
                 throw new ErrorException("The argument is not returning a callable Closure!");
             }
             $bool = $args($this->value);
-            if(!is_bool($bool)) {
+            if (!is_bool($bool)) {
                 throw new RuntimeException("A callable validation must return a boolean!");
             }
         } else {
-            if(!method_exists(Validator::class, $method)) {
+            if (!method_exists(Validator::class, $method)) {
                 throw new BadMethodCallException("The validation $method does not exist!");
             }
 
@@ -581,7 +581,7 @@ class TestCase
                 continue;
             }
 
-            $params = array_map(function($param) {
+            $params = array_map(function ($param) {
                 $type = $param->hasType() ? $param->getType() . ' ' : '';
                 $value = $param->isDefaultValueAvailable() ? ' = ' . Str::value($param->getDefaultValue())->exportReadableValue()->get() : null;
                 return $type . '$' . $param->getName() . $value;
