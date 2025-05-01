@@ -20,7 +20,7 @@ use ReflectionMethod;
 use RuntimeException;
 use Throwable;
 
-class TestCase
+final class TestCase
 {
     private mixed $value;
     private ?string $message;
@@ -121,8 +121,8 @@ class TestCase
         if ($validation instanceof Closure) {
             $listArr = $this->buildClosureTest($validation);
             foreach ($listArr as $list) {
-                foreach ($list as $method => $valid) {
-                    $test->setUnit(false, $method);
+                foreach ($list as $method => $_valid) {
+                    $test->setUnit(false, (string)$method);
                 }
             }
         } else {
@@ -216,6 +216,7 @@ class TestCase
             $this->prepareValidation($mocker, $validate);
         }
 
+        /** @psalm-suppress MixedReturnStatement */
         return $mocker->execute();
     }
 
@@ -234,6 +235,9 @@ class TestCase
     {
         $pool = $mocker->getMethodPool();
         $fn = $validate->bindTo($pool);
+        if(is_null($fn)) {
+            throw new ErrorException("A callable Closure could not be bound to the method pool!");
+        }
         $fn($pool);
 
         $this->deferValidation(fn () => $this->runValidation($mocker, $pool));
@@ -255,8 +259,13 @@ class TestCase
     {
         $error = [];
         $data = MockerController::getData($mocker->getMockedClassName());
+        if(!is_array($data)) {
+            throw new ErrorException("Could not get data from mocker!");
+        }
         foreach ($data as $row) {
-            $error[$row->name] = $this->validateRow($row, $pool);
+            if (is_object($row) && isset($row->name)) {
+                $error[(string)$row->name] = $this->validateRow($row, $pool);
+            }
         }
         return $error;
     }
@@ -275,7 +284,7 @@ class TestCase
      */
     private function validateRow(object $row, MethodPool $pool): array
     {
-        $item = $pool->get($row->name);
+        $item = $pool->get((string)($row->name ?? ""));
         if (!$item) {
             return [];
         }
@@ -290,10 +299,12 @@ class TestCase
             $currentValue = $row->{$property};
 
             if (is_array($value)) {
+                assert(is_array($currentValue), 'The $currentValue variable is not!');
                 $validPool = $this->validateArrayValue($value, $currentValue);
                 $valid = $validPool->isValid();
                 $this->compareFromValidCollection($validPool, $value, $currentValue);
             } else {
+                /** @psalm-suppress MixedArgument */
                 $valid = Validator::value($currentValue)->equal($value);
             }
 
@@ -324,10 +335,12 @@ class TestCase
         foreach ($value as $method => $args) {
             if (is_int($method)) {
                 foreach ($args as $methodB => $argsB) {
-                    $validPool
-                        ->mapErrorToKey($argsB[0])
-                        ->mapErrorValidationName($argsB[1])
-                        ->{$methodB}(...$argsB);
+                    if(is_array($argsB) && count($argsB) >= 2) {
+                        $validPool
+                            ->mapErrorToKey((string)$argsB[0])
+                            ->mapErrorValidationName((string)$argsB[1])
+                            ->{$methodB}(...$argsB);
+                    }
                 }
             } else {
                 $validPool->{$method}(...$args);
@@ -350,7 +363,7 @@ class TestCase
         $new = [];
         $error = $validPool->getError();
         $value = $this->mapValueToCollectionError($error, $value);
-        foreach ($value as $eqIndex => $validator) {
+        foreach ($value as $eqIndex => $_validator) {
             $new[] = Traverse::value($currentValue)->eq($eqIndex)->get();
         }
         $currentValue = $new;
