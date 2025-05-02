@@ -200,11 +200,14 @@ final class Mocker
             $methodItem = $this->getMethodPool()->get($methodName);
             $types = $this->getReturnType($method);
             $returnValue = $this->getReturnValue($types, $method, $methodItem);
+            $paramList = $this->generateMethodSignature($method);
             if($method->isConstructor()) {
                 $types = [];
                 $returnValue = "";
+                if(count($this->constructorArgs) === 0) {
+                    $paramList = "";
+                }
             }
-            $paramList = $this->generateMethodSignature($method);
             $returnType = ($types) ? ': ' . implode('|', $types) : '';
             $modifiersArr = Reflection::getModifierNames($method->getModifiers());
             $modifiers = implode(" ", $modifiersArr);
