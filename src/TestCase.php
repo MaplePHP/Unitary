@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace MaplePHP\Unitary;
 
-use BadMethodCallException;
-use Closure;
-use ErrorException;
 use MaplePHP\DTO\Format\Str;
 use MaplePHP\DTO\Traverse;
 use MaplePHP\Unitary\Mocker\MethodPool;
@@ -15,10 +12,14 @@ use MaplePHP\Unitary\Mocker\MockerController;
 use MaplePHP\Validate\Validator;
 use MaplePHP\Validate\ValidationChain;
 use ReflectionClass;
-use ReflectionException;
 use ReflectionMethod;
-use RuntimeException;
 use Throwable;
+use Exception;
+use ReflectionException;
+use RuntimeException;
+use BadMethodCallException;
+use ErrorException;
+use Closure;
 
 final class TestCase
 {
@@ -172,7 +173,7 @@ final class TestCase
      * @return $this
      * @throws ErrorException
      */
-    public function add(mixed $expect, array|Closure $validation, ?string $message = null): static
+    public function add(mixed $expect, array|Closure $validation, ?string $message = null): TestCase
     {
         return $this->expectAndValidate($expect, $validation, $message);
     }
@@ -206,7 +207,7 @@ final class TestCase
      * @param Closure|null $validate
      * @param array $args
      * @return T
-     * @throws ReflectionException
+     * @throws Exception
      */
     public function mock(string $class, ?Closure $validate = null, array $args = []): mixed
     {
@@ -230,12 +231,13 @@ final class TestCase
      * @param Mocker $mocker The mocker instance containing the mock object
      * @param Closure $validate The closure containing validation rules
      * @return void
+     * @throws ErrorException
      */
     private function prepareValidation(Mocker $mocker, Closure $validate): void
     {
         $pool = $mocker->getMethodPool();
         $fn = $validate->bindTo($pool);
-        if(is_null($fn)) {
+        if (is_null($fn)) {
             throw new ErrorException("A callable Closure could not be bound to the method pool!");
         }
         $fn($pool);
@@ -254,12 +256,13 @@ final class TestCase
      * @param MethodPool $pool The pool containing method expectations
      * @return array An array of validation errors indexed by method name
      * @throws ErrorException
+     * @throws Exception
      */
     private function runValidation(Mocker $mocker, MethodPool $pool): array
     {
         $error = [];
         $data = MockerController::getData($mocker->getMockedClassName());
-        if(!is_array($data)) {
+        if (!is_array($data)) {
             throw new ErrorException("Could not get data from mocker!");
         }
         foreach ($data as $row) {
@@ -299,7 +302,9 @@ final class TestCase
             $currentValue = $row->{$property};
 
             if (is_array($value)) {
-                assert(is_array($currentValue), 'The $currentValue variable is not!');
+                if (!is_array($currentValue)) {
+                    throw new ErrorException("The $property property is not an array!");
+                }
                 $validPool = $this->validateArrayValue($value, $currentValue);
                 $valid = $validPool->isValid();
                 $this->compareFromValidCollection($validPool, $value, $currentValue);
@@ -335,7 +340,7 @@ final class TestCase
         foreach ($value as $method => $args) {
             if (is_int($method)) {
                 foreach ($args as $methodB => $argsB) {
-                    if(is_array($argsB) && count($argsB) >= 2) {
+                    if (is_array($argsB) && count($argsB) >= 2) {
                         $validPool
                             ->mapErrorToKey((string)$argsB[0])
                             ->mapErrorValidationName((string)$argsB[1])
@@ -380,8 +385,8 @@ final class TestCase
     {
         foreach ($value as $item) {
             foreach ($item as $value) {
-                if (isset($error[$value[0]])) {
-                    $error[$value[0]] = $value[2];
+                if (isset($value[0]) && isset($value[2]) && isset($error[(string)$value[0]])) {
+                    $error[(string)$value[0]] = $value[2];
                 }
             }
         }
@@ -395,23 +400,32 @@ final class TestCase
      * and converts them into individual TestUnit instances. If a validation fails,
      * it increases the internal failure count and stores the test details for later reporting.
      *
-     * @return TestUnit[] A list of TestUnit results from the deferred validations.
+     * @return array A list of TestUnit results from the deferred validations.
      * @throws ErrorException If any validation logic throws an error during execution.
      */
     public function runDeferredValidations(): array
     {
         foreach ($this->deferredValidation as $row) {
+
+            if (!isset($row['call']) || !is_callable($row['call'])) {
+                throw new ErrorException("The validation call is not callable!");
+            }
+            /** @var callable $row['call'] */
             $error = $row['call']();
             foreach ($error as $method => $arr) {
                 $test = new TestUnit("Mock method \"$method\" failed");
-                if (is_array($row['trace'] ?? "")) {
+                if (isset($row['trace']) && is_array($row['trace'])) {
                     $test->setCodeLine($row['trace']);
                 }
+
                 foreach ($arr as $data) {
-                    $test->setUnit($data['valid'], $data['property'], [], [
+                    $obj = new Traverse($data);
+                    $isValid = $obj->valid->toBool();
+                    /** @var array{expectedValue: mixed, currentValue: mixed} $data */
+                    $test->setUnit($isValid, $obj->propert->acceptType(['string', 'closure', 'null']), [], [
                         $data['expectedValue'], $data['currentValue']
                     ]);
-                    if (!$data['valid']) {
+                    if (!$isValid) {
                         $this->count++;
                     }
                 }
@@ -578,6 +592,7 @@ final class TestCase
      */
     public function listAllProxyMethods(string $class, ?string $prefixMethods = null, bool $isolateClass = false): void
     {
+        /** @var class-string $class */
         $reflection = new ReflectionClass($class);
         $traitMethods = $isolateClass ? $this->getAllTraitMethods($reflection) : [];
 

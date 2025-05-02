@@ -49,7 +49,7 @@ final class MethodItem
      */
     public function wrap(Closure $call): self
     {
-        if(is_null($this->mocker)) {
+        if (is_null($this->mocker)) {
             throw new BadMethodCallException('Mocker is not set. Use the method "mock" to set the mocker.');
         }
 

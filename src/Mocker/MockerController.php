@@ -31,15 +31,15 @@ final class MockerController extends MethodPool
     public static function getData(string $mockIdentifier): array|bool
     {
         $data = isset(self::$data[$mockIdentifier]) ? self::$data[$mockIdentifier] : false;
-        if(!is_array($data)) {
+        if (!is_array($data)) {
             return false;
         }
         return $data;
     }
-    
+
     /**
      * Get specific data item by mock identifier and method name
-     * 
+     *
      * @param string $mockIdentifier The identifier of the mock
      * @param string $method The method name to retrieve
      * @return mixed Returns the data item if found, false otherwise
@@ -48,7 +48,7 @@ final class MockerController extends MethodPool
     {
         return self::$data[$mockIdentifier][$method] ?? false;
     }
-    
+
 
     /**
      * Add or update data for a specific mock method
@@ -61,7 +61,7 @@ final class MockerController extends MethodPool
      */
     public static function addData(string $mockIdentifier, string $method, string $key, mixed $value): void
     {
-        if(isset(self::$data[$mockIdentifier][$method])) {
+        if (isset(self::$data[$mockIdentifier][$method])) {
             self::$data[$mockIdentifier][$method]->{$key} = $value;
         }
     }
@@ -73,10 +73,11 @@ final class MockerController extends MethodPool
      * @param string $method JSON string containing mock method data
      * @return object Decoded method data object with updated count if applicable
      */
-    public function buildMethodData(string $method): object
+    public function buildMethodData(string $method, bool $isBase64Encoded = false): object
     {
+        $method = $isBase64Encoded ? base64_decode($method) : $method;
         $data = (object)json_decode($method);
-        if(isset($data->mocker) && isset($data->name)) {
+        if (isset($data->mocker) && isset($data->name)) {
             $mocker = (string)$data->mocker;
             $name = (string)$data->name;
             if (empty(self::$data[$mocker][$name])) {

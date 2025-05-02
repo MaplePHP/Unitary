@@ -82,7 +82,7 @@ final class Mocker
      */
     public function getMockedClassName(): string
     {
-        if(!$this->mockClassName) {
+        if (!$this->mockClassName) {
             throw new Exception("Mock class name is not set");
         }
         return $this->mockClassName;
@@ -108,14 +108,21 @@ final class Mocker
         $this->mockClassName = 'Unitary_' . uniqid() . "_Mock_" . $shortClassName;
         $overrides = $this->generateMockMethodOverrides($this->mockClassName);
         $unknownMethod = $this->errorHandleUnknownMethod($className);
+
         $code = "
             class $this->mockClassName extends $className {
                 {$overrides}
                 {$unknownMethod}
+                public static function __set_state(array \$an_array): self
+                {
+                    \$obj = new self(..." . var_export($this->constructorArgs, true) . ");
+                    return \$obj;
+                }
             }
         ";
 
         eval($code);
+
 
         /**
          * @psalm-suppress MixedMethodCall
@@ -178,11 +185,11 @@ final class Mocker
         $overrides = '';
         foreach ($this->methods as $method) {
 
-            if(!($method instanceof ReflectionMethod)) {
+            if (!($method instanceof ReflectionMethod)) {
                 throw new Exception("Method is not a ReflectionMethod");
             }
 
-            if ($method->isConstructor() || $method->isFinal()) {
+            if ($method->isFinal()) {
                 continue;
             }
 
@@ -193,6 +200,10 @@ final class Mocker
             $methodItem = $this->getMethodPool()->get($methodName);
             $types = $this->getReturnType($method);
             $returnValue = $this->getReturnValue($types, $method, $methodItem);
+            if($method->isConstructor()) {
+                $types = [];
+                $returnValue = "";
+            }
             $paramList = $this->generateMethodSignature($method);
             $returnType = ($types) ? ': ' . implode('|', $types) : '';
             $modifiersArr = Reflection::getModifierNames($method->getModifiers());
@@ -212,11 +223,11 @@ final class Mocker
             if ($methodItem) {
                 $returnValue = $this->generateWrapperReturn($methodItem->getWrap(), $methodName, $returnValue);
             }
-
+            $safeJson = base64_encode($info);
             $overrides .= "
                 $modifiers function $methodName($paramList){$returnType}
                 {
-                    \$obj = \\MaplePHP\\Unitary\\Mocker\\MockerController::getInstance()->buildMethodData('$info');
+                    \$obj = \\MaplePHP\\Unitary\\Mocker\\MockerController::getInstance()->buildMethodData('$safeJson', true);
                     \$data = \\MaplePHP\\Unitary\\Mocker\\MockerController::getDataItem(\$obj->mocker, \$obj->name);
                     {$returnValue}
                 }
@@ -293,14 +304,15 @@ final class Mocker
             $types[] = $returnType->getName();
         } elseif ($returnType instanceof ReflectionUnionType) {
             foreach ($returnType->getTypes() as $type) {
-                if(method_exists($type, "getName")) {
+                if (method_exists($type, "getName")) {
                     $types[] = $type->getName();
                 }
             }
 
         } elseif ($returnType instanceof ReflectionIntersectionType) {
             $intersect = array_map(
-                fn ($type) => $type->getName(), $returnType->getTypes()
+                fn ($type) => $type->getName(),
+                $returnType->getTypes()
             );
             $types[] = $intersect;
         }
@@ -308,7 +320,7 @@ final class Mocker
         if (!in_array("mixed", $types) && $returnType && $returnType->allowsNull()) {
             $types[] = "null";
         }
-        return $types;
+        return array_unique($types);
     }
 
     /**

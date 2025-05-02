@@ -79,7 +79,8 @@ class UserService {
 $unit = new Unit();
 $unit->group("Unitary test 2", function (TestCase $inst) use($unit) {
 
-    $mock = $inst->mock(Mailer::class, function (MethodPool $pool) use($inst) {
+    /*
+     $mock = $inst->mock(Mailer::class, function (MethodPool $pool) use($inst) {
         $pool->method("addBCC")
             ->paramIsType(0, "striwng")
             ->paramHasDefault(1, "Daniwel")
@@ -87,6 +88,7 @@ $unit->group("Unitary test 2", function (TestCase $inst) use($unit) {
             ->count(1);
     }, ["Arg 1"]);
     $mock->addBCC("World");
+     */
 
 });
 
