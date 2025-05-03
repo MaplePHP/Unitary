@@ -3,6 +3,8 @@
 PHP Unitary is a **user-friendly** and robust unit testing library designed to make writing and running tests for your PHP code easy. With an intuitive CLI interface that works on all platforms and robust validation options, Unitary makes it easy for you as a developer to ensure your code is reliable and functions as intended.
 
 ![Prompt demo](http://wazabii.se/github-assets/maplephp-unitary.png)
+_Do you like the CLI theme? [Download it here](https://github.com/MaplePHP/DarkBark)_
+
 
 ### Syntax You Will Love
 ```php
@@ -221,6 +223,11 @@ $dispatch = $this->wrap(PaymentProcessor::class)->bind(function ($orderID) use (
 
 ## Configurations
 
+### Show help
+```bash
+php vendor/bin/unitary --help
+```
+
 ### Show only errors
 ```bash
 php vendor/bin/unitary --errors-only
@@ -267,201 +274,7 @@ The exclude argument will always be a relative path from the `--path` argument's
 php vendor/bin/unitary --exclude="./tests/unitary-query-php, tests/otherTests/*, */extras/*"
 ```
 
+## Like The CLI Theme?
+That’s DarkBark. Dark, quiet, confident, like a rainy-night synthwave playlist for your CLI.
 
-## Validation List
-
-Each prompt can have validation rules and custom error messages. Validation can be defined using built-in rules (e.g., length, email) or custom functions. Errors can be specified as static messages or dynamic functions based on the error type.
-
-### Data Type Checks
-1. **isString**
-    - **Description**: Checks if the value is a string.
-    - **Usage**: `"isString" => []`
-
-2. **isInt**
-    - **Description**: Checks if the value is an integer.
-    - **Usage**: `"isInt" => []`
-
-3. **isFloat**
-    - **Description**: Checks if the value is a float.
-    - **Usage**: `"isFloat" => []`
-
-4. **isBool**
-    - **Description**: Checks if the value is a boolean.
-    - **Usage**: `"isBool" => []`
-
-5. **isArray**
-    - **Description**: Checks if the value is an array.
-    - **Usage**: `"isArray" => []`
-
-6. **isObject**
-    - **Description**: Checks if the value is an object.
-    - **Usage**: `"isObject" => []`
-
-7. **isFile**
-    - **Description**: Checks if the value is a valid file.
-    - **Usage**: `"isFile" => []`
-
-8. **isDir**
-    - **Description**: Checks if the value is a valid directory.
-    - **Usage**: `"isDir" => []`
-
-9. **isResource**
-    - **Description**: Checks if the value is a valid resource.
-    - **Usage**: `"isResource" => []`
-
-10. **number**
-    - **Description**: Checks if the value is numeric.
-    - **Usage**: `"number" => []`
-
-### Equality and Length Checks
-11. **equal**
-    - **Description**: Checks if the value is equal to a specified value.
-    - **Usage**: `"equal" => ["someValue"]`
-
-12. **notEqual**
-    - **Description**: Checks if the value is not equal to a specified value.
-    - **Usage**: `"notEqual" => ["someValue"]`
-
-13. **length**
-    - **Description**: Checks if the string length is between a specified start and end length.
-    - **Usage**: `"length" => [1, 200]`
-
-14. **equalLength**
-    - **Description**: Checks if the string length is equal to a specified length.
-    - **Usage**: `"equalLength" => [10]`
-
-### Numeric Range Checks
-15. **min**
-    - **Description**: Checks if the value is greater than or equal to a specified minimum.
-    - **Usage**: `"min" => [10]`
-
-16. **max**
-    - **Description**: Checks if the value is less than or equal to a specified maximum.
-    - **Usage**: `"max" => [100]`
-
-17. **positive**
-    - **Description**: Checks if the value is a positive number.
-    - **Usage**: `"positive" => []`
-
-18. **negative**
-    - **Description**: Checks if the value is a negative number.
-    - **Usage**: `"negative" => []`
-
-### String and Pattern Checks
-19. **pregMatch**
-    - **Description**: Validates if the value matches a given regular expression pattern.
-    - **Usage**: `"pregMatch" => ["a-zA-Z"]`
-
-20. **atoZ (lower and upper)**
-    - **Description**: Checks if the value consists of characters between `a-z` or `A-Z`.
-    - **Usage**: `"atoZ" => []`
-
-21. **lowerAtoZ**
-    - **Description**: Checks if the value consists of lowercase characters between `a-z`.
-    - **Usage**: `"lowerAtoZ" => []`
-
-22. **upperAtoZ**
-    - **Description**: Checks if the value consists of uppercase characters between `A-Z`.
-    - **Usage**: `"upperAtoZ" => []`
-
-23. **hex**
-    - **Description**: Checks if the value is a valid hex color code.
-    - **Usage**: `"hex" => []`
-
-24. **email**
-    - **Description**: Validates email addresses.
-    - **Usage**: `"email" => []`
-
-25. **url**
-    - **Description**: Checks if the value is a valid URL (http|https is required).
-    - **Usage**: `"url" => []`
-
-26. **phone**
-    - **Description**: Validates phone numbers.
-    - **Usage**: `"phone" => []`
-
-27. **zip**
-    - **Description**: Validates ZIP codes within a specified length range.
-    - **Usage**: `"zip" => [5, 9]`
-
-28. **domain**
-    - **Description**: Checks if the value is a valid domain.
-    - **Usage**: `"domain" => [true]`
-
-29. **dns**
-    - **Description**: Checks if the host/domain has a valid DNS record (A, AAAA, MX).
-    - **Usage**: `"dns" => []`
-
-30. **matchDNS**
-    - **Description**: Matches DNS records by searching for a specific type and value.
-    - **Usage**: `"matchDNS" => [DNS_A]`
-
-31. **lossyPassword**
-    - **Description**: Validates a password with allowed characters `[a-zA-Z\d$@$!%*?&]` and a minimum length.
-    - **Usage**: `"lossyPassword" => [8]`
-
-32. **strictPassword**
-    - **Description**: Validates a strict password with specific character requirements and a minimum length.
-    - **Usage**: `"strictPassword" => [8]`
-
-### Required and Boolean-Like Checks
-33. **required**
-    - **Description**: Checks if the value is not empty (e.g., not `""`, `0`, `NULL`).
-    - **Usage**: `"required" => []`
-
-34. **isBoolVal**
-    - **Description**: Checks if the value is a boolean-like value (e.g., "on", "yes", "1", "true").
-    - **Usage**: `"isBoolVal" => []`
-
-35. **hasValue**
-    - **Description**: Checks if the value itself is interpreted as having value (e.g., 0 is valid).
-    - **Usage**: `"hasValue" => []`
-
-36. **isNull**
-    - **Description**: Checks if the value is null.
-    - **Usage**: `"isNull" => []`
-
-### Date and Time Checks
-37. **date**
-    - **Description**: Checks if the value is a valid date with the specified format.
-    - **Usage**: `"date" => ["Y-m-d"]`
-
-38. **dateTime**
-    - **Description**: Checks if the value is a valid date and time with the specified format.
-    - **Usage**: `"dateTime" => ["Y-m-d H:i"]`
-
-39. **time**
-    - **Description**: Checks if the value is a valid time with the specified format.
-    - **Usage**: `"time" => ["H:i"]`
-
-40. **age**
-    - **Description**: Checks if the value represents an age equal to or greater than the specified minimum.
-    - **Usage**: `"age" => [18]`
-
-### Version Checks
-41. **validVersion**
-    - **Description**: Checks if the value is a valid version number.
-    - **Usage**: `"validVersion" => [true]`
-
-42. **versionCompare**
-    - **Description**: Validates and compares if a version is equal/more/equalMore/less than a specified version.
-    - **Usage**: `"versionCompare" => ["1.0.0", ">="]`
-
-### Logical Checks
-43. **oneOf**
-    - **Description**: Validates if one of the provided conditions is met.
-    - **Usage**: `"oneOf" => [["length", [1, 200]], "email"]`
-
-44. **allOf**
-    - **Description**: Validates if all the provided conditions are met.
-    - **Usage**: `"allOf" => [["length", [1, 200]], "email"]`
-
-### Additional Validations
-
-45. **creditCard**
-    - **Description**: Validates credit card numbers.
-    - **Usage**: `"creditCard" => []`
-
-56. **vatNumber**
-    - **Description**: Validates Swedish VAT numbers.
-    - **Usage**: `"vatNumber" => []`
+[Download it here](https://github.com/MaplePHP/DarkBark)

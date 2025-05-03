@@ -17,6 +17,7 @@ final class FileHandler implements HandlerInterface
     /**
      * Construct the file handler
      * The handler will pass stream to a file
+     *
      * @param string $file
      */
     public function __construct(string $file)
@@ -29,6 +30,7 @@ final class FileHandler implements HandlerInterface
 
     /**
      * Access the command stream
+     *
      * @return Command
      */
     public function getCommand(): Command
@@ -39,6 +41,7 @@ final class FileHandler implements HandlerInterface
     /**
      * Execute the handler
      * This will automatically be called inside the Unit execution
+     *
      * @return void
      */
     public function execute(): void

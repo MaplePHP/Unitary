@@ -156,7 +156,7 @@ final class TestCase
     public function deferValidation(Closure $validation): void
     {
         // This will add a cursor to the possible line and file where the error occurred
-        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1];
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3)[2];
         $this->deferredValidation[] = [
             "trace" => $trace,
             "call" => $validation
@@ -179,7 +179,11 @@ final class TestCase
     }
 
     /**
-     * Init a test wrapper
+     * initialize a test wrapper
+     *
+     * NOTICE: When mocking a class with required constructor arguments, those arguments must be
+     * specified in the mock initialization method or it will fail. This is because the mock
+     * creates and simulates an actual instance of the original class with its real constructor.
      *
      * @param string $class
      * @param array $args
@@ -266,7 +270,7 @@ final class TestCase
             throw new ErrorException("Could not get data from mocker!");
         }
         foreach ($data as $row) {
-            if (is_object($row) && isset($row->name)) {
+            if (is_object($row) && isset($row->name) && $pool->has($row->name)) {
                 $error[(string)$row->name] = $this->validateRow($row, $pool);
             }
         }
@@ -410,22 +414,24 @@ final class TestCase
             if (!isset($row['call']) || !is_callable($row['call'])) {
                 throw new ErrorException("The validation call is not callable!");
             }
+
             /** @var callable $row['call'] */
             $error = $row['call']();
+            $hasValidated = [];
             foreach ($error as $method => $arr) {
                 $test = new TestUnit("Mock method \"$method\" failed");
                 if (isset($row['trace']) && is_array($row['trace'])) {
                     $test->setCodeLine($row['trace']);
                 }
-
                 foreach ($arr as $data) {
                     $obj = new Traverse($data);
                     $isValid = $obj->valid->toBool();
                     /** @var array{expectedValue: mixed, currentValue: mixed} $data */
-                    $test->setUnit($isValid, $obj->propert->acceptType(['string', 'closure', 'null']), [], [
+                    $test->setUnit($isValid, $obj->property->acceptType(['string', 'closure', 'null']), [], [
                         $data['expectedValue'], $data['currentValue']
                     ]);
-                    if (!$isValid) {
+                    if (!isset($hasValidated[$method]) && !$isValid) {
+                        $hasValidated[$method] = true;
                         $this->count++;
                     }
                 }

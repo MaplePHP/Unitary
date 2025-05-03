@@ -7,12 +7,11 @@ namespace MaplePHP\Unitary;
 use Closure;
 use ErrorException;
 use Exception;
-use MaplePHP\Unitary\Mocker\MockerController;
-use RuntimeException;
-use MaplePHP\Unitary\Handlers\HandlerInterface;
 use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Prompts\Command;
-use Throwable;
+use MaplePHP\Prompts\Themes\Blocks;
+use MaplePHP\Unitary\Handlers\HandlerInterface;
+use RuntimeException;
 
 class Unit
 {
@@ -196,6 +195,9 @@ class Unit
      */
     public function execute(): bool
     {
+
+        $this->help();
+
         if ($this->executed || !$this->createValidate()) {
             return false;
         }
@@ -487,6 +489,56 @@ class Unit
     public static function isSuccessful(): bool
     {
         return (self::$totalPassedTests !== self::$totalTests);
+    }
+
+    /**
+     * Display help information for the Unitary testing tool
+     * Shows usage instructions, available options and examples
+     * Only displays if --help argument is provided
+     *
+     * @return void True if help was displayed, false otherwise
+     */
+    private function help(): void
+    {
+        if (self::getArgs("help") !== false) {
+
+            $blocks = new Blocks($this->command);
+            $blocks->addHeadline("Unitary - Help");
+            $blocks->addSection("Usage", "php vendor/bin/unitary [options]");
+
+            $blocks->addSection("Options", function(Blocks $inst) {
+                $inst = $inst
+                    ->addOption("help", "Show this help message")
+                    ->addOption("show=<hash|name>", "Run a specific test by hash or manual test name")
+                    ->addOption("errors-only", "Show only failing tests and skip passed test output")
+                    ->addOption("path=<path>", "Specify test path (absolute or relative)")
+                    ->addOption("exclude=<patterns>", "Exclude files or directories (comma-separated, relative to --path)");
+                return $inst;
+            });
+
+            $blocks->addSection("Examples", function(Blocks $inst) {
+                $inst = $inst
+                    ->addExamples(
+                        "php vendor/bin/unitary",
+                        "Run all tests in the default path (./tests)"
+                    )->addExamples(
+                        "php vendor/bin/unitary --show=b0620ca8ef6ea7598eaed56a530b1983",
+                        "Run the test with a specific hash ID"
+                    )->addExamples(
+                        "php vendor/bin/unitary --errors-only",
+                        "Run all tests in the default path (./tests)"
+                    )->addExamples(
+                        "php vendor/bin/unitary --show=maplePHPRequest",
+                        "Run a manually named test case"
+                    )->addExamples(
+                        'php vendor/bin/unitary --path="tests/" --exclude="tests/legacy/*,*/extras/*"',
+                        'Run all tests under "tests/" excluding specified directories'
+                    )
+                ;
+                return $inst;
+            });
+            exit(0);
+        }
     }
 
     /**

@@ -184,11 +184,9 @@ final class Mocker
     {
         $overrides = '';
         foreach ($this->methods as $method) {
-
             if (!($method instanceof ReflectionMethod)) {
                 throw new Exception("Method is not a ReflectionMethod");
             }
-
             if ($method->isFinal()) {
                 continue;
             }
@@ -221,11 +219,12 @@ final class Mocker
             if ($info === false) {
                 throw new RuntimeException('JSON encoding failed: ' . json_last_error_msg(), json_last_error());
             }
-            MockerController::getInstance()->buildMethodData($info);
 
+            MockerController::getInstance()->buildMethodData($info);
             if ($methodItem) {
                 $returnValue = $this->generateWrapperReturn($methodItem->getWrap(), $methodName, $returnValue);
             }
+
             $safeJson = base64_encode($info);
             $overrides .= "
                 $modifiers function $methodName($paramList){$returnType}
@@ -236,7 +235,6 @@ final class Mocker
                 }
                 ";
         }
-
         return $overrides;
     }
 
