@@ -210,7 +210,7 @@ class Unit
             }
 
             $errArg = self::getArgs("errors-only");
-            $row->dispatchTest();
+            $row->dispatchTest($row);
             $tests = $row->runDeferredValidations();
             $color = ($row->hasFailed() ? "brightRed" : "brightBlue");
             $flag = $this->command->getAnsi()->style(['blueBg', 'brightWhite'], " PASS ");

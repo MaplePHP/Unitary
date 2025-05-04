@@ -147,7 +147,6 @@ final class Mocker
 
         eval($code);
 
-
         /**
          * @psalm-suppress MixedMethodCall
          * @psalm-suppress InvalidStringClass
@@ -223,6 +222,7 @@ final class Mocker
             $types = $this->getReturnType($method);
             $returnValue = $this->getReturnValue($types, $method, $methodItem);
             $paramList = $this->generateMethodSignature($method);
+
             if($method->isConstructor()) {
                 $types = [];
                 $returnValue = "";
@@ -357,8 +357,6 @@ final class Mocker
      */
     protected function getMockValueForType(string $typeName, mixed $method, mixed $value = null, bool $nullable = false): ?string
     {
-
-
         $dataTypeName = strtolower($typeName);
         if (!is_null($value)) {
             return "return " . DataTypeMock::exportValue($value) . ";";

@@ -21,7 +21,6 @@ class TestUnit
     /**
      * Initiate the test
      *
-     * @param mixed $value
      * @param string|null $message
      */
     public function __construct(?string $message = null)
@@ -68,6 +67,7 @@ class TestUnit
         array $args = [],
         array $compare = []
     ): self {
+
         if (!$valid) {
             $this->valid = false;
             $this->count++;

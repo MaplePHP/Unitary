@@ -30,6 +30,16 @@ class DataTypeMock
      */
     private ?array $bindArguments = null;
 
+    private static ?self $inst = null;
+
+    public static function inst(): self
+    {
+        if (is_null(self::$inst)) {
+            self::$inst = new self();
+        }
+        return self::$inst;
+    }
+
     /**
      * Returns an array of default arguments for different data types
      *
@@ -42,8 +52,8 @@ class DataTypeMock
             'float' => 3.14,
             'string' => "mockString",
             'bool' => true,
-            'array' => ['item'],
-            'object' => (object)['item'],
+            'array' => ['item1', 'item2', 'item3'],
+            'object' => (object)['item1' => 'value1', 'item2' => 'value2', 'item3' => 'value3'],
             'resource' => "fopen('php://memory', 'r+')",
             'callable' => fn() => 'called',
             'iterable' => new ArrayIterator(['a', 'b']),
@@ -92,7 +102,7 @@ class DataTypeMock
     {
         $inst = clone $this;
         if(isset($value) && is_resource($value)) {
-            $value= $this->handleResourceContent($value);
+            $value = $this->handleResourceContent($value);
         }
         $inst->defaultArguments[$dataType] = $value;
         return $inst;
@@ -137,7 +147,7 @@ class DataTypeMock
     public function getDataTypeValue(string $dataType, ?string $bindKey = null): mixed
     {
         if(is_string($bindKey) && isset($this->bindArguments[$bindKey][$dataType])) {
-            return $this->bindArguments[$bindKey][$dataType];
+            return self::exportValue($this->bindArguments[$bindKey][$dataType]);
         }
 
         if(is_null($this->types)) {

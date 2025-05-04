@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MaplePHP\Unitary;
 
+use MaplePHP\Blunder\BlunderErrorException;
 use MaplePHP\DTO\Format\Str;
 use MaplePHP\DTO\Traverse;
 use MaplePHP\Unitary\Mocker\MethodPool;
@@ -21,6 +22,9 @@ use BadMethodCallException;
 use ErrorException;
 use Closure;
 
+/**
+ * @template T of object
+ */
 final class TestCase
 {
     private mixed $value;
@@ -29,9 +33,9 @@ final class TestCase
     private int $count = 0;
     private ?Closure $bind = null;
     private ?string $errorMessage = null;
-
     private array $deferredValidation = [];
-
+    /** @var Mocker<T> */
+    private Mocker $mocker;
 
     /**
      * Initialize a new TestCase instance with an optional message.
@@ -57,13 +61,23 @@ final class TestCase
     /**
      * Will dispatch the case tests and return them as an array
      *
+     * @param self $row
      * @return array
+     * @throws BlunderErrorException
      */
-    public function dispatchTest(): array
+    public function dispatchTest(self &$row): array
     {
+        $row = $this;
         $test = $this->bind;
         if (!is_null($test)) {
-            $test($this);
+            try {
+                $newInst = $test($this);
+            } catch (Throwable $e) {
+                throw new BlunderErrorException($e->getMessage(), $e->getCode());
+            }
+            if ($newInst instanceof self) {
+                $row = $newInst;
+            }
         }
         return $this->test;
     }
@@ -200,6 +214,39 @@ final class TestCase
     }
 
     /**
+     * @param class-string<T> $class
+     * @param array $args
+     * @return self<T>
+     */
+    public function withMock(string $class, array $args = []): self
+    {
+        $inst = clone $this;
+        $inst->mocker = new Mocker($class, $args);
+        return $inst;
+    }
+
+    /**
+     * @param Closure|null $validate
+     * @return T
+     * @throws ErrorException
+     * @throws Exception
+     */
+    public function buildMock(?Closure $validate = null): mixed
+    {
+        if (is_callable($validate)) {
+            $this->prepareValidation($this->mocker, $validate);
+        }
+
+        try {
+            /** @psalm-suppress MixedReturnStatement */
+            return $this->mocker->execute();
+        } catch (Throwable $e) {
+            throw new BlunderErrorException($e->getMessage(), $e->getCode());
+        }
+    }
+
+
+    /**
      * Creates and returns an instance of a dynamically generated mock class.
      *
      * The mock class is based on the provided class name and optional constructor arguments.
@@ -213,16 +260,16 @@ final class TestCase
      * @return T
      * @throws Exception
      */
-    public function mock(string $class, ?Closure $validate = null, array $args = []): mixed
+    public function mock(string $class, ?Closure $validate = null, array $args = [])
     {
-        $mocker = new Mocker($class, $args);
+        $this->mocker = new Mocker($class, $args);
+        return $this->buildMock($validate);
+    }
 
-        if (is_callable($validate)) {
-            $this->prepareValidation($mocker, $validate);
-        }
 
-        /** @psalm-suppress MixedReturnStatement */
-        return $mocker->execute();
+    public function getMocker(): Mocker
+    {
+        return $this->mocker;
     }
 
     /**
@@ -424,15 +471,16 @@ final class TestCase
                     $test->setCodeLine($row['trace']);
                 }
                 foreach ($arr as $data) {
-                    $obj = new Traverse($data);
-                    $isValid = $obj->valid->toBool();
-                    /** @var array{expectedValue: mixed, currentValue: mixed} $data */
-                    $test->setUnit($isValid, $obj->property->acceptType(['string', 'closure', 'null']), [], [
-                        $data['expectedValue'], $data['currentValue']
-                    ]);
-                    if (!isset($hasValidated[$method]) && !$isValid) {
-                        $hasValidated[$method] = true;
-                        $this->count++;
+                    // We do not want to validate the return here automatically
+                    if($data['property'] !== "return") {
+                        /** @var array{expectedValue: mixed, currentValue: mixed} $data */
+                        $test->setUnit($data['valid'], $data['property'], [], [
+                            $data['expectedValue'], $data['currentValue']
+                        ]);
+                        if (!isset($hasValidated[$method]) && !$data['valid']) {
+                            $hasValidated[$method] = true;
+                            $this->count++;
+                        }
                     }
                 }
                 $this->test[] = $test;

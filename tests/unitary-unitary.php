@@ -5,6 +5,8 @@ use MaplePHP\Unitary\TestCase;
 use MaplePHP\Unitary\Unit;
 use MaplePHP\Validate\ValidationChain;
 use MaplePHP\Unitary\Mocker\MethodPool;
+use MaplePHP\Http\Response;
+use MaplePHP\Http\Stream;
 
 
 class Mailer
@@ -77,32 +79,85 @@ class UserService {
 }
 
 $unit = new Unit();
-$unit->group("Unitary test 1", function (TestCase $inst) use($unit) {
-     $mock = $inst->mock(Mailer::class, function (MethodPool $pool) use($inst) {
+
+
+
+$unit->group("Advanced App Response Test", function (TestCase $case) use($unit) {
+
+
+    // Quickly mock the Stream class
+    $stream = $case->mock(Stream::class);
+
+    // Mock with configuration
+    //
+    // Notice: this will handle TestCase as immutable, and because of this
+    // the new instance of TestCase must be return to the group callable below
+    //
+    // By passing the mocked Stream class to the Response constructor, we
+    // will actually also test that the argument has the right data type
+    $case = $case->withMock(Response::class, [$stream]);
+
+    // We can override all "default" mocking values tide to TestCase Instance
+    // to use later on in out in the validations, you can also tie the mock
+    // value to a method
+    $case->getMocker()
+        ->mockDataType("string", "myCustomMockStringValue")
+        ->mockDataType("array", ["myCustomMockArrayItem"])
+        ->mockDataType("int", 200, "getStatusCode");
+
+    // List all default mock values that will be automatically used in
+    // parameters and return values
+    //print_r(\MaplePHP\Unitary\TestUtils\DataTypeMock::inst()->getMockValues());
+
+    $response = $case->buildMock(function (MethodPool $pool) use($stream) {
+        // Even tho Unitary mocker tries to automatically mock the return type of methods,
+        // it might fail if the return type is an expected Class instance, then you will
+        // need to manually set the return type to tell Unitary mocker what class to expect,
+        // which is in this example a class named "Stream".
+        // You can do this by either passing the expected class directly into the `return` method
+        // or even better by mocking the expected class and then passing the mocked class.
+        $pool->method("getBody")->return($stream);
+    });
+
+    $case->validate($response->getHeader("lorem"), function(ValidationChain $inst) {
+        // Validate against the new default array item value
+        // If we weren't overriding the default the array would be ['item1', 'item2', 'item3']
+        $inst->isInArray(["myCustomMockArrayItem"]);
+    });
+
+    $case->validate($response->getStatusCode(), function(ValidationChain $inst) {
+        // Will validate to the default int data type set above
+        // and bounded to "getStatusCode" method
+        $inst->isEqualTo(200);
+    });
+
+    $case->validate($response->getProtocolVersion(), function(ValidationChain $inst) {
+        // MockedValue is the default value that the mocked class will return
+        // if you do not specify otherwise, either by specify what the method should return
+        // or buy overrides the default mocking data type values.
+        $inst->isEqualTo("MockedValue");
+    });
+
+    $case->validate($response->getBody(), function(ValidationChain $inst) {
+        $inst->isInstanceOf(Stream::class);
+    });
+
+    // You need to return a new instance of TestCase for new mocking settings
+    return $case;
+});
+
+
+$unit->group("Mailer test", function (TestCase $inst) use($unit) {
+    $mock = $inst->mock(Mailer::class, function (MethodPool $pool) use($inst) {
         $pool->method("addBCC")
-            ->isAbstract()
             ->paramIsType(0, "string")
             ->paramHasDefault(1, "Daniel")
-            ->paramIsOptional(0)
+            ->paramIsOptional(1)
             ->paramIsReference(1)
             ->count(1);
     });
     $mock->addBCC("World");
 });
-
-
-/*
- $unit->group("Unitary test 2", function (TestCase $inst) use($unit) {
-    $mock = $inst->mocker(Mailer::class)->mock(function (MethodPool $pool) use($inst) {
-        $pool->method("addBCC")
-            ->paramHasDefault(1, "DanielRonkainen")
-            ->count(1);
-    });
-
-    $mock->mockDataType();
-    $mock->addBCC("World");
-});
- */
 
 
 
