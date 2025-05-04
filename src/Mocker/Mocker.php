@@ -9,8 +9,10 @@
 
 namespace MaplePHP\Unitary\Mocker;
 
+use ArrayIterator;
 use Closure;
 use Exception;
+use MaplePHP\Unitary\TestUtils\DataTypeMock;
 use Reflection;
 use ReflectionClass;
 use ReflectionIntersectionType;
@@ -32,6 +34,8 @@ final class Mocker
     protected array $methods;
     protected array $methodList = [];
     protected static ?MethodPool $methodPool = null;
+    protected array $defaultArguments = [];
+    private DataTypeMock $dataTypeMock;
 
     /**
      * @param string $className
@@ -43,6 +47,7 @@ final class Mocker
         /** @var class-string $className */
         $this->reflection = new ReflectionClass($className);
 
+        $this->dataTypeMock = new DataTypeMock();
         /*
         // Auto fill the Constructor args!
         $test = $this->reflection->getConstructor();
@@ -86,6 +91,25 @@ final class Mocker
             throw new Exception("Mock class name is not set");
         }
         return $this->mockClassName;
+    }
+
+    /**
+     * Sets a custom mock value for a specific data type. The mock value can be bound to a specific method
+     * or used as a global default for the data type.
+     *
+     * @param string $dataType The data type to mock (e.g., 'int', 'string', 'bool')
+     * @param mixed $value The value to use when mocking this data type
+     * @param string|null $bindToMethod Optional method name to bind this mock value to
+     * @return self Returns the current instance for method chaining
+     */
+    public function mockDataType(string $dataType, mixed $value, ?string $bindToMethod = null): self
+    {
+        if($bindToMethod) {
+            $this->dataTypeMock = $this->dataTypeMock->withCustomBoundDefault($bindToMethod,  $dataType, $value);
+        } else {
+            $this->dataTypeMock = $this->dataTypeMock->withCustomDefault($dataType, $value);
+        }
+        return $this;
     }
 
     /**
@@ -333,22 +357,33 @@ final class Mocker
      */
     protected function getMockValueForType(string $typeName, mixed $method, mixed $value = null, bool $nullable = false): ?string
     {
+
+
         $dataTypeName = strtolower($typeName);
         if (!is_null($value)) {
-            return "return " . var_export($value, true) . ";";
+            return "return " . DataTypeMock::exportValue($value) . ";";
         }
 
+        $methodName = ($method instanceof ReflectionMethod) ? $method->getName() : null;
+
+        /*
+        $this->dataTypeMock = $this->dataTypeMock->withCustomDefault('int', $value);
+        if($method instanceof ReflectionMethod) {
+            $this->dataTypeMock = $this->dataTypeMock->withCustomBoundDefault($method->getName(),  'int', $value);
+        }
+         */
+
         $mock = match ($dataTypeName) {
-            'int', 'integer' => "return 123456;",
-            'float', 'double' => "return 3.14;",
-            'string' => "return 'mockString';",
-            'bool', 'boolean' => "return true;",
-            'array' => "return ['item'];",
-            'object' => "return (object)['item'];",
-            'resource' => "return fopen('php://memory', 'r+');",
-            'callable' => "return fn() => 'called';",
-            'iterable' => "return new ArrayIterator(['a', 'b']);",
-            'null' => "return null;",
+            'int', 'integer' => "return " . $this->dataTypeMock->getDataTypeValue('int', $methodName) . ";",
+            'float', 'double' => "return " . $this->dataTypeMock->getDataTypeValue('float', $methodName) . ";",
+            'string' => "return " . $this->dataTypeMock->getDataTypeValue('string', $methodName) . ";",
+            'bool', 'boolean' => "return " . $this->dataTypeMock->getDataTypeValue('bool', $methodName) . ";",
+            'array' => "return " . $this->dataTypeMock->getDataTypeValue('array', $methodName) . ";",
+            'object' => "return " . $this->dataTypeMock->getDataTypeValue('object', $methodName) . ";",
+            'resource' => "return " . $this->dataTypeMock->getDataTypeValue('resource', $methodName) . ";",
+            'callable' => "return " . $this->dataTypeMock->getDataTypeValue('callable', $methodName) . ";",
+            'iterable' => "return " . $this->dataTypeMock->getDataTypeValue('iterable', $methodName) . ";",
+            'null' => "return " . $this->dataTypeMock->getDataTypeValue('null', $methodName) . ";",
             'void' => "",
             'self' => (is_object($method) && method_exists($method, "isStatic") && $method->isStatic()) ? 'return new self();' : 'return $this;',
             /** @var class-string $typeName */
@@ -358,20 +393,6 @@ final class Mocker
 
         };
         return $nullable && rand(0, 1) ? null : $mock;
-    }
-
-    /**
-     * Will return a streamable content
-     *
-     * @param mixed $resourceValue
-     * @return string|null
-     */
-    protected function handleResourceContent(mixed $resourceValue): ?string
-    {
-        if (!is_resource($resourceValue)) {
-            return null;
-        }
-        return var_export(stream_get_contents($resourceValue), true);
     }
 
     /**
@@ -417,5 +438,4 @@ final class Mocker
             'fileName'           => $refMethod->getFileName(),
         ];
     }
-
 }

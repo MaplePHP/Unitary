@@ -1,0 +1,167 @@
+<?php
+
+namespace MaplePHP\Unitary\TestUtils;
+
+use ArrayIterator;
+use MaplePHP\Log\InvalidArgumentException;
+
+/**
+ * A utility class for mocking different data types in unit tests.
+ * Provides functionality to generate mock values for various PHP data types,
+ * handle custom default values, and convert values to string representations.
+ * This class is particularly useful for testing type-specific functionality
+ * and generating test data with specific data types.
+ */
+class DataTypeMock
+{
+
+    /**
+     * @var array Stores custom default values for data types
+     */
+    private array $defaultArguments = [];
+
+    /**
+     * @var array|null Cache of stringified data type values
+     */
+    private ?array $types = null;
+
+    /**
+     * @var array|null Stores bound arguments with their associated keys
+     */
+    private ?array $bindArguments = null;
+
+    /**
+     * Returns an array of default arguments for different data types
+     *
+     * @return array Array of default arguments with mock values for different data types
+     */
+    public function getMockValues(): array
+    {
+        return array_merge([
+            'int' => 123456,
+            'float' => 3.14,
+            'string' => "mockString",
+            'bool' => true,
+            'array' => ['item'],
+            'object' => (object)['item'],
+            'resource' => "fopen('php://memory', 'r+')",
+            'callable' => fn() => 'called',
+            'iterable' => new ArrayIterator(['a', 'b']),
+            'null' => null,
+        ], $this->defaultArguments);
+    }
+    
+    /**
+     * Exports a value to a parsable string representation
+     *
+     * @param mixed $value The value to be exported
+     * @return string The string representation of the value
+     */
+    public static function exportValue(mixed $value): string
+    {
+        return var_export($value, true);
+        
+    }
+    
+    /**
+     * Creates a new instance with merged default and custom arguments.
+     * Handles resource type arguments separately by converting them to string content.
+     *
+     * @param array $dataTypeArgs Custom arguments to merge with defaults
+     * @return self New instance with updated arguments
+     */
+    public function withCustomDefaults(array $dataTypeArgs): self
+    {
+        $inst = clone $this;
+        foreach($dataTypeArgs as $key => $value) {
+            $inst = $this->withCustomDefault($key, $value);
+        }
+        return $inst;
+    }
+
+
+    /**
+     * Sets a custom default value for a specific data type.
+     * If the value is a resource, it will be converted to its string content.
+     *
+     * @param string $dataType The data type to set the custom default for
+     * @param mixed $value The value to set as default for the data type
+     * @return self New instance with updated custom default
+     */
+    public function withCustomDefault(string $dataType, mixed $value): self
+    {
+        $inst = clone $this;
+        if(isset($value) && is_resource($value)) {
+            $value= $this->handleResourceContent($value);
+        }
+        $inst->defaultArguments[$dataType] = $value;
+        return $inst;
+    }
+
+    /**
+     * Sets a custom default value for a specific data type with a binding key.
+     * Creates a new instance with the bound value stored in bindArguments array.
+     *
+     * @param string $key The binding key to store the value under
+     * @param string $dataType The data type to set the custom default for
+     * @param mixed $value The value to set as default for the data type
+     * @return self New instance with the bound value
+     */
+    public function withCustomBoundDefault(string $key, string $dataType, mixed $value): self
+    {
+        $inst = clone $this;
+        $tempInst = $this->withCustomDefault($dataType, $value);
+        $inst->bindArguments[$key][$dataType] = $tempInst->defaultArguments[$dataType];
+        return $inst;
+    }
+    
+    /**
+     * Converts default argument values to their string representations
+     * using var_export for each value in the default arguments array
+     *
+     * @return array Array of stringify default argument values
+     */
+    public function getDataTypeListToString(): array
+    {
+        return array_map(fn($value) => self::exportValue($value), $this->getMockValues());
+    }
+
+    /**
+     * Retrieves the string representation of a value for a given data type
+     * Initializes types' array if not already set
+     *
+     * @param string $dataType The data type to get the value for
+     * @return mixed The string representation of the value for the specified data type
+     * @throws InvalidArgumentException If the specified data type is invalid
+     */
+    public function getDataTypeValue(string $dataType, ?string $bindKey = null): mixed
+    {
+        if(is_string($bindKey) && isset($this->bindArguments[$bindKey][$dataType])) {
+            return $this->bindArguments[$bindKey][$dataType];
+        }
+
+        if(is_null($this->types)) {
+            $this->types = $this->getDataTypeListToString();    
+        }
+
+        if(!isset($this->types[$dataType])) {
+            throw new InvalidArgumentException("Invalid data type: $dataType");
+        }
+        return $this->types[$dataType];
+        
+    }
+    
+    /**
+     * Will return a streamable content
+     *
+     * @param mixed $resourceValue
+     * @return string|null
+     */
+    public function handleResourceContent(mixed $resourceValue): ?string
+    {
+        if (!is_resource($resourceValue)) {
+            return null;
+        }
+        return var_export(stream_get_contents($resourceValue), true);
+    }
+}
