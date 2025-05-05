@@ -73,7 +73,10 @@ final class TestCase
             try {
                 $newInst = $test($this);
             } catch (Throwable $e) {
-                throw new BlunderErrorException($e->getMessage(), $e->getCode());
+                if(str_contains($e->getFile(), "eval()")) {
+                    throw new BlunderErrorException($e->getMessage(), $e->getCode());
+                }
+                throw $e;
             }
             if ($newInst instanceof self) {
                 $row = $newInst;
@@ -105,7 +108,7 @@ final class TestCase
     public function validate(mixed $expect, Closure $validation): self
     {
         $this->expectAndValidate($expect, function (mixed $value, ValidationChain $inst) use ($validation) {
-            return $validation($inst, $value);
+            return $validation($inst, new Traverse($value));
         }, $this->errorMessage);
 
         return $this;
@@ -136,8 +139,12 @@ final class TestCase
         if ($validation instanceof Closure) {
             $listArr = $this->buildClosureTest($validation);
             foreach ($listArr as $list) {
-                foreach ($list as $method => $_valid) {
-                    $test->setUnit(false, (string)$method);
+                if(is_bool($list)) {
+                    $test->setUnit($list, "Validation");
+                } else {
+                    foreach ($list as $method => $_valid) {
+                        $test->setUnit(false, (string)$method);
+                    }
                 }
             }
         } else {

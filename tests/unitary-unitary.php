@@ -1,6 +1,7 @@
 
 <?php
 
+use MaplePHP\DTO\Traverse;
 use MaplePHP\Unitary\TestCase;
 use MaplePHP\Unitary\Unit;
 use MaplePHP\Validate\ValidationChain;
@@ -81,12 +82,25 @@ class UserService {
 $unit = new Unit();
 
 
+$unit->group("Advanced App Response Test", function (TestCase $case) use($unit) {
+
+    $stream = $case->mock(Stream::class);
+    $response = new Response($stream);
+
+    $case->validate($response->getBody()->getContents(), function(ValidationChain $inst) {
+        $inst->hasResponse();
+    });
+});
+
 
 $unit->group("Advanced App Response Test", function (TestCase $case) use($unit) {
 
 
     // Quickly mock the Stream class
-    $stream = $case->mock(Stream::class);
+    $stream = $case->mock(Stream::class, function (MethodPool $pool) {
+        $pool->method("getContents")
+            ->return('{"test":"test"}');
+    });
 
     // Mock with configuration
     //
@@ -119,6 +133,13 @@ $unit->group("Advanced App Response Test", function (TestCase $case) use($unit) 
         $pool->method("getBody")->return($stream);
     });
 
+
+    $case->validate($response->getBody()->getContents(), function(ValidationChain $inst, Traverse $collection) {
+        $inst->isString();
+        $inst->isJson();
+        return $collection->strJsonDecode()->test->valid("isString");
+    });
+
     $case->validate($response->getHeader("lorem"), function(ValidationChain $inst) {
         // Validate against the new default array item value
         // If we weren't overriding the default the array would be ['item1', 'item2', 'item3']
@@ -128,7 +149,7 @@ $unit->group("Advanced App Response Test", function (TestCase $case) use($unit) 
     $case->validate($response->getStatusCode(), function(ValidationChain $inst) {
         // Will validate to the default int data type set above
         // and bounded to "getStatusCode" method
-        $inst->isEqualTo(200);
+        $inst->isHttpSuccess();
     });
 
     $case->validate($response->getProtocolVersion(), function(ValidationChain $inst) {
