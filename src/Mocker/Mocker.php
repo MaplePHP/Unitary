@@ -9,7 +9,6 @@
 
 namespace MaplePHP\Unitary\Mocker;
 
-use ArrayIterator;
 use Closure;
 use Exception;
 use MaplePHP\Unitary\TestUtils\DataTypeMock;
@@ -23,8 +22,6 @@ use RuntimeException;
 
 final class Mocker
 {
-    //protected object $instance;
-    //protected array $overrides = [];
     protected ReflectionClass $reflection;
     protected string $className;
     /** @var class-string|null */
@@ -33,8 +30,6 @@ final class Mocker
     protected array $constructorArgs = [];
     protected array $methods;
     protected array $methodList = [];
-    protected static ?MethodPool $methodPool = null;
-    protected array $defaultArguments = [];
     private DataTypeMock $dataTypeMock;
 
     /**
@@ -46,44 +41,61 @@ final class Mocker
         $this->className = $className;
         /** @var class-string $className */
         $this->reflection = new ReflectionClass($className);
-
         $this->dataTypeMock = new DataTypeMock();
+        $this->methods = $this->reflection->getMethods();
+        $this->constructorArgs = $args;
         /*
         // Auto fill the Constructor args!
         $test = $this->reflection->getConstructor();
         $test = $this->generateMethodSignature($test);
         $param = $test->getParameters();
          */
-
-        $this->methods = $this->reflection->getMethods();
-        $this->constructorArgs = $args;
     }
 
+    /**
+     * Adds metadata to the mock method, including the mock class name, return value,
+     * and a flag indicating whether to keep the original method implementation.
+     *
+     * @param array $data The base data array to add metadata to
+     * @param string $mockClassName The name of the mock class
+     * @param mixed $return The return value to be stored in metadata
+     * @return array The data array with added metadata
+     */
+    protected function addMockMetadata(array $data, string $mockClassName, mixed $return): array
+    {
+        $data['mocker'] = $mockClassName;
+        $data['return'] = $return;
+        $data['keepOriginal'] = false;
+        return $data;
+    }
+    
+    /**
+     * Gets the fully qualified name of the class being mocked.
+     *
+     * @return string The class name that was provided during instantiation
+     */
     public function getClassName(): string
     {
         return $this->className;
     }
 
+    
+    /**
+     * Returns the constructor arguments provided during instantiation.
+     *
+     * @return array The array of constructor arguments used to create the mock instance
+     */
     public function getClassArgs(): array
     {
         return $this->constructorArgs;
     }
 
     /**
-     * Override the default method overrides with your own mock logic and validation rules
+     * Gets the mock class name generated during mock creation.
+     * This method should only be called after execute() has been invoked.
      *
-     * @return MethodPool
-     */
-    public function getMethodPool(): MethodPool
-    {
-        if (is_null(self::$methodPool)) {
-            self::$methodPool = new MethodPool($this);
-        }
-        return self::$methodPool;
-    }
-
-    /**
-     * @throws Exception
+     * @return string The generated mock class name
+     * @throws Exception If the mock class name has not been set (execute() hasn't been called)
      */
     public function getMockedClassName(): string
     {
@@ -194,7 +206,7 @@ final class Mocker
         }
         return "return 'MockedValue';";
     }
-
+    
     /**
      * Builds and returns PHP code that overrides all public methods in the class being mocked.
      * Each overridden method returns a predefined mock value or delegates to the original logic.
@@ -218,7 +230,11 @@ final class Mocker
             $this->methodList[] = $methodName;
 
             // The MethodItem contains all items that are validatable
-            $methodItem = $this->getMethodPool()->get($methodName);
+            $methodItem = MethodPool::getMethod($this->getClassName(), $methodName);
+            if($methodItem && $methodItem->keepOriginal) {
+                continue;
+            }
+
             $types = $this->getReturnType($method);
             $returnValue = $this->getReturnValue($types, $method, $methodItem);
             $paramList = $this->generateMethodSignature($method);
@@ -236,8 +252,8 @@ final class Mocker
 
             $return = ($methodItem && $methodItem->hasReturn()) ? $methodItem->return : eval($returnValue);
             $arr = $this->getMethodInfoAsArray($method);
-            $arr['mocker'] = $mockClassName;
-            $arr['return'] = $return;
+            $arr = $this->addMockMetadata($arr, $mockClassName, $return);
+            
 
             $info = json_encode($arr);
             if ($info === false) {
@@ -336,7 +352,7 @@ final class Mocker
 
         } elseif ($returnType instanceof ReflectionIntersectionType) {
             $intersect = array_map(
-                fn ($type) => $type->getName(),
+                fn ($type) => $type instanceof ReflectionNamedType ? $type->getName() : (string) $type,
                 $returnType->getTypes()
             );
             $types[] = $intersect;
@@ -363,13 +379,6 @@ final class Mocker
         }
 
         $methodName = ($method instanceof ReflectionMethod) ? $method->getName() : null;
-
-        /*
-        $this->dataTypeMock = $this->dataTypeMock->withCustomDefault('int', $value);
-        if($method instanceof ReflectionMethod) {
-            $this->dataTypeMock = $this->dataTypeMock->withCustomBoundDefault($method->getName(),  'int', $value);
-        }
-         */
 
         $mock = match ($dataTypeName) {
             'int', 'integer' => "return " . $this->dataTypeMock->getDataTypeValue('int', $methodName) . ";",

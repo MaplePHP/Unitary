@@ -2,6 +2,10 @@
 
 namespace MaplePHP\Unitary\Mocker;
 
+/**
+ * A controller class responsible for managing mock data for methods.
+ * Provides methods to add, retrieve, and track mock data, including support for singleton access.
+ */
 final class MockerController extends MethodPool
 {
     private static ?MockerController $instance = null;
@@ -9,8 +13,8 @@ final class MockerController extends MethodPool
     private static array $data = [];
 
     /**
-     * Get singleton instance of MockerController
-     * Creates new instance if none exists
+     * Get a singleton instance of MockerController
+     * Creates a new instance if none exists
      *
      * @return static The singleton instance of MockerController
      */
@@ -48,8 +52,7 @@ final class MockerController extends MethodPool
     {
         return self::$data[$mockIdentifier][$method] ?? false;
     }
-
-
+    
     /**
      * Add or update data for a specific mock method
      *
@@ -81,11 +84,13 @@ final class MockerController extends MethodPool
             $mocker = (string)$data->mocker;
             $name = (string)$data->name;
             if (empty(self::$data[$mocker][$name])) {
-                $data->count = 0;
+                $data->called = 0;
                 self::$data[$mocker][$name] = $data;
+                // Mocked method has trigger "once"!
             } else {
                 if (isset(self::$data[$mocker][$name])) {
-                    self::$data[$mocker][$name]->count = (int)self::$data[$mocker][$name]->count + 1;
+                    self::$data[$mocker][$name]->called = (int)self::$data[$mocker][$name]->called + 1;
+                    // Mocked method has trigger "More Than" once!
                 }
             }
         }

@@ -6,11 +6,22 @@ class MethodPool
 {
     private ?Mocker $mocker = null;
     /** @var array<string, MethodItem> */
-    private array $methods = [];
+    private static array $methods = [];
 
     public function __construct(?Mocker $mocker = null)
     {
         $this->mocker = $mocker;
+    }
+
+    /**
+     * Access method pool
+     * @param string $class
+     * @param string $name
+     * @return MethodItem|null
+     */
+    public static function getMethod(string $class, string $name): ?MethodItem
+    {
+        return self::$methods[$class][$name] ?? null;
     }
 
     /**
@@ -22,8 +33,8 @@ class MethodPool
      */
     public function method(string $name): MethodItem
     {
-        $this->methods[$name] = new MethodItem($this->mocker);
-        return $this->methods[$name];
+        self::$methods[$this->mocker->getClassName()][$name] = new MethodItem($this->mocker);
+        return self::$methods[$this->mocker->getClassName()][$name];
     }
 
     /**
@@ -34,7 +45,7 @@ class MethodPool
      */
     public function get(string $key): MethodItem|null
     {
-        return $this->methods[$key] ?? null;
+        return self::$methods[$this->mocker->getClassName()][$key] ?? null;
     }
 
     /**
@@ -44,7 +55,7 @@ class MethodPool
      */
     public function getAll(): array
     {
-        return $this->methods;
+        return self::$methods;
     }
 
     /**
@@ -55,7 +66,7 @@ class MethodPool
      */
     public function has(string $name): bool
     {
-        return isset($this->methods[$name]);
+        return isset(self::$methods[$this->mocker->getClassName()][$name]);
     }
 
 }

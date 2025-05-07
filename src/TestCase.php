@@ -293,7 +293,7 @@ final class TestCase
      */
     private function prepareValidation(Mocker $mocker, Closure $validate): void
     {
-        $pool = $mocker->getMethodPool();
+        $pool = new MethodPool($mocker);
         $fn = $validate->bindTo($pool);
         if (is_null($fn)) {
             throw new ErrorException("A callable Closure could not be bound to the method pool!");
@@ -357,15 +357,21 @@ final class TestCase
                 continue;
             }
 
+            if(!property_exists($row, $property)) {
+                throw new ErrorException(
+                    "The mock method meta data property name '$property' is undefined in mock object. " .
+                    "To resolve this either use MockerController::buildMethodData() to add the property dynamically " .
+                    "or define a default value through Mocker::addMockMetadata()"
+                );
+            }
             $currentValue = $row->{$property};
-
             if (is_array($value)) {
-                if (!is_array($currentValue)) {
-                    throw new ErrorException("The $property property is not an array!");
-                }
                 $validPool = $this->validateArrayValue($value, $currentValue);
                 $valid = $validPool->isValid();
-                $this->compareFromValidCollection($validPool, $value, $currentValue);
+
+                if (is_array($currentValue)) {
+                    $this->compareFromValidCollection($validPool, $value, $currentValue);
+                }
             } else {
                 /** @psalm-suppress MixedArgument */
                 $valid = Validator::value($currentValue)->equal($value);

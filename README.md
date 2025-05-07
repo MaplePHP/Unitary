@@ -156,7 +156,7 @@ use \MaplePHP\Unitary\Mocker\MethodPool;
 $unit->group("Testing user service", function (TestCase $inst) {
     $mock = $inst->mock(Mailer::class, function (MethodPool $pool) use($inst) {
         // Quick way to tell Unitary that this method should return 'john.doe'
-        $pool->method("getFromEmail")->return('john.doe@gmail.com');
+        $pool->method("getFromEmail")->willReturn('john.doe@gmail.com');
 
         // Or we can acctually pass a callable to it and tell it what it should return 
         // But we can also validate the argumnets!
@@ -176,7 +176,7 @@ $unit->group("Testing user service", function (TestCase $inst) {
 
 ### Mocking: Add Consistency validation
 What is really cool is that you can also use Unitary mocker to make sure consistencies is followed and 
-validate that the method is built and loaded correctly. 
+validate that the method is built and loaded correctly.
 
 ```php
 use \MaplePHP\Unitary\Mocker\MethodPool;
@@ -187,11 +187,11 @@ $unit->group("Unitary test", function (TestCase $inst) {
             ->isPublic()
             ->hasDocComment()
             ->hasReturnType()
-            ->count(1);
+            ->isTimes(1);
         
         $pool->method("addBCC")
             ->isPublic()
-            ->count(3);
+            ->isTimes(3);
     });
     $service = new UserService($mock);
 });

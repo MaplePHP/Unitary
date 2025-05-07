@@ -13,7 +13,7 @@ final class MethodItem
 {
     private ?Mocker $mocker;
     public mixed $return = null;
-    public ?int $count = null;
+    public int|array|null $called = null;
 
     public ?string $class = null;
     public ?string $name = null;
@@ -33,6 +33,7 @@ final class MethodItem
     public ?int $startLine = null;
     public ?int $endLine = null;
     public ?string $fileName = null;
+    public bool $keepOriginal = false;
     protected bool $hasReturn = false;
     protected ?Closure $wrapper = null;
 
@@ -42,10 +43,12 @@ final class MethodItem
     }
 
     /**
-     * Will create a method wrapper making it possible to mock
+     * Creates a proxy wrapper around a method to enable integration testing.
+     * The wrapper allows intercepting and modifying method behavior during tests.
      *
-     * @param Closure $call
-     * @return $this
+     * @param Closure $call The closure to be executed as the wrapper function
+     * @return $this Method chain
+     * @throws BadMethodCallException When mocker is not set
      */
     public function wrap(Closure $call): self
     {
@@ -85,14 +88,72 @@ final class MethodItem
     }
 
     /**
-     * Check if a method has been called x times
-     * @param int $count
-     * @return $this
+     * Preserve the original method functionality instead of mocking it.
+     * When this is set, the method will execute its original implementation instead of any mock behavior.
+     *
+     * @return $this Method chain
      */
-    public function count(int $count): self
+    public function keepOriginal(): self
     {
         $inst = $this;
-        $inst->count = $count;
+        $inst->keepOriginal = true;
+        return $inst;
+    }
+
+    /**
+     * Check if a method has been called x times
+     * 
+     * @param int $times
+     * @return $this
+     */
+    public function called(int $times): self
+    {
+        $inst = $this;
+        $inst->called = $times;
+        return $inst;
+    }
+
+    /**
+     * Check if a method has been called x times
+     * 
+     * @return $this
+     */
+    public function hasBeenCalled(): self
+    {
+        $inst = $this;
+        $inst->called = [
+            "isAtLeast" => [1],
+        ];
+        return $inst;
+    }
+
+    /**
+     * Check if a method has been called x times
+     *
+     * @param int $times
+     * @return $this
+     */
+    public function calledAtLeast(int $times): self
+    {
+        $inst = $this;
+        $inst->called = [
+            "isAtLeast" => [$times],
+        ];
+        return $inst;
+    }
+
+    /**
+     * Check if a method has been called x times
+     *
+     * @param int $times
+     * @return $this
+     */
+    public function calledAtMost(int $times): self
+    {
+        $inst = $this;
+        $inst->called = [
+            "isAtMost" => [$times],
+        ];
         return $inst;
     }
 
@@ -102,7 +163,7 @@ final class MethodItem
      * @param mixed $value
      * @return $this
      */
-    public function return(mixed $value): self
+    public function willReturn(mixed $value): self
     {
         $inst = $this;
         $inst->hasReturn = true;
@@ -116,7 +177,7 @@ final class MethodItem
      * @param string $class
      * @return self
      */
-    public function class(string $class): self
+    public function hasClass(string $class): self
     {
         $inst = $this;
         $inst->class = $class;
@@ -129,7 +190,7 @@ final class MethodItem
      * @param string $name
      * @return self
      */
-    public function name(string $name): self
+    public function hasName(string $name): self
     {
         $inst = $this;
         $inst->name = $name;
@@ -238,7 +299,7 @@ final class MethodItem
      * @param string $type
      * @return self
      */
-    public function returnType(string $type): self
+    public function isReturnType(string $type): self
     {
         $inst = $this;
         $inst->returnType = $type;
@@ -317,7 +378,7 @@ final class MethodItem
      * @param int $length
      * @return $this
      */
-    public function hasParamsCount(int $length): self
+    public function paramsHasCount(int $length): self
     {
         $inst = $this;
         $inst->parameters[] = [
@@ -440,6 +501,19 @@ final class MethodItem
     }
 
     /**
+     * Set the file name where the method is declared.
+     *
+     * @param string $file
+     * @return self
+     */
+    public function hasFileName(string $file): self
+    {
+        $inst = $this;
+        $inst->fileName = $file;
+        return $inst;
+    }
+
+    /**
      * Set the starting line number of the method.
      *
      * @param int $line
@@ -462,19 +536,6 @@ final class MethodItem
     {
         $inst = $this;
         $inst->endLine = $line;
-        return $inst;
-    }
-
-    /**
-     * Set the file name where the method is declared.
-     *
-     * @param string $file
-     * @return self
-     */
-    public function fileName(string $file): self
-    {
-        $inst = $this;
-        $inst->fileName = $file;
         return $inst;
     }
 }

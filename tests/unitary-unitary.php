@@ -16,9 +16,14 @@ class Mailer
     public $bcc = "";
 
 
-    public function __construct(string $arg1)
+    public function __construct()
     {
 
+    }
+
+    public function send()
+    {
+        echo $this->sendEmail($this->getFromEmail());
     }
 
     public function sendEmail(string $email, string $name = "daniel"): string
@@ -34,9 +39,15 @@ class Mailer
         return filter_var($email, FILTER_VALIDATE_EMAIL);
     }
 
-    public function getFromEmail(string $email): string
+    public function setFromEmail(string $email): self
     {
-        return $this->from;
+        $this->from = $email;
+        return $this;
+    }
+
+    public function getFromEmail(): string
+    {
+        return !empty($this->from) ? $this->from : "empty email";
     }
 
     /**
@@ -57,10 +68,12 @@ class Mailer
 
     public function test(...$params): void
     {
+        $this->test2();
     }
 
     public function test2(): void
     {
+        echo "Hello World\n";
     }
 
 }
@@ -82,6 +95,7 @@ class UserService {
 $unit = new Unit();
 
 
+
 $unit->group("Advanced App Response Test", function (TestCase $case) use($unit) {
 
     $stream = $case->mock(Stream::class);
@@ -93,15 +107,25 @@ $unit->group("Advanced App Response Test", function (TestCase $case) use($unit) 
 });
 
 
+$unit->group("Advanced Mailer Test", function (TestCase $case) use($unit) {
+    $mail = $case->mock(Mailer::class, function (MethodPool $pool) {
+        $pool->method("send")->keepOriginal();
+        $pool->method("sendEmail")->keepOriginal();
+    });
+    $mail->send();
+});
+
 $unit->group("Advanced App Response Test", function (TestCase $case) use($unit) {
 
 
     // Quickly mock the Stream class
     $stream = $case->mock(Stream::class, function (MethodPool $pool) {
         $pool->method("getContents")
-            ->return('{"test":"test"}');
-    });
+            ->willReturn('{"test":"test"}')
+            ->calledAtLeast(1);
 
+        $pool->method("fopen")->isPrivate();
+    });
     // Mock with configuration
     //
     // Notice: this will handle TestCase as immutable, and because of this
@@ -130,7 +154,7 @@ $unit->group("Advanced App Response Test", function (TestCase $case) use($unit) 
         // which is in this example a class named "Stream".
         // You can do this by either passing the expected class directly into the `return` method
         // or even better by mocking the expected class and then passing the mocked class.
-        $pool->method("getBody")->return($stream);
+        $pool->method("getBody")->willReturn($stream);
     });
 
 
@@ -175,9 +199,12 @@ $unit->group("Mailer test", function (TestCase $inst) use($unit) {
             ->paramHasDefault(1, "Daniel")
             ->paramIsOptional(1)
             ->paramIsReference(1)
-            ->count(1);
+            ->called(1);
+
+        //$pool->method("test2")->called(1);
     });
     $mock->addBCC("World");
+    $mock->test(1);
 });
 
 
@@ -190,11 +217,7 @@ $unit->group("Unitary test 2", function (TestCase $inst) {
 
     $mock = $inst->mock(Mailer::class, function (MethodPool $pool) use($inst) {
         $pool->method("addFromEmail")
-            ->hasParamsTypes()
-            ->isPublic()
-            ->hasDocComment()
-            ->hasReturnType()
-            ->count(0);
+            ->isPublic();
 
         $pool->method("addBCC")
             ->isPublic()
