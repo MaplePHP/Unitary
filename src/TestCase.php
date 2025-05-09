@@ -69,7 +69,7 @@ final class TestCase
     {
         $row = $this;
         $test = $this->bind;
-        if (!is_null($test)) {
+        if ($test !== null) {
             try {
                 $newInst = $test($this);
             } catch (Throwable $e) {
@@ -295,7 +295,7 @@ final class TestCase
     {
         $pool = new MethodPool($mocker);
         $fn = $validate->bindTo($pool);
-        if (is_null($fn)) {
+        if ($fn === null) {
             throw new ErrorException("A callable Closure could not be bound to the method pool!");
         }
         $fn($pool);
@@ -353,7 +353,7 @@ final class TestCase
         $errors = [];
 
         foreach (get_object_vars($item) as $property => $value) {
-            if (is_null($value)) {
+            if ($value === null) {
                 continue;
             }
 
@@ -587,7 +587,7 @@ final class TestCase
         $validation = $validation->bindTo($validPool);
 
         $error = [];
-        if (!is_null($validation)) {
+        if ($validation !== null) {
             $bool = $validation($this->value, $validPool);
             $error = $validPool->getError();
             if (is_bool($bool) && !$bool) {
@@ -595,7 +595,7 @@ final class TestCase
             }
         }
 
-        if (is_null($this->message)) {
+        if ($this->message === null) {
             throw new RuntimeException("When testing with closure the third argument message is required");
         }
 
@@ -614,7 +614,7 @@ final class TestCase
     {
         if ($args instanceof Closure) {
             $args = $args->bindTo($this->valid($this->value));
-            if (is_null($args)) {
+            if ($args === null) {
                 throw new ErrorException("The argument is not returning a callable Closure!");
             }
             $bool = $args($this->value);
@@ -684,7 +684,7 @@ final class TestCase
 
             $name = $method->getName();
             if (!$method->isStatic() && !str_starts_with($name, '__')) {
-                if (!is_null($prefixMethods)) {
+                if ($prefixMethods !== null) {
                     $name = $prefixMethods . ucfirst($name);
                 }
                 echo "@method self $name(" . implode(', ', $params) . ")\n";

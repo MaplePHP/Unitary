@@ -374,7 +374,7 @@ final class Mocker
     protected function getMockValueForType(string $typeName, mixed $method, mixed $value = null, bool $nullable = false): ?string
     {
         $dataTypeName = strtolower($typeName);
-        if (!is_null($value)) {
+        if ($value !== null) {
             return "return " . DataTypeMock::exportValue($value) . ";";
         }
 

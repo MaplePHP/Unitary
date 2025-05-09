@@ -162,12 +162,12 @@ class Unit
     {
         $start = new TestMem();
         $func = $func->bindTo($this);
-        if (!is_null($func)) {
+        if ($func !== null) {
             $func($this);
         }
         $line = $this->command->getAnsi()->line(80);
         $this->command->message("");
-        $this->command->message($this->command->getAnsi()->style(["bold", "yellow"], "Performance" . (!is_null($title) ? " - $title:" : ":")));
+        $this->command->message($this->command->getAnsi()->style(["bold", "yellow"], "Performance" . ($title !== null ? " - $title:" : ":")));
 
         $this->command->message($line);
         $this->command->message(
@@ -305,7 +305,7 @@ class Unit
         if ($this->output) {
             $this->buildNotice("Note:", $this->output, 80);
         }
-        if (!is_null($this->handler)) {
+        if ($this->handler !== null) {
             $this->handler->execute();
         }
         $this->executed = true;
@@ -446,7 +446,7 @@ class Unit
      */
     public static function hasUnit(): bool
     {
-        return !is_null(self::$current);
+        return self::$current !== null;
     }
 
     /**
@@ -456,7 +456,7 @@ class Unit
      */
     public static function getUnit(): ?Unit
     {
-        if (is_null(self::hasUnit())) {
+        if (self::hasUnit() === null) {
             throw new Exception("Unit has not been set yet. It needs to be set first.");
         }
         return self::$current;
@@ -468,7 +468,7 @@ class Unit
      */
     public static function completed(): void
     {
-        if (!is_null(self::$current) && is_null(self::$current->handler)) {
+        if (self::$current !== null && self::$current->handler === null) {
             $dot = self::$current->command->getAnsi()->middot();
 
             self::$current->command->message("");

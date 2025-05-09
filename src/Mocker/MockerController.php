@@ -20,7 +20,7 @@ final class MockerController extends MethodPool
      */
     public static function getInstance(): self
     {
-        if (is_null(self::$instance)) {
+        if (self::$instance === null) {
             self::$instance = new self();
         }
         return self::$instance;

@@ -34,7 +34,7 @@ class DataTypeMock
 
     public static function inst(): self
     {
-        if (is_null(self::$inst)) {
+        if (self::$inst === null) {
             self::$inst = new self();
         }
         return self::$inst;
@@ -150,7 +150,7 @@ class DataTypeMock
             return self::exportValue($this->bindArguments[$bindKey][$dataType]);
         }
 
-        if(is_null($this->types)) {
+        if($this->types === null) {
             $this->types = $this->getDataTypeListToString();    
         }
 

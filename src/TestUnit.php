@@ -26,7 +26,7 @@ class TestUnit
     public function __construct(?string $message = null)
     {
         $this->valid = true;
-        $this->message = is_null($message) ? "Could not validate" : $message;
+        $this->message = $message === null ? "Could not validate" : $message;
     }
 
     /**
@@ -200,7 +200,7 @@ class TestUnit
      */
     public function getReadValue(mixed $value = null, bool $minify = false): string|bool
     {
-        $value = is_null($value) ? $this->value : $value;
+        $value = $value === null ? $this->value : $value;
         if (is_bool($value)) {
             return '"' . ($value ? "true" : "false") . '"' . ($minify ? "" : " (type: bool)");
         }
@@ -219,7 +219,7 @@ class TestUnit
         if (is_object($value)) {
             return '"' . $this->excerpt(get_class($value)) . '"' . ($minify ? "" : " (type: object)");
         }
-        if (is_null($value)) {
+        if ($value === null) {
             return '"null"'. ($minify ? '' : ' (type: null)');
         }
         if (is_resource($value)) {

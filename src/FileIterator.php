@@ -47,7 +47,7 @@ final class FileIterator
                 ]);
 
                 $call = $this->requireUnitFile((string)$file);
-                if (!is_null($call)) {
+                if ($call !== null) {
                     $call();
                 }
                 if (!Unit::hasUnit()) {
@@ -181,7 +181,7 @@ final class FileIterator
     protected function getUnit(): Unit
     {
         $unit = Unit::getUnit();
-        if (is_null($unit)) {
+        if ($unit === null) {
             throw new RuntimeException("The Unit instance has not been initiated.");
         }
         return $unit;
