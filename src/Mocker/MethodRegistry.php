@@ -2,13 +2,13 @@
 
 namespace MaplePHP\Unitary\Mocker;
 
-class MethodPool
+class MethodRegistry
 {
-    private ?Mocker $mocker = null;
-    /** @var array<string, MethodItem> */
+    private ?MockBuilder $mocker = null;
+    /** @var array<string, MockedMethod> */
     private static array $methods = [];
 
-    public function __construct(?Mocker $mocker = null)
+    public function __construct(?MockBuilder $mocker = null)
     {
         $this->mocker = $mocker;
     }
@@ -17,9 +17,9 @@ class MethodPool
      * Access method pool
      * @param string $class
      * @param string $name
-     * @return MethodItem|null
+     * @return MockedMethod|null
      */
-    public static function getMethod(string $class, string $name): ?MethodItem
+    public static function getMethod(string $class, string $name): ?MockedMethod
     {
         return self::$methods[$class][$name] ?? null;
     }
@@ -29,11 +29,11 @@ class MethodPool
      * returns the corresponding MethodItem instance.
      *
      * @param string $name The name of the method to add.
-     * @return MethodItem The newly created MethodItem instance.
+     * @return MockedMethod The newly created MethodItem instance.
      */
-    public function method(string $name): MethodItem
+    public function method(string $name): MockedMethod
     {
-        self::$methods[$this->mocker->getClassName()][$name] = new MethodItem($this->mocker);
+        self::$methods[$this->mocker->getClassName()][$name] = new MockedMethod($this->mocker);
         return self::$methods[$this->mocker->getClassName()][$name];
     }
 
@@ -41,9 +41,9 @@ class MethodPool
      * Get method
      *
      * @param string $key
-     * @return MethodItem|null
+     * @return MockedMethod|null
      */
-    public function get(string $key): MethodItem|null
+    public function get(string $key): MockedMethod|null
     {
         return self::$methods[$this->mocker->getClassName()][$key] ?? null;
     }

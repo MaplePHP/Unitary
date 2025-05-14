@@ -1,14 +1,10 @@
 
 <?php
 
-use MaplePHP\DTO\Traverse;
-use MaplePHP\Unitary\TestCase;
-use MaplePHP\Unitary\Unit;
-use MaplePHP\Validate\ValidationChain;
-use MaplePHP\Unitary\Mocker\MethodPool;
+use MaplePHP\Http\Request;
 use MaplePHP\Http\Response;
 use MaplePHP\Http\Stream;
-
+use MaplePHP\Unitary\{TestCase, TestConfig, Expect, Unit};
 
 class Mailer
 {
@@ -95,16 +91,42 @@ class UserService {
 $unit = new Unit();
 
 
+$config = TestConfig::make("This is a test message")
+    ->setSkip()
+    ->setSelect('unitary');
+
+$unit->group($config, function (TestCase $case) use($unit) {
+
+    $request = new Request("HSHHS", "https://example.com:443/?cat=25&page=1622");
+
+    $case->validate($request->getMethod(), function(Expect $inst) {
+        $inst->isRequestMethod();
+    });
+
+    $case->validate($request->getPort(), function(Expect $inst) {
+        $inst->isEqualTo(443);
+    });
+
+    $case->validate($request->getUri()->getQuery(), function(Expect $inst) {
+        $inst->hasQueryParam("cat");
+        $inst->hasQueryParam("page", 1622);
+    });
+});
+
+
 
 $unit->group("Advanced App Response Test", function (TestCase $case) use($unit) {
 
     $stream = $case->mock(Stream::class);
     $response = new Response($stream);
 
-    $case->validate($response->getBody()->getContents(), function(ValidationChain $inst) {
+    $case->validate($response->getBody()->getContents(), function(Expect $inst) {
         $inst->hasResponse();
     });
 });
+/*
+
+
 
 
 $unit->group("Advanced Mailer Test", function (TestCase $case) use($unit) {
@@ -158,32 +180,32 @@ $unit->group("Advanced App Response Test", function (TestCase $case) use($unit) 
     });
 
 
-    $case->validate($response->getBody()->getContents(), function(ValidationChain $inst, Traverse $collection) {
+    $case->validate($response->getBody()->getContents(), function(Validate $inst, Traverse $collection) {
         $inst->isString();
         $inst->isJson();
         return $collection->strJsonDecode()->test->valid("isString");
     });
 
-    $case->validate($response->getHeader("lorem"), function(ValidationChain $inst) {
+    $case->validate($response->getHeader("lorem"), function(Validate $inst) {
         // Validate against the new default array item value
         // If we weren't overriding the default the array would be ['item1', 'item2', 'item3']
         $inst->isInArray(["myCustomMockArrayItem"]);
     });
 
-    $case->validate($response->getStatusCode(), function(ValidationChain $inst) {
+    $case->validate($response->getStatusCode(), function(Validate $inst) {
         // Will validate to the default int data type set above
         // and bounded to "getStatusCode" method
         $inst->isHttpSuccess();
     });
 
-    $case->validate($response->getProtocolVersion(), function(ValidationChain $inst) {
+    $case->validate($response->getProtocolVersion(), function(Validate $inst) {
         // MockedValue is the default value that the mocked class will return
         // if you do not specify otherwise, either by specify what the method should return
         // or buy overrides the default mocking data type values.
         $inst->isEqualTo("MockedValue");
     });
 
-    $case->validate($response->getBody(), function(ValidationChain $inst) {
+    $case->validate($response->getBody(), function(Validate $inst) {
         $inst->isInstanceOf(Stream::class);
     });
 
@@ -208,11 +230,7 @@ $unit->group("Mailer test", function (TestCase $inst) use($unit) {
 });
 
 
-
-
-/*
-
-$unit = new Unit();
+//$unit = new Unit();
 $unit->group("Unitary test 2", function (TestCase $inst) {
 
     $mock = $inst->mock(Mailer::class, function (MethodPool $pool) use($inst) {
@@ -228,7 +246,7 @@ $unit->group("Unitary test 2", function (TestCase $inst) {
             ->paramHasDefault(1, "Daniel")
             ->paramIsOptional(1)
             ->paramIsReference(1)
-            ->count(0);
+            ->called(0);
 
         $pool->method("test")
             ->hasParams()
@@ -236,25 +254,18 @@ $unit->group("Unitary test 2", function (TestCase $inst) {
             ->wrap(function($args) use($inst) {
                 echo "World -> $args\n";
             })
-            ->count(1);
+            ->called(1);
 
         $pool->method("test2")
             ->hasNotParams()
-            ->count(0);
+            ->called(0);
 
     }, ["Arg 1"]);
 
-    $mock->test("Hello");
-    $service = new UserService($mock);
+    //$mock->test("Hello");
+    //$service = new UserService($mock);
 
-    $validPool = new ValidationChain("dwqdqw");
-    $validPool
-        ->isEmail()
-        ->length(1, 200)
-        ->endsWith(".com");
-    $isValid = $validPool->isValid();
-
-    $inst->validate("yourTestValue", function(ValidationChain $inst) {
+    $inst->validate("yourTestValue", function(Validate $inst) {
         $inst->isBool();
         $inst->isInt();
         $inst->isJson();
@@ -264,5 +275,4 @@ $unit->group("Unitary test 2", function (TestCase $inst) {
 
 });
 
-*/
-
+ */

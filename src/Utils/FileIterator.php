@@ -2,15 +2,16 @@
 
 declare(strict_types=1);
 
-namespace MaplePHP\Unitary;
+namespace MaplePHP\Unitary\Utils;
 
 use Closure;
 use Exception;
-use RuntimeException;
 use MaplePHP\Blunder\Handlers\CliHandler;
 use MaplePHP\Blunder\Run;
+use MaplePHP\Unitary\Unit;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use RuntimeException;
 use SplFileInfo;
 
 final class FileIterator
@@ -35,7 +36,7 @@ final class FileIterator
         $files = $this->findFiles($directory);
         if (empty($files)) {
             /* @var string static::PATTERN */
-            throw new RuntimeException("No files found matching the pattern \"" . (static::PATTERN ?? "") . "\" in directory \"$directory\" ");
+            throw new RuntimeException("No files found matching the pattern \"" . (FileIterator::PATTERN ?? "") . "\" in directory \"$directory\" ");
         } else {
             foreach ($files as $file) {
                 extract($this->args, EXTR_PREFIX_SAME, "wddx");
@@ -74,7 +75,7 @@ final class FileIterator
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir));
 
         /** @var string $pattern */
-        $pattern = static::PATTERN;
+        $pattern = FileIterator::PATTERN;
         foreach ($iterator as $file) {
             if (($file instanceof SplFileInfo) && fnmatch($pattern, $file->getFilename()) &&
                 (isset($this->args['path']) || !str_contains($file->getPathname(), DIRECTORY_SEPARATOR . "vendor" . DIRECTORY_SEPARATOR))) {
@@ -120,7 +121,7 @@ final class FileIterator
         $file = $this->getNaturalPath($file);
         foreach ($exclArr as $excl) {
             /* @var string $excl */
-            $relativeExclPath = $this->getNaturalPath($relativeDir . DIRECTORY_SEPARATOR . (string)$excl);
+            $relativeExclPath = $this->getNaturalPath($relativeDir . DIRECTORY_SEPARATOR . $excl);
             if (fnmatch($relativeExclPath, $file)) {
                 return true;
             }

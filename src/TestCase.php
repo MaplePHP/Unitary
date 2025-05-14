@@ -4,23 +4,23 @@ declare(strict_types=1);
 
 namespace MaplePHP\Unitary;
 
+use BadMethodCallException;
+use Closure;
+use ErrorException;
+use Exception;
 use MaplePHP\Blunder\BlunderErrorException;
 use MaplePHP\DTO\Format\Str;
 use MaplePHP\DTO\Traverse;
-use MaplePHP\Unitary\Mocker\MethodPool;
-use MaplePHP\Unitary\Mocker\Mocker;
-use MaplePHP\Unitary\Mocker\MockerController;
+use MaplePHP\Unitary\Mocker\MethodRegistry;
+use MaplePHP\Unitary\Mocker\MockBuilder;
+use MaplePHP\Unitary\Mocker\MockController;
+use MaplePHP\Unitary\TestUtils\ExecutionWrapper;
 use MaplePHP\Validate\Validator;
-use MaplePHP\Validate\ValidationChain;
 use ReflectionClass;
-use ReflectionMethod;
-use Throwable;
-use Exception;
 use ReflectionException;
+use ReflectionMethod;
 use RuntimeException;
-use BadMethodCallException;
-use ErrorException;
-use Closure;
+use Throwable;
 
 /**
  * @template T of object
@@ -28,23 +28,28 @@ use Closure;
 final class TestCase
 {
     private mixed $value;
-    private ?string $message;
+    private TestConfig $config;
+    private ?string $message = null;
     private array $test = [];
     private int $count = 0;
     private ?Closure $bind = null;
     private ?string $errorMessage = null;
     private array $deferredValidation = [];
-    /** @var Mocker<T> */
-    private Mocker $mocker;
+    /** @var MockBuilder<T> */
+    private MockBuilder $mocker;
 
     /**
      * Initialize a new TestCase instance with an optional message.
      *
-     * @param string|null $message A message to associate with the test case.
+     * @param TestConfig|string|null $config
      */
-    public function __construct(?string $message = null)
+    public function __construct(TestConfig|string|null $config = null)
     {
-        $this->message = $message;
+        if (!($config instanceof TestConfig)) {
+            $this->config = new TestConfig($config);
+        } else {
+            $this->config = $config;
+        }
     }
 
     /**
@@ -64,6 +69,7 @@ final class TestCase
      * @param self $row
      * @return array
      * @throws BlunderErrorException
+     * @throws Throwable
      */
     public function dispatchTest(self &$row): array
     {
@@ -101,13 +107,13 @@ final class TestCase
      * Add a test unit validation using the provided expectation and validation logic
      *
      * @param mixed $expect The expected value
-     * @param Closure(ValidationChain, mixed): bool $validation The validation logic
+     * @param Closure(Expect, mixed): bool $validation The validation logic
      * @return $this
      * @throws ErrorException
      */
     public function validate(mixed $expect, Closure $validation): self
     {
-        $this->expectAndValidate($expect, function (mixed $value, ValidationChain $inst) use ($validation) {
+        $this->expectAndValidate($expect, function (mixed $value, Expect $inst) use ($validation) {
             return $validation($inst, new Traverse($value));
         }, $this->errorMessage);
 
@@ -208,11 +214,11 @@ final class TestCase
      *
      * @param string $class
      * @param array $args
-     * @return TestWrapper
+     * @return ExecutionWrapper
      */
-    public function wrap(string $class, array $args = []): TestWrapper
+    public function wrap(string $class, array $args = []): ExecutionWrapper
     {
-        return new class ($class, $args) extends TestWrapper {
+        return new class ($class, $args) extends ExecutionWrapper {
             public function __construct(string $class, array $args = [])
             {
                 parent::__construct($class, $args);
@@ -228,7 +234,7 @@ final class TestCase
     public function withMock(string $class, array $args = []): self
     {
         $inst = clone $this;
-        $inst->mocker = new Mocker($class, $args);
+        $inst->mocker = new MockBuilder($class, $args);
         return $inst;
     }
 
@@ -252,7 +258,6 @@ final class TestCase
         }
     }
 
-
     /**
      * Creates and returns an instance of a dynamically generated mock class.
      *
@@ -269,12 +274,11 @@ final class TestCase
      */
     public function mock(string $class, ?Closure $validate = null, array $args = [])
     {
-        $this->mocker = new Mocker($class, $args);
+        $this->mocker = new MockBuilder($class, $args);
         return $this->buildMock($validate);
     }
 
-
-    public function getMocker(): Mocker
+    public function getMocker(): MockBuilder
     {
         return $this->mocker;
     }
@@ -286,14 +290,14 @@ final class TestCase
      * to the method pool, and schedules the validation to run later via deferValidation.
      * This allows for mock expectations to be defined and validated after the test execution.
      *
-     * @param Mocker $mocker The mocker instance containing the mock object
+     * @param MockBuilder $mocker The mocker instance containing the mock object
      * @param Closure $validate The closure containing validation rules
      * @return void
      * @throws ErrorException
      */
-    private function prepareValidation(Mocker $mocker, Closure $validate): void
+    private function prepareValidation(MockBuilder $mocker, Closure $validate): void
     {
-        $pool = new MethodPool($mocker);
+        $pool = new MethodRegistry($mocker);
         $fn = $validate->bindTo($pool);
         if ($fn === null) {
             throw new ErrorException("A callable Closure could not be bound to the method pool!");
@@ -310,16 +314,16 @@ final class TestCase
      * against the expectations defined in the method pool. The validation results are collected
      * and returned as an array of errors indexed by method name.
      *
-     * @param Mocker $mocker The mocker instance containing the mocked class
-     * @param MethodPool $pool The pool containing method expectations
+     * @param MockBuilder $mocker The mocker instance containing the mocked class
+     * @param MethodRegistry $pool The pool containing method expectations
      * @return array An array of validation errors indexed by method name
      * @throws ErrorException
      * @throws Exception
      */
-    private function runValidation(Mocker $mocker, MethodPool $pool): array
+    private function runValidation(MockBuilder $mocker, MethodRegistry $pool): array
     {
         $error = [];
-        $data = MockerController::getData($mocker->getMockedClassName());
+        $data = MockController::getData($mocker->getMockedClassName());
         if (!is_array($data)) {
             throw new ErrorException("Could not get data from mocker!");
         }
@@ -339,11 +343,11 @@ final class TestCase
      * and complex array validations.
      *
      * @param object $row The method calls data to validate
-     * @param MethodPool $pool The pool containing validation expectations
+     * @param MethodRegistry $pool The pool containing validation expectations
      * @return array Array of validation results containing property comparisons
      * @throws ErrorException
      */
-    private function validateRow(object $row, MethodPool $pool): array
+    private function validateRow(object $row, MethodRegistry $pool): array
     {
         $item = $pool->get((string)($row->name ?? ""));
         if (!$item) {
@@ -360,7 +364,7 @@ final class TestCase
             if(!property_exists($row, $property)) {
                 throw new ErrorException(
                     "The mock method meta data property name '$property' is undefined in mock object. " .
-                    "To resolve this either use MockerController::buildMethodData() to add the property dynamically " .
+                    "To resolve this either use MockController::buildMethodData() to add the property dynamically " .
                     "or define a default value through Mocker::addMockMetadata()"
                 );
             }
@@ -396,11 +400,11 @@ final class TestCase
      *
      * @param array $value The validation configuration array
      * @param mixed $currentValue The value to validate
-     * @return ValidationChain The validation chain instance with applied validations
+     * @return Expect The validation chain instance with applied validations
      */
-    private function validateArrayValue(array $value, mixed $currentValue): ValidationChain
+    private function validateArrayValue(array $value, mixed $currentValue): Expect
     {
-        $validPool = new ValidationChain($currentValue);
+        $validPool = new Expect($currentValue);
         foreach ($value as $method => $args) {
             if (is_int($method)) {
                 foreach ($args as $methodB => $argsB) {
@@ -422,12 +426,12 @@ final class TestCase
     /**
      * Create a comparison from a validation collection
      *
-     * @param ValidationChain $validPool
+     * @param Expect $validPool
      * @param array $value
      * @param array $currentValue
      * @return void
      */
-    protected function compareFromValidCollection(ValidationChain $validPool, array &$value, array &$currentValue): void
+    protected function compareFromValidCollection(Expect $validPool, array &$value, array &$currentValue): void
     {
         $new = [];
         $error = $validPool->getError();
@@ -555,13 +559,23 @@ final class TestCase
     }
 
     /**
+     * Get the test configuration
+     *
+     * @return TestConfig
+     */
+    public function getConfig(): TestConfig
+    {
+        return $this->config;
+    }
+
+    /**
      * Get user added message
      *
      * @return string|null
      */
     public function getMessage(): ?string
     {
-        return $this->message;
+        return $this->config->message;
     }
 
     /**
@@ -583,7 +597,7 @@ final class TestCase
     protected function buildClosureTest(Closure $validation): array
     {
         //$bool = false;
-        $validPool = new ValidationChain($this->value);
+        $validPool = new Expect($this->value);
         $validation = $validation->bindTo($validPool);
 
         $error = [];
@@ -595,8 +609,8 @@ final class TestCase
             }
         }
 
-        if ($this->message === null) {
-            throw new RuntimeException("When testing with closure the third argument message is required");
+        if ($this->getMessage() === null) {
+            throw new RuntimeException("You need to specify a \"message\" in first parameter of ->group(string|TestConfig \$message, ...).");
         }
 
         return $error;

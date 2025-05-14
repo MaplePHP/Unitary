@@ -20,7 +20,7 @@ use ReflectionNamedType;
 use ReflectionUnionType;
 use RuntimeException;
 
-final class Mocker
+final class MockBuilder
 {
     protected ReflectionClass $reflection;
     protected string $className;
@@ -192,10 +192,10 @@ final class Mocker
     /**
      * @param array $types
      * @param mixed $method
-     * @param MethodItem|null $methodItem
+     * @param MockedMethod|null $methodItem
      * @return string
      */
-    protected function getReturnValue(array $types, mixed $method, ?MethodItem $methodItem = null): string
+    protected function getReturnValue(array $types, mixed $method, ?MockedMethod $methodItem = null): string
     {
         // Will overwrite the auto generated value
         if ($methodItem && $methodItem->hasReturn()) {
@@ -230,7 +230,7 @@ final class Mocker
             $this->methodList[] = $methodName;
 
             // The MethodItem contains all items that are validatable
-            $methodItem = MethodPool::getMethod($this->getClassName(), $methodName);
+            $methodItem = MethodRegistry::getMethod($this->getClassName(), $methodName);
             if($methodItem && $methodItem->keepOriginal) {
                 continue;
             }
@@ -260,7 +260,7 @@ final class Mocker
                 throw new RuntimeException('JSON encoding failed: ' . json_last_error_msg(), json_last_error());
             }
 
-            MockerController::getInstance()->buildMethodData($info);
+            MockController::getInstance()->buildMethodData($info);
             if ($methodItem) {
                 $returnValue = $this->generateWrapperReturn($methodItem->getWrap(), $methodName, $returnValue);
             }
@@ -269,8 +269,8 @@ final class Mocker
             $overrides .= "
                 $modifiers function $methodName($paramList){$returnType}
                 {
-                    \$obj = \\MaplePHP\\Unitary\\Mocker\\MockerController::getInstance()->buildMethodData('$safeJson', true);
-                    \$data = \\MaplePHP\\Unitary\\Mocker\\MockerController::getDataItem(\$obj->mocker, \$obj->name);
+                    \$obj = \\MaplePHP\\Unitary\\Mocker\\MockController::getInstance()->buildMethodData('$safeJson', true);
+                    \$data = \\MaplePHP\\Unitary\\Mocker\\MockController::getDataItem(\$obj->mocker, \$obj->name);
                     {$returnValue}
                 }
                 ";
@@ -289,7 +289,7 @@ final class Mocker
      */
     protected function generateWrapperReturn(?Closure $wrapper, string $methodName, string $returnValue): string
     {
-        MockerController::addData((string)$this->mockClassName, $methodName, 'wrapper', $wrapper);
+        MockController::addData((string)$this->mockClassName, $methodName, 'wrapper', $wrapper);
         $return = ($returnValue) ? "return " : "";
         return "
             if (isset(\$data->wrapper) && \$data->wrapper instanceof \\Closure) {

@@ -9,13 +9,13 @@
  *              Don't delete this comment, it's part of the license.
  */
 
-namespace MaplePHP\Unitary;
+namespace MaplePHP\Unitary\TestUtils;
 
 use Closure;
 use Exception;
 use MaplePHP\Container\Reflection;
 
-abstract class TestWrapper
+abstract class ExecutionWrapper
 {
     protected Reflection $ref;
     protected object $instance;
@@ -38,7 +38,7 @@ abstract class TestWrapper
     }
 
     /**
-     * Will bind Closure to class instance and directly return the Closure
+     * Will bind Closure to a class instance and directly return the Closure
      *
      * @param Closure $call
      * @return Closure

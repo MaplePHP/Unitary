@@ -151,10 +151,10 @@ then you can just tell Unitary how those failed methods should load.
 
 ```php
 use MaplePHP\Validate\ValidationChain;
-use \MaplePHP\Unitary\Mocker\MethodPool;
+use \MaplePHP\Unitary\Mocker\MethodRegistry;
 
 $unit->group("Testing user service", function (TestCase $inst) {
-    $mock = $inst->mock(Mailer::class, function (MethodPool $pool) use($inst) {
+    $mock = $inst->mock(Mailer::class, function (MethodRegistry $pool) use($inst) {
         // Quick way to tell Unitary that this method should return 'john.doe'
         $pool->method("getFromEmail")->willReturn('john.doe@gmail.com');
 
@@ -179,10 +179,10 @@ What is really cool is that you can also use Unitary mocker to make sure consist
 validate that the method is built and loaded correctly.
 
 ```php
-use \MaplePHP\Unitary\Mocker\MethodPool;
+use \MaplePHP\Unitary\Mocker\MethodRegistry;
 
 $unit->group("Unitary test", function (TestCase $inst) {
-    $mock = $inst->mock(Mailer::class, function (MethodPool $pool) use($inst) {
+    $mock = $inst->mock(Mailer::class, function (MethodRegistry $pool) use($inst) {
         $pool->method("addFromEmail")
             ->isPublic()
             ->hasDocComment()
@@ -246,7 +246,7 @@ php vendor/bin/unitary --show=b0620ca8ef6ea7598eaed56a530b1983
 You can also mark a test case to run manually, excluding it from the main test batch.
 
 ```php
-$unit->manual('maplePHPRequest')->case("MaplePHP Request URI path test", function() {
+$unit->hide('maplePHPRequest')->case("MaplePHP Request URI path test", function() {
     ...
 });
 ```

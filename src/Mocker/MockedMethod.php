@@ -4,14 +4,14 @@ namespace MaplePHP\Unitary\Mocker;
 
 use BadMethodCallException;
 use Closure;
-use MaplePHP\Unitary\TestWrapper;
+use MaplePHP\Unitary\TestUtils\ExecutionWrapper;
 
 /**
  * @psalm-suppress PossiblyUnusedProperty
  */
-final class MethodItem
+final class MockedMethod
 {
-    private ?Mocker $mocker;
+    private ?MockBuilder $mocker;
     public mixed $return = null;
     public int|array|null $called = null;
 
@@ -37,7 +37,7 @@ final class MethodItem
     protected bool $hasReturn = false;
     protected ?Closure $wrapper = null;
 
-    public function __construct(?Mocker $mocker = null)
+    public function __construct(?MockBuilder $mocker = null)
     {
         $this->mocker = $mocker;
     }
@@ -57,7 +57,7 @@ final class MethodItem
         }
 
         $inst = $this;
-        $wrap = new class ($this->mocker->getClassName(), $this->mocker->getClassArgs()) extends TestWrapper {
+        $wrap = new class ($this->mocker->getClassName(), $this->mocker->getClassArgs()) extends ExecutionWrapper {
             public function __construct(string $class, array $args = [])
             {
                 parent::__construct($class, $args);

@@ -21,7 +21,7 @@ class DataTypeMock
     private array $defaultArguments = [];
 
     /**
-     * @var array|null Cache of stringified data type values
+     * @var array|null Cache of stringifies data type values
      */
     private ?array $types = null;
 
@@ -110,7 +110,7 @@ class DataTypeMock
 
     /**
      * Sets a custom default value for a specific data type with a binding key.
-     * Creates a new instance with the bound value stored in bindArguments array.
+     * Creates a new instance with the bound value stored in the bindArguments array.
      *
      * @param string $key The binding key to store the value under
      * @param string $dataType The data type to set the custom default for

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MaplePHP\Unitary;
+namespace MaplePHP\Unitary\Utils;
 
-class TestMem
+class Performance
 {
     private float $startTime;
     private int $startMemory;

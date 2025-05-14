@@ -30,7 +30,7 @@ class TestUnit
     }
 
     /**
-     * Check if value should be presented
+     * Check if the value should be presented
      *
      * @return bool
      */
@@ -45,7 +45,7 @@ class TestUnit
      * @param mixed $value
      * @return void
      */
-    public function setTestValue(mixed $value)
+    public function setTestValue(mixed $value): void
     {
         $this->value = $value;
         $this->hasValue = true;
@@ -129,7 +129,6 @@ class TestUnit
         return $this;
     }
 
-
     /**
      * Get the code line from a backtrace
      *
@@ -151,7 +150,7 @@ class TestUnit
     }
 
     /**
-     * Get failed test count
+     * Get a failed test count
      *
      * @return int
      */
@@ -161,7 +160,7 @@ class TestUnit
     }
 
     /**
-     * Get test message
+     * Get a test message
      *
      * @return string|null
      */
@@ -171,7 +170,7 @@ class TestUnit
     }
 
     /**
-     * Get if test is valid
+     * Get if the test is valid
      *
      * @return bool
      */
@@ -242,5 +241,4 @@ class TestUnit
         $format = new Str($value);
         return (string)$format->excerpt($length)->get();
     }
-
 }

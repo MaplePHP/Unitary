@@ -11,7 +11,7 @@ use MaplePHP\Http\Environment;
 use MaplePHP\Http\ServerRequest;
 use MaplePHP\Http\Uri;
 use MaplePHP\Prompts\Command;
-use MaplePHP\Unitary\FileIterator;
+use MaplePHP\Unitary\Utils\FileIterator;
 
 $command = new Command();
 $env = new Environment();

@@ -7,10 +7,12 @@ namespace MaplePHP\Unitary;
 use Closure;
 use ErrorException;
 use Exception;
+use MaplePHP\Blunder\BlunderErrorException;
 use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Prompts\Themes\Blocks;
 use MaplePHP\Unitary\Handlers\HandlerInterface;
+use MaplePHP\Unitary\Utils\Performance;
 use RuntimeException;
 
 class Unit
@@ -21,12 +23,13 @@ class Unit
     private int $index = 0;
     private array $cases = [];
     private bool $skip = false;
+    private string $select = "";
     private bool $executed = false;
     private static array $headers = [];
     private static ?Unit $current;
-    private static array $manual = [];
     public static int $totalPassedTests = 0;
     public static int $totalTests = 0;
+
 
 
     /**
@@ -49,7 +52,9 @@ class Unit
     }
 
     /**
-     * Skip you can add this if you want to turn of validation of a unit case
+     * This will skip "ALL" tests in the test file
+     * If you want to skip a specific test, use the TestConfig class instead
+     *
      * @param bool $skip
      * @return $this
      */
@@ -60,19 +65,28 @@ class Unit
     }
 
     /**
-     * Make script manually callable
+     * WIll hide the test case from the output but show it as a warning
+     *
      * @param string $key
      * @return $this
      */
-    public function manual(string $key): self
+    public function select(string $key): self
     {
-        if (isset(self::$manual[$key])) {
-            $file = (string)(self::$headers['file'] ?? "none");
-            throw new RuntimeException("The manual key \"$key\" already exists.
-                Please set a unique key in the " . $file. " file.");
-        }
-        self::$manual[$key] = self::$headers['checksum'];
-        return $this->skip(true);
+        $this->select = $key;
+        return $this;
+    }
+
+    /**
+     * DEPRECATED: Use TestConfig::setSelect instead
+     * See documentation for more information
+     *
+     * @param string|null $key
+     * @return void
+     */
+    public function manual(?string $key = null): void
+    {
+        throw new RuntimeException("Manual method has been deprecated, use TestConfig::setSelect instead. " .
+            "See documentation for more information.");
     }
 
     /**
@@ -140,11 +154,11 @@ class Unit
     /**
      * Add a test unit/group
      *
-     * @param string $message
+     * @param string|TestConfig $message
      * @param Closure(TestCase):void $callback
      * @return void
      */
-    public function group(string $message, Closure $callback): void
+    public function group(string|TestConfig $message, Closure $callback): void
     {
         $testCase = new TestCase($message);
         $testCase->bind($callback);
@@ -160,7 +174,7 @@ class Unit
 
     public function performance(Closure $func, ?string $title = null): void
     {
-        $start = new TestMem();
+        $start = new Performance();
         $func = $func->bindTo($this);
         if ($func !== null) {
             $func($this);
@@ -192,13 +206,16 @@ class Unit
      *
      * @return bool
      * @throws ErrorException
+     * @throws BlunderErrorException
+     * @throws \Throwable
      */
     public function execute(): bool
     {
 
         $this->help();
 
-        if ($this->executed || !$this->createValidate()) {
+        $show = self::getArgs('show') === (string)self::$headers['checksum'];
+        if ($this->executed || $this->skip) {
             return false;
         }
 
@@ -217,7 +234,20 @@ class Unit
             if ($row->hasFailed()) {
                 $flag = $this->command->getAnsi()->style(['redBg', 'brightWhite'], " FAIL ");
             }
+            if ($row->getConfig()->skip) {
+                $color = "yellow";
+                $flag = $this->command->getAnsi()->style(['yellowBg', 'black'], " WARN ");
+            }
 
+            // Will show test by hash or key, will open warn tests
+            if((self::getArgs('show') !== false && !$show) && $row->getConfig()->select !== self::getArgs('show')) {
+                continue;
+            }
+            if($row->getConfig()->select === self::getArgs('show')) {
+                $show = $row->getConfig()->select === self::getArgs('show');
+            }
+
+            // Success, no need to try to show errors, continue with next test
             if ($errArg !== false && !$row->hasFailed()) {
                 continue;
             }
@@ -230,7 +260,7 @@ class Unit
                 $this->command->getAnsi()->style(["bold", $color], (string)$row->getMessage())
             );
 
-            if (isset($tests)) {
+            if (isset($tests) && ($show || !$row->getConfig()->skip)) {
                 foreach ($tests as $test) {
                     if (!($test instanceof TestUnit)) {
                         throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestUnit.");
@@ -240,7 +270,7 @@ class Unit
                         $msg = (string)$test->getMessage();
                         $this->command->message("");
                         $this->command->message(
-                            $this->command->getAnsi()->style(["bold", "brightRed"], "Error: ") .
+                            $this->command->getAnsi()->style(["bold", $color], "Error: ") .
                             $this->command->getAnsi()->bold($msg)
                         );
                         $this->command->message("");
@@ -266,7 +296,7 @@ class Unit
                                 $failedMsg = "   " .$title . ((!$unit['valid']) ? " → failed" : "");
                                 $this->command->message(
                                     $this->command->getAnsi()->style(
-                                        ((!$unit['valid']) ? "brightRed" : null),
+                                        ((!$unit['valid']) ? $color : null),
                                         $failedMsg
                                     )
                                 );
@@ -275,7 +305,7 @@ class Unit
                                     $lengthB = (strlen($compare) + strlen($failedMsg) - 8);
                                     $comparePad = str_pad($compare, $lengthB, " ", STR_PAD_LEFT);
                                     $this->command->message(
-                                        $this->command->getAnsi()->style("brightRed", $comparePad)
+                                        $this->command->getAnsi()->style($color, $comparePad)
                                     );
                                 }
                             }
@@ -292,13 +322,21 @@ class Unit
             self::$totalTests += $row->getTotal();
 
             $checksum = (string)(self::$headers['checksum'] ?? "");
+
+            if ($row->getConfig()->select) {
+                $checksum .= " (" . $row->getConfig()->select . ")";
+            }
+
             $this->command->message("");
 
-            $this->command->message(
-                $this->command->getAnsi()->bold("Passed: ") .
+            $footer = $this->command->getAnsi()->bold("Passed: ") .
                 $this->command->getAnsi()->style([$color], $row->getCount() . "/" . $row->getTotal()) .
-                $this->command->getAnsi()->style(["italic", "grey"], " - ". $checksum)
-            );
+                $this->command->getAnsi()->style(["italic", "grey"], " - ". $checksum);
+            if (!$show && $row->getConfig()->skip) {
+                $footer = $this->command->getAnsi()->style(["italic", "grey"], $checksum);
+            }
+
+            $this->command->message($footer);
         }
         $this->output .= ob_get_clean();
 
@@ -340,24 +378,6 @@ class Unit
     {
         throw new RuntimeException("The validate() method must be called inside a group() method! " .
             "Move this validate() call inside your group() callback function.");
-    }
-
-    /**
-     * Validate before execute test
-     *
-     * @return bool
-     */
-    private function createValidate(): bool
-    {
-        $args = (array)(self::$headers['args'] ?? []);
-        $manual = isset($args['show']) ? (string)$args['show'] : "";
-        if (isset($args['show'])) {
-            return !((self::$manual[$manual] ?? "") !== self::$headers['checksum'] && $manual !== self::$headers['checksum']);
-        }
-        if ($this->skip) {
-            return false;
-        }
-        return true;
     }
 
     /**
