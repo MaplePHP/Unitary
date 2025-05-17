@@ -1,6 +1,6 @@
 # MaplePHP - Unitary
 
-PHP Unitary is a **user-friendly** and robust unit testing library designed to make writing and running tests for your PHP code easy. With an intuitive CLI interface that works on all platforms and robust validation options, Unitary makes it easy for you as a developer to ensure your code is reliable and functions as intended.
+PHP Unitary is a **user-friendly** and robust unit testing framework designed to make writing and running tests for your PHP code easy. With an intuitive CLI interface that works on all platforms and robust validation options, Unitary makes it easy for you as a developer to ensure your code is reliable and functions as intended.
 
 ![Prompt demo](http://wazabii.se/github-assets/maplephp-unitary.png)
 _Do you like the CLI theme? [Download it here](https://github.com/MaplePHP/DarkBark)_

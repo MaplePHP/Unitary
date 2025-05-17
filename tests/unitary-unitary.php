@@ -1,10 +1,11 @@
 
 <?php
 
+use MaplePHP\DTO\Traverse;
 use MaplePHP\Http\Request;
 use MaplePHP\Http\Response;
 use MaplePHP\Http\Stream;
-use MaplePHP\Unitary\{TestCase, TestConfig, Expect, Unit};
+use MaplePHP\Unitary\{Mocker\MethodRegistry, Mocker\MockedMethod, TestCase, TestConfig, Expect, Unit};
 
 class Mailer
 {
@@ -19,7 +20,7 @@ class Mailer
 
     public function send()
     {
-        echo $this->sendEmail($this->getFromEmail());
+        $this->sendEmail($this->getFromEmail());
     }
 
     public function sendEmail(string $email, string $name = "daniel"): string
@@ -91,48 +92,33 @@ class UserService {
 $unit = new Unit();
 
 
-$config = TestConfig::make("This is a test message")
-    ->setSkip()
-    ->setSelect('unitary');
-
-$unit->group($config, function (TestCase $case) use($unit) {
-
-    $request = new Request("HSHHS", "https://example.com:443/?cat=25&page=1622");
-
-    $case->validate($request->getMethod(), function(Expect $inst) {
-        $inst->isRequestMethod();
-    });
-
-    $case->validate($request->getPort(), function(Expect $inst) {
-        $inst->isEqualTo(443);
-    });
-
-    $case->validate($request->getUri()->getQuery(), function(Expect $inst) {
-        $inst->hasQueryParam("cat");
-        $inst->hasQueryParam("page", 1622);
-    });
-});
-
-
-
-$unit->group("Advanced App Response Test", function (TestCase $case) use($unit) {
+$unit->group(TestConfig::make("Test 1")->setName("unitary")->setSkip(), function (TestCase $case) use($unit) {
 
     $stream = $case->mock(Stream::class);
     $response = new Response($stream);
 
     $case->validate($response->getBody()->getContents(), function(Expect $inst) {
+        assert(1 === 2, "Lore");
+        $inst->notHasResponse();
+    });
+});
+
+$unit->group("Advanced App Response Test 2", function (TestCase $case) use($unit) {
+    $stream = $case->mock(Stream::class);
+    $response = new Response($stream);
+    $case->validate($response->getBody()->getContents(), function(Expect $inst) {
         $inst->hasResponse();
     });
 });
+
+
 /*
 
 
-
-
 $unit->group("Advanced Mailer Test", function (TestCase $case) use($unit) {
-    $mail = $case->mock(Mailer::class, function (MethodPool $pool) {
-        $pool->method("send")->keepOriginal();
-        $pool->method("sendEmail")->keepOriginal();
+    $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
+        $method->method("send")->keepOriginal();
+        $method->method("sendEmail")->keepOriginal();
     });
     $mail->send();
 });
@@ -141,12 +127,12 @@ $unit->group("Advanced App Response Test", function (TestCase $case) use($unit) 
 
 
     // Quickly mock the Stream class
-    $stream = $case->mock(Stream::class, function (MethodPool $pool) {
-        $pool->method("getContents")
+    $stream = $case->mock(Stream::class, function (MethodRegistry $method) {
+        $method->method("getContents")
             ->willReturn('{"test":"test"}')
             ->calledAtLeast(1);
 
-        $pool->method("fopen")->isPrivate();
+        $method->method("fopen")->isPrivate();
     });
     // Mock with configuration
     //
@@ -169,43 +155,42 @@ $unit->group("Advanced App Response Test", function (TestCase $case) use($unit) 
     // parameters and return values
     //print_r(\MaplePHP\Unitary\TestUtils\DataTypeMock::inst()->getMockValues());
 
-    $response = $case->buildMock(function (MethodPool $pool) use($stream) {
+    $response = $case->buildMock(function (MethodRegistry $method) use($stream) {
         // Even tho Unitary mocker tries to automatically mock the return type of methods,
         // it might fail if the return type is an expected Class instance, then you will
         // need to manually set the return type to tell Unitary mocker what class to expect,
         // which is in this example a class named "Stream".
         // You can do this by either passing the expected class directly into the `return` method
         // or even better by mocking the expected class and then passing the mocked class.
-        $pool->method("getBody")->willReturn($stream);
+        $method->method("getBody")->willReturn($stream);
     });
 
 
-    $case->validate($response->getBody()->getContents(), function(Validate $inst, Traverse $collection) {
+    $case->validate($response->getBody()->getContents(), function(Expect $inst) {
         $inst->isString();
         $inst->isJson();
-        return $collection->strJsonDecode()->test->valid("isString");
     });
 
-    $case->validate($response->getHeader("lorem"), function(Validate $inst) {
+    $case->validate($response->getHeader("lorem"), function(Expect $inst) {
         // Validate against the new default array item value
         // If we weren't overriding the default the array would be ['item1', 'item2', 'item3']
         $inst->isInArray(["myCustomMockArrayItem"]);
     });
 
-    $case->validate($response->getStatusCode(), function(Validate $inst) {
+    $case->validate($response->getStatusCode(), function(Expect $inst) {
         // Will validate to the default int data type set above
         // and bounded to "getStatusCode" method
         $inst->isHttpSuccess();
     });
 
-    $case->validate($response->getProtocolVersion(), function(Validate $inst) {
+    $case->validate($response->getProtocolVersion(), function(Expect $inst) {
         // MockedValue is the default value that the mocked class will return
         // if you do not specify otherwise, either by specify what the method should return
         // or buy overrides the default mocking data type values.
         $inst->isEqualTo("MockedValue");
     });
 
-    $case->validate($response->getBody(), function(Validate $inst) {
+    $case->validate($response->getBody(), function(Expect $inst) {
         $inst->isInstanceOf(Stream::class);
     });
 
@@ -215,29 +200,26 @@ $unit->group("Advanced App Response Test", function (TestCase $case) use($unit) 
 
 
 $unit->group("Mailer test", function (TestCase $inst) use($unit) {
-    $mock = $inst->mock(Mailer::class, function (MethodPool $pool) use($inst) {
-        $pool->method("addBCC")
+    $mock = $inst->mock(Mailer::class, function (MethodRegistry $method) use($inst) {
+        $method->method("addBCC")
             ->paramIsType(0, "string")
             ->paramHasDefault(1, "Daniel")
             ->paramIsOptional(1)
             ->paramIsReference(1)
             ->called(1);
-
-        //$pool->method("test2")->called(1);
     });
     $mock->addBCC("World");
     $mock->test(1);
 });
 
 
-//$unit = new Unit();
 $unit->group("Unitary test 2", function (TestCase $inst) {
 
-    $mock = $inst->mock(Mailer::class, function (MethodPool $pool) use($inst) {
-        $pool->method("addFromEmail")
+    $mock = $inst->mock(Mailer::class, function (MethodRegistry $method) use($inst) {
+        $method->method("addFromEmail")
             ->isPublic();
 
-        $pool->method("addBCC")
+        $method->method("addBCC")
             ->isPublic()
             ->hasDocComment()
             ->hasParams()
@@ -248,7 +230,7 @@ $unit->group("Unitary test 2", function (TestCase $inst) {
             ->paramIsReference(1)
             ->called(0);
 
-        $pool->method("test")
+        $method->method("test")
             ->hasParams()
             ->paramIsSpread(0) // Same as ->paramIsVariadic()
             ->wrap(function($args) use($inst) {
@@ -256,7 +238,7 @@ $unit->group("Unitary test 2", function (TestCase $inst) {
             })
             ->called(1);
 
-        $pool->method("test2")
+        $method->method("test2")
             ->hasNotParams()
             ->called(0);
 
@@ -265,7 +247,7 @@ $unit->group("Unitary test 2", function (TestCase $inst) {
     //$mock->test("Hello");
     //$service = new UserService($mock);
 
-    $inst->validate("yourTestValue", function(Validate $inst) {
+    $inst->validate("yourTestValue", function(Expect $inst) {
         $inst->isBool();
         $inst->isInt();
         $inst->isJson();
@@ -276,3 +258,5 @@ $unit->group("Unitary test 2", function (TestCase $inst) {
 });
 
  */
+
+

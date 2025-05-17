@@ -23,7 +23,6 @@ class Unit
     private int $index = 0;
     private array $cases = [];
     private bool $skip = false;
-    private string $select = "";
     private bool $executed = false;
     private static array $headers = [];
     private static ?Unit $current;
@@ -65,25 +64,12 @@ class Unit
     }
 
     /**
-     * WIll hide the test case from the output but show it as a warning
-     *
-     * @param string $key
-     * @return $this
-     */
-    public function select(string $key): self
-    {
-        $this->select = $key;
-        return $this;
-    }
-
-    /**
      * DEPRECATED: Use TestConfig::setSelect instead
      * See documentation for more information
      *
-     * @param string|null $key
      * @return void
      */
-    public function manual(?string $key = null): void
+    public function manual(): void
     {
         throw new RuntimeException("Manual method has been deprecated, use TestConfig::setSelect instead. " .
             "See documentation for more information.");
@@ -211,17 +197,15 @@ class Unit
      */
     public function execute(): bool
     {
-
+        $this->template();
         $this->help();
-
-        $show = self::getArgs('show') === (string)self::$headers['checksum'];
         if ($this->executed || $this->skip) {
             return false;
         }
 
         // LOOP through each case
         ob_start();
-        foreach ($this->cases as $row) {
+        foreach ($this->cases as $index => $row) {
             if (!($row instanceof TestCase)) {
                 throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestCase.");
             }
@@ -229,6 +213,7 @@ class Unit
             $errArg = self::getArgs("errors-only");
             $row->dispatchTest($row);
             $tests = $row->runDeferredValidations();
+            $checksum = (self::$headers['checksum'] ?? "") . $index;
             $color = ($row->hasFailed() ? "brightRed" : "brightBlue");
             $flag = $this->command->getAnsi()->style(['blueBg', 'brightWhite'], " PASS ");
             if ($row->hasFailed()) {
@@ -236,21 +221,20 @@ class Unit
             }
             if ($row->getConfig()->skip) {
                 $color = "yellow";
-                $flag = $this->command->getAnsi()->style(['yellowBg', 'black'], " WARN ");
+                $flag = $this->command->getAnsi()->style(['yellowBg', 'black'], " SKIP ");
             }
 
-            // Will show test by hash or key, will open warn tests
-            if((self::getArgs('show') !== false && !$show) && $row->getConfig()->select !== self::getArgs('show')) {
+            $show = ($row->getConfig()->select === self::getArgs('show') || self::getArgs('show') === $checksum);
+            if((self::getArgs('show') !== false) && !$show) {
                 continue;
             }
-            if($row->getConfig()->select === self::getArgs('show')) {
-                $show = $row->getConfig()->select === self::getArgs('show');
-            }
 
-            // Success, no need to try to show errors, continue with next test
+            // Success, no need to try to show errors, continue with the next test
             if ($errArg !== false && !$row->hasFailed()) {
                 continue;
             }
+
+
 
             $this->command->message("");
             $this->command->message(
@@ -260,7 +244,7 @@ class Unit
                 $this->command->getAnsi()->style(["bold", $color], (string)$row->getMessage())
             );
 
-            if (isset($tests) && ($show || !$row->getConfig()->skip)) {
+            if (($show || !$row->getConfig()->skip)) {
                 foreach ($tests as $test) {
                     if (!($test instanceof TestUnit)) {
                         throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestUnit.");
@@ -290,7 +274,7 @@ class Unit
                                 $compare = "";
                                 if ($unit['compare']) {
                                     $expectedValue = array_shift($unit['compare']);
-                                    $compare = "Expected: {$expectedValue} | Actual: " . implode(":", $unit['compare']);
+                                    $compare = "Expected: $expectedValue | Actual: " . implode(":", $unit['compare']);
                                 }
 
                                 $failedMsg = "   " .$title . ((!$unit['valid']) ? " → failed" : "");
@@ -312,7 +296,7 @@ class Unit
                         }
                         if ($test->hasValue()) {
                             $this->command->message("");
-                            $this->command->message($this->command->getAnsi()->bold("Value: ") . $test->getReadValue());
+                            $this->command->message($this->command->getAnsi()->bold("Input value: ") . $test->getReadValue());
                         }
                     }
                 }
@@ -320,17 +304,18 @@ class Unit
 
             self::$totalPassedTests += $row->getCount();
             self::$totalTests += $row->getTotal();
-
-            $checksum = (string)(self::$headers['checksum'] ?? "");
-
             if ($row->getConfig()->select) {
                 $checksum .= " (" . $row->getConfig()->select . ")";
             }
-
             $this->command->message("");
 
-            $footer = $this->command->getAnsi()->bold("Passed: ") .
-                $this->command->getAnsi()->style([$color], $row->getCount() . "/" . $row->getTotal()) .
+            $passed = $this->command->getAnsi()->bold("Passed: ");
+            if ($row->getHasAssertError()) {
+                $passed .= $this->command->getAnsi()->style(["grey"], "N/A");
+            } else {
+                $passed .= $this->command->getAnsi()->style([$color], $row->getCount() . "/" . $row->getTotal());
+            }
+            $footer = $passed .
                 $this->command->getAnsi()->style(["italic", "grey"], " - ". $checksum);
             if (!$show && $row->getConfig()->skip) {
                 $footer = $this->command->getAnsi()->style(["italic", "grey"], $checksum);
@@ -343,15 +328,13 @@ class Unit
         if ($this->output) {
             $this->buildNotice("Note:", $this->output, 80);
         }
-        if ($this->handler !== null) {
-            $this->handler->execute();
-        }
+        $this->handler?->execute();
         $this->executed = true;
         return true;
     }
 
     /**
-     * Will reset the execute and stream if is a seekable stream
+     * Will reset the executing and stream if is a seekable stream
      *
      * @return bool
      */
@@ -400,7 +383,7 @@ class Unit
     }
 
     /**
-     * Make file path into a title
+     * Make a file path into a title
      * @param string $file
      * @param int $length
      * @param bool $removeSuffix
@@ -452,7 +435,7 @@ class Unit
     }
 
     /**
-     * Used to reset current instance
+     * Used to reset the current instance
      * @return void
      */
     public static function resetUnit(): void
@@ -461,7 +444,7 @@ class Unit
     }
 
     /**
-     * Used to check if instance is set
+     * Used to check if an instance is set
      * @return bool
      */
     public static function hasUnit(): bool
@@ -512,6 +495,37 @@ class Unit
     }
 
     /**
+     * Display a template for the Unitary testing tool
+     * Shows a basic template for the Unitary testing tool
+     * Only displays if --template argument is provided
+     *
+     * @return void
+     */
+    private function template(): void
+    {
+        if (self::getArgs("template") !== false) {
+
+            $blocks = new Blocks($this->command);
+            $blocks->addHeadline("\n--- Unitary template ---");
+            $blocks->addCode(
+                <<<'PHP'
+                use MaplePHP\Unitary\{Unit, TestCase, TestConfig, Expect};
+                
+                $unit = new Unit();
+                $unit->group("Your test subject", function (TestCase $case) {
+                
+                    $case->validate("Your test value", function(Expect $valid) {
+                        $valid->isString();
+                    });
+                    
+                });
+                PHP
+            );
+            exit(0);
+        }
+    }
+
+    /**
      * Display help information for the Unitary testing tool
      * Shows usage instructions, available options and examples
      * Only displays if --help argument is provided
@@ -523,21 +537,21 @@ class Unit
         if (self::getArgs("help") !== false) {
 
             $blocks = new Blocks($this->command);
-            $blocks->addHeadline("Unitary - Help");
+            $blocks->addHeadline("\n--- Unitary Help ---");
             $blocks->addSection("Usage", "php vendor/bin/unitary [options]");
 
             $blocks->addSection("Options", function(Blocks $inst) {
-                $inst = $inst
+                return $inst
                     ->addOption("help", "Show this help message")
                     ->addOption("show=<hash|name>", "Run a specific test by hash or manual test name")
                     ->addOption("errors-only", "Show only failing tests and skip passed test output")
+                    ->addOption("template", "Will give you a boilerplate test code")
                     ->addOption("path=<path>", "Specify test path (absolute or relative)")
                     ->addOption("exclude=<patterns>", "Exclude files or directories (comma-separated, relative to --path)");
-                return $inst;
             });
 
             $blocks->addSection("Examples", function(Blocks $inst) {
-                $inst = $inst
+                return $inst
                     ->addExamples(
                         "php vendor/bin/unitary",
                         "Run all tests in the default path (./tests)"
@@ -548,14 +562,15 @@ class Unit
                         "php vendor/bin/unitary --errors-only",
                         "Run all tests in the default path (./tests)"
                     )->addExamples(
-                        "php vendor/bin/unitary --show=maplePHPRequest",
+                        "php vendor/bin/unitary --show=YourNameHere",
                         "Run a manually named test case"
+                    )->addExamples(
+                        "php vendor/bin/unitary --template",
+                        "Run a and will give you template code for a new test"
                     )->addExamples(
                         'php vendor/bin/unitary --path="tests/" --exclude="tests/legacy/*,*/extras/*"',
                         'Run all tests under "tests/" excluding specified directories'
-                    )
-                ;
-                return $inst;
+                    );
             });
             exit(0);
         }

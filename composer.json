@@ -31,6 +31,9 @@
     "maplephp/prompts": "^1.0"
   },
   "autoload": {
+    "files": [
+      "src/Setup/assert-polyfill.php"
+    ],
     "psr-4": {
       "MaplePHP\\Unitary\\": "src"
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MaplePHP\Unitary;
 
+use AssertionError;
 use BadMethodCallException;
 use Closure;
 use ErrorException;
@@ -37,6 +38,10 @@ final class TestCase
     private array $deferredValidation = [];
     /** @var MockBuilder<T> */
     private MockBuilder $mocker;
+    /**
+     * @var true
+     */
+    private bool $hasAssertError = false;
 
     /**
      * Initialize a new TestCase instance with an optional message.
@@ -64,6 +69,26 @@ final class TestCase
     }
 
     /**
+     * Sets the assertion error flag to true
+     *
+     * @return void
+     */
+    function setHasAssertError(): void
+    {
+        $this->hasAssertError = true;
+    }
+
+    /**
+     * Gets the current state of the assertion error flag
+     *
+     * @return bool
+     */
+    function getHasAssertError(): bool
+    {
+        return $this->hasAssertError;
+    }
+
+    /**
      * Will dispatch the case tests and return them as an array
      *
      * @param self $row
@@ -78,6 +103,13 @@ final class TestCase
         if ($test !== null) {
             try {
                 $newInst = $test($this);
+            } catch (AssertionError $e) {
+                $newInst = clone $this;
+                $newInst->setHasAssertError();
+                $msg = "Assertion failed";
+                $newInst->expectAndValidate(
+                    true, fn() => false, $msg, $e->getMessage(), $e->getTrace()[0]
+                );
             } catch (Throwable $e) {
                 if(str_contains($e->getFile(), "eval()")) {
                     throw new BlunderErrorException($e->getMessage(), $e->getCode());
@@ -107,7 +139,7 @@ final class TestCase
      * Add a test unit validation using the provided expectation and validation logic
      *
      * @param mixed $expect The expected value
-     * @param Closure(Expect, mixed): bool $validation The validation logic
+     * @param Closure(Expect, Traverse): bool $validation
      * @return $this
      * @throws ErrorException
      */
@@ -137,13 +169,15 @@ final class TestCase
     protected function expectAndValidate(
         mixed $expect,
         array|Closure $validation,
-        ?string $message = null
+        ?string $message = null,
+        ?string $description = null,
+        ?array $trace = null
     ): self {
         $this->value = $expect;
         $test = new TestUnit($message);
         $test->setTestValue($this->value);
         if ($validation instanceof Closure) {
-            $listArr = $this->buildClosureTest($validation);
+            $listArr = $this->buildClosureTest($validation, $description);
             foreach ($listArr as $list) {
                 if(is_bool($list)) {
                     $test->setUnit($list, "Validation");
@@ -162,7 +196,10 @@ final class TestCase
             }
         }
         if (!$test->isValid()) {
-            $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1];
+            if(!$trace) {
+                $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1];
+            }
+
             $test->setCodeLine($trace);
             $this->count++;
         }
@@ -592,19 +629,29 @@ final class TestCase
      * This will build the closure test
      *
      * @param Closure $validation
+     * @param string|null $message
      * @return array
      */
-    protected function buildClosureTest(Closure $validation): array
+    protected function buildClosureTest(Closure $validation, ?string $message = null): array
     {
         //$bool = false;
         $validPool = new Expect($this->value);
         $validation = $validation->bindTo($validPool);
-
         $error = [];
         if ($validation !== null) {
-            $bool = $validation($this->value, $validPool);
+            try {
+                $bool = $validation($this->value, $validPool);
+            } catch (AssertionError $e) {
+                $bool = false;
+                $message = $e->getMessage();
+            }
+
             $error = $validPool->getError();
-            if (is_bool($bool) && !$bool) {
+            if($bool === false && $message !== null) {
+                $error[] = [
+                    $message => true
+                ];
+            } else if (is_bool($bool) && !$bool) {
                 $error['customError'] = false;
             }
         }

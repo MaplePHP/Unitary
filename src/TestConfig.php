@@ -31,10 +31,16 @@ class TestConfig
      * @param string $key The key to set.
      * @return self
      */
-    public function setSelect(string $key): self
+    public function setName(string $key): self
     {
         $this->select = $key;
         return $this;
+    }
+
+    // Alias for setName()
+    public function setSelect(string $key): self
+    {
+        return $this->setName($key);
     }
 
     /**
