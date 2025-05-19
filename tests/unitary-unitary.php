@@ -58,7 +58,15 @@ class Mailer
         $this->from = $email;
     }
 
-    public function addBCC(string $email, &$name = "Daniel"): void
+    /**
+     * Add a BCC (blind carbon copy) email address
+     *
+     * @param string $email The email address to be added as BCC
+     * @param string $name The name associated with the email address, default is "Daniel"
+     * @param mixed $testRef A reference variable, default is "Daniel"
+     * @return void
+     */
+    public function addBCC(string $email, string $name = "Daniel", &$testRef = "Daniel"): void
     {
         $this->bcc = $email;
     }
@@ -78,14 +86,19 @@ class Mailer
 class UserService {
     public function __construct(private Mailer $mailer) {}
 
-    public function registerUser(string $email, string $name = "Daniel"): void {
+    public function registerUser(string $email): bool {
         // register user logic...
 
-        if(!$this->mailer->isValidEmail($email)) {
+        $this->mailer->addFromEmail($email);
+        $this->mailer->addBCC("jane.doe@hotmail.com", "Jane Doe");
+        $this->mailer->addBCC("lane.doe@hotmail.com", "Lane Doe");
+
+        if(!filter_var($this->mailer->getFromEmail(), FILTER_VALIDATE_EMAIL)) {
             throw new \Exception("Invalid email");
         }
-        echo $this->mailer->sendEmail($email, $name)."\n";
-        echo $this->mailer->sendEmail($email, $name);
+        //echo $this->mailer->sendEmail($email, $name)."\n";
+        //echo $this->mailer->sendEmail($email, $name);
+        return true;
     }
 }
 
@@ -213,11 +226,11 @@ $unit->group("Mailer test", function (TestCase $inst) use($unit) {
 });
 
 
-$unit->group("Unitary test 2", function (TestCase $inst) {
+$unit->group("Testing User service", function (TestCase $inst) {
 
-    $mock = $inst->mock(Mailer::class, function (MethodRegistry $method) use($inst) {
+    $mailer = $inst->mock(Mailer::class, function (MethodRegistry $method) use($inst) {
         $method->method("addFromEmail")
-            ->isPublic();
+            ->called(1);
 
         $method->method("addBCC")
             ->isPublic()
@@ -228,35 +241,50 @@ $unit->group("Unitary test 2", function (TestCase $inst) {
             ->paramHasDefault(1, "Daniel")
             ->paramIsOptional(1)
             ->paramIsReference(1)
-            ->called(0);
+            ->called(2);
 
-        $method->method("test")
-            ->hasParams()
-            ->paramIsSpread(0) // Same as ->paramIsVariadic()
-            ->wrap(function($args) use($inst) {
-                echo "World -> $args\n";
-            })
-            ->called(1);
+        $method->method("getFromEmail")
+            ->willReturn("john.doe@gmail.com");
 
-        $method->method("test2")
-            ->hasNotParams()
-            ->called(0);
+    }, [true // <- Mailer class constructor argument, enable debug]);
 
-    }, ["Arg 1"]);
+    $service = new UserService($mailer);
 
-    //$mock->test("Hello");
-    //$service = new UserService($mock);
-
-    $inst->validate("yourTestValue", function(Expect $inst) {
-        $inst->isBool();
-        $inst->isInt();
-        $inst->isJson();
-        $inst->isString();
-        $inst->isResource();
+    $case->validate($service->send(), function(Expect $inst) {
+        $inst->isTrue();
     });
 
 });
 
  */
 
+
+$unit->group("Testing User service", function (TestCase $case) {
+
+    $mailer = $case->mock(Mailer::class, function (MethodRegistry $method) {
+        $method->method("addFromEmail")
+            ->called(1);
+
+        $method->method("addBCC")
+            ->isPublic()
+            ->hasDocComment()
+            ->hasParams()
+            ->paramHasType(0)
+            ->paramIsType(0, "string")
+            ->paramHasDefault(2, "Daniel")
+            ->paramIsOptional(2)
+            ->paramIsReference(2)
+            ->called(1);
+
+        $method->method("getFromEmail")
+            ->willReturn("john.doe@gmail.com");
+
+    }, [true]); // <-- true is passed as argument 1 to Mailer constructor
+
+    $service = new UserService($mailer);
+    $case->validate($service->registerUser("john.doe@gmail.com"), function(Expect $inst) {
+        $inst->isTrue();
+    });
+
+});
 

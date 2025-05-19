@@ -61,11 +61,13 @@ final class TestCase
      * Bind the test case to the Closure
      *
      * @param Closure $bind
+     * @param bool $bindToClosure choose bind to closure or not (Not recommended)
+     *                            Used primary as a fallback for older versions of Unitary
      * @return void
      */
-    public function bind(Closure $bind): void
+    public function bind(Closure $bind, bool $bindToClosure = false): void
     {
-        $this->bind = $bind->bindTo($this);
+        $this->bind = ($bindToClosure) ? $bind->bindTo($this) : $bind;
     }
 
     /**
@@ -220,7 +222,7 @@ final class TestCase
     public function deferValidation(Closure $validation): void
     {
         // This will add a cursor to the possible line and file where the error occurred
-        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3)[2];
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4)[3];
         $this->deferredValidation[] = [
             "trace" => $trace,
             "call" => $validation

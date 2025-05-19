@@ -125,37 +125,43 @@ class Unit
     }
 
     /**
-     * DEPRECATED: Name has been changed to case
+     * Name has been changed to case
+     * WILL BECOME DEPRECATED VERY SOON
      * @param string $message
      * @param Closure $callback
      * @return void
      */
     public function add(string $message, Closure $callback): void
     {
-        // Might be trigger in future
         //trigger_error('Method ' . __METHOD__ . ' is deprecated', E_USER_DEPRECATED);
         $this->case($message, $callback);
     }
 
     /**
-     * Add a test unit/group
+     * Adds a test case to the collection (group() is preferred over case())
+     * The key difference from group() is that this TestCase will NOT be bound the Closure
      *
-     * @param string|TestConfig $message
-     * @param Closure(TestCase):void $callback
+     * @param string|TestConfig $message The message or configuration for the test case.
+     * @param Closure $callback The closure containing the test case logic.
      * @return void
      */
     public function group(string|TestConfig $message, Closure $callback): void
     {
-        $testCase = new TestCase($message);
-        $testCase->bind($callback);
-        $this->cases[$this->index] = $testCase;
-        $this->index++;
+        $this->addCase($message, $callback);
     }
 
-    // Alias to group
-    public function case(string $message, Closure $callback): void
+    /**
+     * Adds a test case to the collection.
+     * The key difference from group() is that this TestCase will be bound the Closure
+     * Not Deprecated but might be in the far future
+     *
+     * @param string|TestConfig $message The message or configuration for the test case.
+     * @param Closure $callback The closure containing the test case logic.
+     * @return void
+     */
+    public function case(string|TestConfig $message, Closure $callback): void
     {
-        $this->group($message, $callback);
+        $this->addCase($message, $callback, true);
     }
 
     public function performance(Closure $func, ?string $title = null): void
@@ -574,6 +580,22 @@ class Unit
             });
             exit(0);
         }
+    }
+
+    /**
+     * Adds a test case to the collection.
+     *
+     * @param string|TestConfig $message The description or configuration of the test case.
+     * @param Closure $callback The closure that defines the test case logic.
+     * @param bool $bindToClosure Indicates whether the closure should be bound to TestCase.
+     * @return void
+     */
+    protected function addCase(string|TestConfig $message, Closure $callback, bool $bindToClosure = false): void
+    {
+        $testCase = new TestCase($message);
+        $testCase->bind($callback, $bindToClosure);
+        $this->cases[$this->index] = $testCase;
+        $this->index++;
     }
 
     /**
