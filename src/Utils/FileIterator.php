@@ -35,14 +35,11 @@ final class FileIterator
      */
     public function executeAll(string $path, string|bool $rootDir = false): void
     {
-
         $rootDir = $rootDir !== false ? realpath($rootDir) : false;
         $path = (!$path && $rootDir) ? $rootDir : $path;
-
-        if($rootDir !== false && !str_starts_with($path, $rootDir)) {
-            throw new RuntimeException("The test search path (\$path) \"" . $path . "\" does not have the root director (\$rootDir) of \"" . $rootDir . "\".");
+        if($rootDir !== false && !str_starts_with($path, "/") && !str_starts_with($path, $rootDir)) {
+            $path = $rootDir . "/" . $path;
         }
-
         $files = $this->findFiles($path, $rootDir);
         if (empty($files)) {
             /* @var string static::PATTERN */
