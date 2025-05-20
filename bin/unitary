@@ -33,7 +33,7 @@ try {
         throw new Exception("Test directory '$testDir' does not exist");
     }
     $unit = new FileIterator($data);
-    $unit->executeAll($testDir);
+    $unit->executeAll($testDir, $defaultPath);
 
 } catch (Exception $e) {
     $command->error($e->getMessage());

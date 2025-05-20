@@ -6,6 +6,7 @@ namespace MaplePHP\Unitary\Utils;
 
 use Closure;
 use Exception;
+use MaplePHP\Blunder\Exceptions\BlunderSoftException;
 use MaplePHP\Blunder\Handlers\CliHandler;
 use MaplePHP\Blunder\Run;
 use MaplePHP\Unitary\Unit;
@@ -27,16 +28,27 @@ final class FileIterator
 
     /**
      * Will Execute all unitary test files.
-     * @param string $directory
+     * @param string $path
+     * @param string|bool $rootDir
      * @return void
-     * @throws RuntimeException
+     * @throws BlunderSoftException
      */
-    public function executeAll(string $directory): void
+    public function executeAll(string $path, string|bool $rootDir = false): void
     {
-        $files = $this->findFiles($directory);
+
+        $rootDir = $rootDir !== false ? realpath($rootDir) : false;
+        $path = (!$path && $rootDir) ? $rootDir : $path;
+
+        if($rootDir !== false && !str_starts_with($path, $rootDir)) {
+            throw new RuntimeException("The test search path (\$path) \"" . $path . "\" does not have the root director (\$rootDir) of \"" . $rootDir . "\".");
+        }
+
+        $files = $this->findFiles($path, $rootDir);
         if (empty($files)) {
             /* @var string static::PATTERN */
-            throw new RuntimeException("No files found matching the pattern \"" . (FileIterator::PATTERN ?? "") . "\" in directory \"$directory\" ");
+            throw new BlunderSoftException("Unitary could not find any test files matching the pattern \"" .
+                (FileIterator::PATTERN ?? "") . "\" in directory \"" . dirname($path) .
+                "\" and its subdirectories.");
         } else {
             foreach ($files as $file) {
                 extract($this->args, EXTR_PREFIX_SAME, "wddx");
@@ -62,28 +74,45 @@ final class FileIterator
 
     /**
      * Will Scan and find all unitary test files
-     * @param string $dir
+     * @param string $path
+     * @param string|false $rootDir
      * @return array
      */
-    private function findFiles(string $dir): array
+    private function findFiles(string $path, string|bool $rootDir = false): array
     {
         $files = [];
-        $realDir = realpath($dir);
+        $realDir = realpath($path);
         if ($realDir === false) {
-            throw new RuntimeException("Directory \"$dir\" does not exist. Try using a absolut path!");
+            throw new RuntimeException("Directory \"$path\" does not exist. Try using a absolut path!");
         }
-        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir));
 
-        /** @var string $pattern */
-        $pattern = FileIterator::PATTERN;
-        foreach ($iterator as $file) {
-            if (($file instanceof SplFileInfo) && fnmatch($pattern, $file->getFilename()) &&
-                (isset($this->args['path']) || !str_contains($file->getPathname(), DIRECTORY_SEPARATOR . "vendor" . DIRECTORY_SEPARATOR))) {
-                if (!$this->findExcluded($this->exclude(), $dir, $file->getPathname())) {
-                    $files[] = $file->getPathname();
+        if (is_file($path) && str_starts_with(basename($path), "unitary-")) {
+            $files[] = $path;
+        } else {
+            if(is_file($path)) {
+                $path = dirname($path) . "/";
+            }
+
+            if(is_dir($path)) {
+                $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path));
+                /** @var string $pattern */
+                $pattern = FileIterator::PATTERN;
+                foreach ($iterator as $file) {
+                    if (($file instanceof SplFileInfo) && fnmatch($pattern, $file->getFilename()) &&
+                        (!empty($this->args['exclude']) || !str_contains($file->getPathname(), DIRECTORY_SEPARATOR . "vendor" . DIRECTORY_SEPARATOR))) {
+                        if (!$this->findExcluded($this->exclude(), $path, $file->getPathname())) {
+                            $files[] = $file->getPathname();
+                        }
+                    }
                 }
             }
         }
+
+        if($rootDir && count($files) <= 0 && str_starts_with($path, $rootDir)) {
+            $path = realpath($path . "/..") . "/";
+            return $this->findFiles($path, $rootDir);
+        }
+
         return $files;
     }
 
