@@ -33,8 +33,9 @@ class TestConfig
      */
     public function setName(string $key): self
     {
-        $this->select = $key;
-        return $this;
+        $inst = clone $this;
+        $inst->select = $key;
+        return $inst;
     }
 
     // Alias for setName()
@@ -51,8 +52,9 @@ class TestConfig
      */
     public function setMessage(string $message): self
     {
-        $this->message = $message;
-        return $this;
+        $inst = clone $this;
+        $inst->message = $message;
+        return $inst;
     }
 
     /**
@@ -63,8 +65,9 @@ class TestConfig
      */
     public function setSkip(bool $bool = true): self
     {
-        $this->skip = $bool;
-        return $this;
+        $inst = clone $this;
+        $inst->skip = $bool;
+        return $inst;
     }
 
 }

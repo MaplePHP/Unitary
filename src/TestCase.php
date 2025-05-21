@@ -184,8 +184,8 @@ final class TestCase
                 if(is_bool($list)) {
                     $test->setUnit($list, "Validation");
                 } else {
-                    foreach ($list as $method => $_valid) {
-                        $test->setUnit(false, (string)$method);
+                    foreach ($list as $method => $valid) {
+                        $test->setUnit(false, (string)$method, $valid);
                     }
                 }
             }

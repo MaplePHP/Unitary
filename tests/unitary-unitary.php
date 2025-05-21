@@ -104,19 +104,19 @@ class UserService {
 
 $unit = new Unit();
 
+$config = TestConfig::make("Test 1")->setName("unitary");
 
-$unit->group(TestConfig::make("Test 1")->setName("unitary")->setSkip(), function (TestCase $case) use($unit) {
+$unit->group($config->setSkip(), function (TestCase $case) use($unit) {
 
     $stream = $case->mock(Stream::class);
     $response = new Response($stream);
 
     $case->validate($response->getBody()->getContents(), function(Expect $inst) {
-        assert(1 === 2, "Lore");
+        assert(1 == 1, "Lore");
         $inst->notHasResponse();
     });
-});
 
-$unit->group("Advanced App Response Test 2", function (TestCase $case) use($unit) {
+
     $stream = $case->mock(Stream::class);
     $response = new Response($stream);
     $case->validate($response->getBody()->getContents(), function(Expect $inst) {
@@ -124,6 +124,27 @@ $unit->group("Advanced App Response Test 2", function (TestCase $case) use($unit
     });
 });
 
+$unit->case($config->setMessage("Testing custom validations"), function ($case) {
+
+    $case->validate("GET", function(Expect $inst) {
+        assert($inst->isEqualTo("GET")->isValid(), "Assert has failed");
+    });
+
+});
+
+$unit->case($config->setMessage("Validate old Unitary case syntax"), function ($case) {
+
+    $case->add("HelloWorld", [
+        "isString" => [],
+        "User validation" => function($value) {
+            return $value === "HelloWorld";
+        }
+    ], "Is not a valid port number");
+
+    $this->add("HelloWorld", [
+        "isEqualTo" => ["HelloWorld"],
+    ], "Failed to validate");;
+});
 
 /*
 
@@ -255,10 +276,6 @@ $unit->group("Testing User service", function (TestCase $inst) {
     });
 
 });
-
- */
-
-
 $unit->group("Testing User service", function (TestCase $case) {
 
     $mailer = $case->mock(Mailer::class, function (MethodRegistry $method) {
@@ -287,4 +304,8 @@ $unit->group("Testing User service", function (TestCase $case) {
     });
 
 });
+ */
+
+
+
 

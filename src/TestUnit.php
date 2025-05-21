@@ -64,7 +64,7 @@ class TestUnit
     public function setUnit(
         bool|null $valid,
         null|string|\Closure $validation = null,
-        array $args = [],
+        array|bool $args = [],
         array $compare = []
     ): self {
 
@@ -74,7 +74,8 @@ class TestUnit
         }
 
         if (!is_callable($validation)) {
-            $valLength = strlen((string)$validation);
+            $addArgs = is_array($args) ? "(" . implode(", ", $args) . ")" : "";
+            $valLength = strlen($validation . $addArgs);
             if ($validation && $this->valLength < $valLength) {
                 $this->valLength = $valLength;
             }

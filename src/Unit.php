@@ -211,6 +211,7 @@ class Unit
 
         // LOOP through each case
         ob_start();
+        $countCases = count($this->cases);
         foreach ($this->cases as $index => $row) {
             if (!($row instanceof TestCase)) {
                 throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestCase.");
@@ -240,8 +241,6 @@ class Unit
                 continue;
             }
 
-
-
             $this->command->message("");
             $this->command->message(
                 $flag . " " .
@@ -249,6 +248,12 @@ class Unit
                 " - " .
                 $this->command->getAnsi()->style(["bold", $color], (string)$row->getMessage())
             );
+            if($show && !$row->hasFailed()) {
+                $this->command->message("");
+                $this->command->message(
+                    $this->command->getAnsi()->style(["italic", $color], "Test file: " . self::$headers['file'])
+                );
+            }
 
             if (($show || !$row->getConfig()->skip)) {
                 foreach ($tests as $test) {
@@ -267,15 +272,17 @@ class Unit
 
                         $trace = $test->getCodeLine();
                         if (!empty($trace['code'])) {
-                            $this->command->message($this->command->getAnsi()->style(["bold", "grey"], "Failed on line {$trace['line']}: "));
+                            $this->command->message($this->command->getAnsi()->style(["bold", "grey"], "Failed on {$trace['file']}:{$trace['line']}"));
                             $this->command->message($this->command->getAnsi()->style(["grey"], " → {$trace['code']}"));
                         }
 
                         /** @var array<string, string> $unit */
                         foreach ($test->getUnits() as $unit) {
                             if (is_string($unit['validation']) && !$unit['valid']) {
-                                $lengthA = $test->getValidationLength() + 1;
-                                $title = str_pad($unit['validation'], $lengthA);
+                                $lengthA = $test->getValidationLength();
+                                $addArgs = is_array($unit['args']) ? "(" . implode(", ", $unit['args']) . ")" : "";
+                                $validation = "{$unit['validation']}{$addArgs}";
+                                $title = str_pad($validation, $lengthA);
 
                                 $compare = "";
                                 if ($unit['compare']) {
@@ -302,7 +309,10 @@ class Unit
                         }
                         if ($test->hasValue()) {
                             $this->command->message("");
-                            $this->command->message($this->command->getAnsi()->bold("Input value: ") . $test->getReadValue());
+                            $this->command->message(
+                                $this->command->getAnsi()->bold("Input value: ") .
+                                $test->getReadValue()
+                            );
                         }
                     }
                 }
@@ -321,13 +331,14 @@ class Unit
             } else {
                 $passed .= $this->command->getAnsi()->style([$color], $row->getCount() . "/" . $row->getTotal());
             }
+
             $footer = $passed .
                 $this->command->getAnsi()->style(["italic", "grey"], " - ". $checksum);
             if (!$show && $row->getConfig()->skip) {
                 $footer = $this->command->getAnsi()->style(["italic", "grey"], $checksum);
             }
-
             $this->command->message($footer);
+            $this->command->message("");
         }
         $this->output .= ob_get_clean();
 
@@ -480,7 +491,7 @@ class Unit
         if (self::$current !== null && self::$current->handler === null) {
             $dot = self::$current->command->getAnsi()->middot();
 
-            self::$current->command->message("");
+            //self::$current->command->message("");
             self::$current->command->message(
                 self::$current->command->getAnsi()->style(
                     ["italic", "grey"],
@@ -488,6 +499,7 @@ class Unit
                     "Peak memory usage: " . round(memory_get_peak_usage() / 1024, 2) . " KB"
                 )
             );
+            self::$current->command->message("");
         }
     }
 

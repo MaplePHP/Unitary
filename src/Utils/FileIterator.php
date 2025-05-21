@@ -105,7 +105,7 @@ final class FileIterator
             }
         }
 
-        if($rootDir && count($files) <= 0 && str_starts_with($path, $rootDir)) {
+        if($rootDir && count($files) <= 0 && str_starts_with($path, $rootDir) && isset($this->args['smart-search'])) {
             $path = realpath($path . "/..") . "/";
             return $this->findFiles($path, $rootDir);
         }
