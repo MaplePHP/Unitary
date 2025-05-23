@@ -14,6 +14,15 @@ class MethodRegistry
     }
 
     /**
+     * @param string $class
+     * @return void
+     */
+    public static function reset(string $class): void
+    {
+        self::$methods[$class] = [];
+    }
+
+    /**
      * Access method pool
      * @param string $class
      * @param string $name

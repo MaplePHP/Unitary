@@ -285,9 +285,18 @@ final class TestCase
      */
     public function buildMock(?Closure $validate = null): mixed
     {
+        // We can't make mock immutable as it would reduce usability
         if (is_callable($validate)) {
             $this->prepareValidation($this->mocker, $validate);
         }
+        /*
+         if (is_callable($validate)) {
+            $this->prepareValidation($this->mocker, $validate);
+        } else {
+            // However, tests execute linearly and are contained within groups, making reset an effective solution
+            MethodRegistry::reset($this->mocker->getClassName());
+        }
+         */
 
         try {
             /** @psalm-suppress MixedReturnStatement */

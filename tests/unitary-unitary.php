@@ -104,19 +104,23 @@ class UserService {
 
 $unit = new Unit();
 
-$config = TestConfig::make("Test 1")->setName("unitary");
+$config = TestConfig::make("Testing mocking library")->setName("unitary");
 
-$unit->group($config->setSkip(), function (TestCase $case) use($unit) {
+$unit->group($config, function (TestCase $case) use($unit) {
 
-    $stream = $case->mock(Stream::class);
+    $stream = $case->mock(Stream::class, function (MethodRegistry $method) {
+        $method->method("getContents")
+            ->willReturn('')
+            ->calledAtLeast(1);
+    });
     $response = new Response($stream);
 
     $case->validate($response->getBody()->getContents(), function(Expect $inst) {
-        assert(1 == 1, "Lore");
-        $inst->notHasResponse();
+        $inst->hasResponse();
     });
+});
 
-
+$unit->group($config, function (TestCase $case) use($unit) {
     $stream = $case->mock(Stream::class);
     $response = new Response($stream);
     $case->validate($response->getBody()->getContents(), function(Expect $inst) {
@@ -124,11 +128,13 @@ $unit->group($config->setSkip(), function (TestCase $case) use($unit) {
     });
 });
 
-$unit->case($config->setMessage("Testing custom validations"), function ($case) {
+$unit->group($config->setMessage("Testing custom validations"), function ($case) {
 
-    $case->validate("GET", function(Expect $inst) {
-        assert($inst->isEqualTo("GET")->isValid(), "Assert has failed");
+    $case->validate("HelloWorld", function(Expect $inst) {
+        assert($inst->isEqualTo("HelloWorld")->isValid(), "Assert has failed");
     });
+
+    assert(1 === 1, "Assert has failed");
 
 });
 
