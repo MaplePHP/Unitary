@@ -4,7 +4,7 @@ namespace MaplePHP\Unitary\Mocker;
 
 class MethodRegistry
 {
-    private ?MockBuilder $mocker = null;
+    private ?MockBuilder $mocker;
     /** @var array<string, MockedMethod> */
     private static array $methods = [];
 
@@ -42,8 +42,8 @@ class MethodRegistry
      */
     public function method(string $name): MockedMethod
     {
-        self::$methods[$this->mocker->getClassName()][$name] = new MockedMethod($this->mocker);
-        return self::$methods[$this->mocker->getClassName()][$name];
+        self::$methods[$this->mocker->getMockedClassName()][$name] = new MockedMethod($this->mocker);
+        return self::$methods[$this->mocker->getMockedClassName()][$name];
     }
 
     /**
@@ -54,7 +54,7 @@ class MethodRegistry
      */
     public function get(string $key): MockedMethod|null
     {
-        return self::$methods[$this->mocker->getClassName()][$key] ?? null;
+        return self::$methods[$this->mocker->getMockedClassName()][$key] ?? null;
     }
 
     /**
@@ -75,7 +75,7 @@ class MethodRegistry
      */
     public function has(string $name): bool
     {
-        return isset(self::$methods[$this->mocker->getClassName()][$name]);
+        return isset(self::$methods[$this->mocker->getMockedClassName()][$name]);
     }
 
 }

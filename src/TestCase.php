@@ -61,7 +61,7 @@ final class TestCase
      * Bind the test case to the Closure
      *
      * @param Closure $bind
-     * @param bool $bindToClosure choose bind to closure or not (Not recommended)
+     * @param bool $bindToClosure choose bind to closure or not (recommended)
      *                            Used primary as a fallback for older versions of Unitary
      * @return void
      */
@@ -245,7 +245,7 @@ final class TestCase
     }
 
     /**
-     * initialize a test wrapper
+     * Initialize a test wrapper
      *
      * NOTICE: When mocking a class with required constructor arguments, those arguments must be
      * specified in the mock initialization method or it will fail. This is because the mock
@@ -285,19 +285,9 @@ final class TestCase
      */
     public function buildMock(?Closure $validate = null): mixed
     {
-        // We can't make mock immutable as it would reduce usability
         if (is_callable($validate)) {
             $this->prepareValidation($this->mocker, $validate);
         }
-        /*
-         if (is_callable($validate)) {
-            $this->prepareValidation($this->mocker, $validate);
-        } else {
-            // However, tests execute linearly and are contained within groups, making reset an effective solution
-            MethodRegistry::reset($this->mocker->getClassName());
-        }
-         */
-
         try {
             /** @psalm-suppress MixedReturnStatement */
             return $this->mocker->execute();

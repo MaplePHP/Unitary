@@ -44,6 +44,14 @@ final class MockBuilder
         $this->dataTypeMock = new DataTypeMock();
         $this->methods = $this->reflection->getMethods();
         $this->constructorArgs = $args;
+
+        $shortClassName = explode("\\", $className);
+        $shortClassName = end($shortClassName);
+        /**
+         * @var class-string $shortClassName
+         * @psalm-suppress PropertyTypeCoercion
+         */
+        $this->mockClassName = 'Unitary_' . uniqid() . "_Mock_" . $shortClassName;
         /*
         // Auto fill the Constructor args!
         $test = $this->reflection->getConstructor();
@@ -95,13 +103,9 @@ final class MockBuilder
      * This method should only be called after execute() has been invoked.
      *
      * @return string The generated mock class name
-     * @throws Exception If the mock class name has not been set (execute() hasn't been called)
      */
     public function getMockedClassName(): string
     {
-        if (!$this->mockClassName) {
-            throw new Exception("Mock class name is not set");
-        }
         return $this->mockClassName;
     }
 
@@ -133,15 +137,6 @@ final class MockBuilder
     public function execute(): mixed
     {
         $className = $this->reflection->getName();
-
-        $shortClassName = explode("\\", $className);
-        $shortClassName = end($shortClassName);
-
-        /**
-         * @var class-string $shortClassName
-         * @psalm-suppress PropertyTypeCoercion
-         */
-        $this->mockClassName = 'Unitary_' . uniqid() . "_Mock_" . $shortClassName;
         $overrides = $this->generateMockMethodOverrides($this->mockClassName);
         $unknownMethod = $this->errorHandleUnknownMethod($className);
 
@@ -230,7 +225,7 @@ final class MockBuilder
             $this->methodList[] = $methodName;
 
             // The MethodItem contains all items that are validatable
-            $methodItem = MethodRegistry::getMethod($this->getClassName(), $methodName);
+            $methodItem = MethodRegistry::getMethod($this->getMockedClassName(), $methodName);
             if($methodItem && $methodItem->keepOriginal) {
                 continue;
             }

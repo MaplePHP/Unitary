@@ -118,9 +118,8 @@ $unit->group($config, function (TestCase $case) use($unit) {
     $case->validate($response->getBody()->getContents(), function(Expect $inst) {
         $inst->hasResponse();
     });
-});
 
-$unit->group($config, function (TestCase $case) use($unit) {
+
     $stream = $case->mock(Stream::class);
     $response = new Response($stream);
     $case->validate($response->getBody()->getContents(), function(Expect $inst) {
