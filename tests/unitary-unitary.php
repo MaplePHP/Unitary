@@ -18,9 +18,11 @@ class Mailer
 
     }
 
-    public function send()
+    public function send(): string
     {
         $this->sendEmail($this->getFromEmail());
+
+        return $this->privateMethod();
     }
 
     public function sendEmail(string $email, string $name = "daniel"): string
@@ -45,6 +47,11 @@ class Mailer
     public function getFromEmail(): string
     {
         return !empty($this->from) ? $this->from : "empty email";
+    }
+
+    private function privateMethod(): string
+    {
+        return "HEHEHE";
     }
 
     /**
@@ -104,7 +111,30 @@ class UserService {
 
 $unit = new Unit();
 
-$config = TestConfig::make("Testing mocking library")->setName("unitary");
+
+$unit->group("Advanced Mailer Test", function (TestCase $case) use($unit) {
+    $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
+        $method->method("send")->keepOriginal();
+
+    });
+    echo $mail->send();
+});
+
+$unit->group("Example API Request", function(TestCase $case) {
+
+    $request = new Request("GET", "https://example.com/?page=1&slug=hello-world");
+
+    $case->validate($request->getMethod(), function(Expect $expect) {
+        $expect->isRequestMethod();
+    });
+
+    $case->validate($request->getUri()->getQuery(), function(Expect $expect) {
+        $expect->hasQueryParam("page", 1);
+        $expect->hasQueryParam("slug", "hello-world");
+    });
+});
+
+$config = TestConfig::make("Testing mocking library")->withName("unitary")->withSkip();
 
 $unit->group($config, function (TestCase $case) use($unit) {
 
@@ -118,16 +148,9 @@ $unit->group($config, function (TestCase $case) use($unit) {
     $case->validate($response->getBody()->getContents(), function(Expect $inst) {
         $inst->hasResponse();
     });
-
-
-    $stream = $case->mock(Stream::class);
-    $response = new Response($stream);
-    $case->validate($response->getBody()->getContents(), function(Expect $inst) {
-        $inst->hasResponse();
-    });
 });
 
-$unit->group($config->setMessage("Testing custom validations"), function ($case) {
+$unit->group($config->withSubject("Testing custom validations"), function ($case) {
 
     $case->validate("HelloWorld", function(Expect $inst) {
         assert($inst->isEqualTo("HelloWorld")->isValid(), "Assert has failed");
@@ -137,7 +160,7 @@ $unit->group($config->setMessage("Testing custom validations"), function ($case)
 
 });
 
-$unit->case($config->setMessage("Validate old Unitary case syntax"), function ($case) {
+$unit->case($config->withSubject("Validate old Unitary case syntax"), function ($case) {
 
     $case->add("HelloWorld", [
         "isString" => [],
@@ -150,6 +173,7 @@ $unit->case($config->setMessage("Validate old Unitary case syntax"), function ($
         "isEqualTo" => ["HelloWorld"],
     ], "Failed to validate");;
 });
+
 
 /*
 

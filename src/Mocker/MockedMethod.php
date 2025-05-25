@@ -57,7 +57,7 @@ final class MockedMethod
         }
 
         $inst = $this;
-        $wrap = new class ($this->mocker->getMockedClassName(), $this->mocker->getClassArgs()) extends ExecutionWrapper {
+        $wrap = new class ($this->mocker->getClassName(), $this->mocker->getClassArgs()) extends ExecutionWrapper {
             public function __construct(string $class, array $args = [])
             {
                 parent::__construct($class, $args);

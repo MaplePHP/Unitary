@@ -31,7 +31,7 @@ class TestConfig
      * @param string $key The key to set.
      * @return self
      */
-    public function setName(string $key): self
+    public function withName(string $key): self
     {
         $inst = clone $this;
         $inst->select = $key;
@@ -41,19 +41,19 @@ class TestConfig
     // Alias for setName()
     public function setSelect(string $key): self
     {
-        return $this->setName($key);
+        return $this->withName($key);
     }
 
     /**
      * Sets the message for the current instance.
      *
-     * @param string $message The message to set.
+     * @param string $subject The message to set.
      * @return self
      */
-    public function setMessage(string $message): self
+    public function withSubject(string $subject): self
     {
         $inst = clone $this;
-        $inst->message = $message;
+        $inst->message = $subject;
         return $inst;
     }
 
@@ -63,7 +63,7 @@ class TestConfig
      * @param bool $bool Optional. The value to set for the skip state. Defaults to true.
      * @return self
      */
-    public function setSkip(bool $bool = true): self
+    public function withSkip(bool $bool = true): self
     {
         $inst = clone $this;
         $inst->skip = $bool;

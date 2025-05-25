@@ -61,19 +61,20 @@ final class MockBuilder
     }
 
     /**
-     * Adds metadata to the mock method, including the mock class name, return value,
-     * and a flag indicating whether to keep the original method implementation.
+     * Adds metadata to the mock method, including the mock class name, return value.
+     * This is possible custom-added data that "has to" validate against the MockedMethod instance
      *
      * @param array $data The base data array to add metadata to
      * @param string $mockClassName The name of the mock class
-     * @param mixed $return The return value to be stored in metadata
+     * @param mixed $returnValue
+     * @param mixed $methodItem
      * @return array The data array with added metadata
      */
-    protected function addMockMetadata(array $data, string $mockClassName, mixed $return): array
+    protected function addMockMetadata(array $data, string $mockClassName, mixed $returnValue, mixed $methodItem): array
     {
         $data['mocker'] = $mockClassName;
-        $data['return'] = $return;
-        $data['keepOriginal'] = false;
+        $data['return'] = ($methodItem && $methodItem->hasReturn()) ? $methodItem->return : eval($returnValue);
+        $data['keepOriginal'] = ($methodItem && $methodItem->keepOriginal) ? $methodItem->keepOriginal : false;
         return $data;
     }
     
@@ -226,9 +227,6 @@ final class MockBuilder
 
             // The MethodItem contains all items that are validatable
             $methodItem = MethodRegistry::getMethod($this->getMockedClassName(), $methodName);
-            if($methodItem && $methodItem->keepOriginal) {
-                continue;
-            }
 
             $types = $this->getReturnType($method);
             $returnValue = $this->getReturnValue($types, $method, $methodItem);
@@ -245,10 +243,8 @@ final class MockBuilder
             $modifiersArr = Reflection::getModifierNames($method->getModifiers());
             $modifiers = implode(" ", $modifiersArr);
 
-            $return = ($methodItem && $methodItem->hasReturn()) ? $methodItem->return : eval($returnValue);
             $arr = $this->getMethodInfoAsArray($method);
-            $arr = $this->addMockMetadata($arr, $mockClassName, $return);
-            
+            $arr = $this->addMockMetadata($arr, $mockClassName, $returnValue, $methodItem);
 
             $info = json_encode($arr);
             if ($info === false) {
@@ -258,6 +254,13 @@ final class MockBuilder
             MockController::getInstance()->buildMethodData($info);
             if ($methodItem) {
                 $returnValue = $this->generateWrapperReturn($methodItem->getWrap(), $methodName, $returnValue);
+            }
+
+            if($methodItem && $methodItem->keepOriginal) {
+                $returnValue = "parent::$methodName($paramList);";
+                if (!in_array('void', $types)) {
+                    $returnValue = "return $returnValue";
+                }
             }
 
             $safeJson = base64_encode($info);
