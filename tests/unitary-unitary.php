@@ -2,6 +2,7 @@
 <?php
 
 use MaplePHP\DTO\Traverse;
+use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Http\Request;
 use MaplePHP\Http\Response;
 use MaplePHP\Http\Stream;
@@ -111,6 +112,17 @@ class UserService {
 
 $unit = new Unit();
 
+$unit->group("Mocking a PSR-7 Stream", function(TestCase $case) {
+    // Create a mock of a PSR-7 StreamInterface
+    $stream = $case->mock(StreamInterface::class);
+
+    // Inject the mock into a Response object
+    $response = new Response($stream);
+
+    $case->validate($response->getBody(), function(Expect $expect) {
+        $expect->isInstanceOf(StreamInterface::class);
+    });
+});
 
 $unit->group("Advanced Mailer Test", function (TestCase $case) use($unit) {
     $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {

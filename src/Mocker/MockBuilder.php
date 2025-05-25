@@ -139,10 +139,11 @@ final class MockBuilder
     {
         $className = $this->reflection->getName();
         $overrides = $this->generateMockMethodOverrides($this->mockClassName);
-        $unknownMethod = $this->errorHandleUnknownMethod($className);
+        $unknownMethod = $this->errorHandleUnknownMethod($className, !$this->reflection->isInterface());
+        $extends = $this->reflection->isInterface() ? "implements $className" : "extends $className";
 
         $code = "
-            class $this->mockClassName extends $className {
+            class $this->mockClassName $extends {
                 {$overrides}
                 {$unknownMethod}
                 public static function __set_state(array \$an_array): self
@@ -153,6 +154,8 @@ final class MockBuilder
             }
         ";
 
+        //print_r($code);
+        //die;
         eval($code);
 
         /**
@@ -170,14 +173,19 @@ final class MockBuilder
      * @param string $className The name of the class for which the mock is created.
      * @return string The generated PHP code for handling unknown method calls.
      */
-    private function errorHandleUnknownMethod(string $className): string
+    private function errorHandleUnknownMethod(string $className, bool $checkOriginal = true): string
     {
         if (!in_array('__call', $this->methodList)) {
-            return "
-                public function __call(string \$name, array \$arguments) {
-                    if (method_exists(get_parent_class(\$this), '__call')) {
+
+            $checkOriginalCall = $checkOriginal ? "
+                if (method_exists(get_parent_class(\$this), '__call')) {
                         return parent::__call(\$name, \$arguments);
                     }
+                " : "";
+
+            return "
+                public function __call(string \$name, array \$arguments) {
+                    {$checkOriginalCall}
                     throw new \\BadMethodCallException(\"Method '\$name' does not exist in class '$className'.\");
                 }
             ";
@@ -241,6 +249,7 @@ final class MockBuilder
             }
             $returnType = ($types) ? ': ' . implode('|', $types) : '';
             $modifiersArr = Reflection::getModifierNames($method->getModifiers());
+            $modifiersArr = array_filter($modifiersArr, fn($val) => $val !==  "abstract");
             $modifiers = implode(" ", $modifiersArr);
 
             $arr = $this->getMethodInfoAsArray($method);
