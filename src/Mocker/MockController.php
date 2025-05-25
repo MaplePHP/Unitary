@@ -76,19 +76,26 @@ final class MockController extends MethodRegistry
      * @param string $method JSON string containing mock method data
      * @return object Decoded method data object with updated count if applicable
      */
-    public function buildMethodData(string $method, bool $isBase64Encoded = false): object
+    public function buildMethodData(string $method, array $args = [], bool $isBase64Encoded = false): object
     {
         $method = $isBase64Encoded ? base64_decode($method) : $method;
         $data = (object)json_decode($method);
+
         if (isset($data->mocker) && isset($data->name)) {
             $mocker = (string)$data->mocker;
             $name = (string)$data->name;
             if (empty(self::$data[$mocker][$name])) {
+                // This is outside the mocked method
+                // You can prepare values here with defaults
                 $data->called = 0;
+                $data->arguments = [];
                 self::$data[$mocker][$name] = $data;
                 // Mocked method has trigger "once"!
             } else {
+                // This is the mocked method
+                // You can overwrite the default with the expected mocked values here
                 if (isset(self::$data[$mocker][$name])) {
+                    self::$data[$mocker][$name]->arguments[] = $args;
                     self::$data[$mocker][$name]->called = (int)self::$data[$mocker][$name]->called + 1;
                     // Mocked method has trigger "More Than" once!
                 }

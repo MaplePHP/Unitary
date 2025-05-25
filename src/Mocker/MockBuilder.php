@@ -77,7 +77,16 @@ final class MockBuilder
         $data['keepOriginal'] = ($methodItem && $methodItem->keepOriginal) ? $methodItem->keepOriginal : false;
         return $data;
     }
-    
+
+    /**
+     * Get reflection of the expected class
+     * @return ReflectionClass
+     */
+    public function getReflectionClass(): ReflectionClass
+    {
+        return $this->reflection;
+    }
+
     /**
      * Gets the fully qualified name of the class being mocked.
      *
@@ -276,7 +285,7 @@ final class MockBuilder
             $overrides .= "
                 $modifiers function $methodName($paramList){$returnType}
                 {
-                    \$obj = \\MaplePHP\\Unitary\\Mocker\\MockController::getInstance()->buildMethodData('$safeJson', true);
+                    \$obj = \\MaplePHP\\Unitary\\Mocker\\MockController::getInstance()->buildMethodData('$safeJson', func_get_args(), true);
                     \$data = \\MaplePHP\\Unitary\\Mocker\\MockController::getDataItem(\$obj->mocker, \$obj->name);
                     {$returnValue}
                 }

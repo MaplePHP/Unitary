@@ -3,6 +3,7 @@
 namespace MaplePHP\Unitary\Mocker;
 
 use BadMethodCallException;
+use InvalidArgumentException;
 use Closure;
 use MaplePHP\Unitary\TestUtils\ExecutionWrapper;
 
@@ -17,6 +18,7 @@ final class MockedMethod
 
     public ?string $class = null;
     public ?string $name = null;
+    public array $arguments = [];
     public ?bool $isStatic = null;
     public ?bool $isPublic = null;
     public ?bool $isPrivate = null;
@@ -54,6 +56,10 @@ final class MockedMethod
     {
         if ($this->mocker === null) {
             throw new BadMethodCallException('Mocker is not set. Use the method "mock" to set the mocker.');
+        }
+
+        if($this->mocker->getReflectionClass()->isInterface()) {
+            throw new BadMethodCallException('You only use "wrap()" on regular classes and not "interfaces".');
         }
 
         $inst = $this;
@@ -110,6 +116,64 @@ final class MockedMethod
     {
         $inst = $this;
         $inst->called = $times;
+        return $inst;
+    }
+
+    /**
+     * Validates arguments for the first called method
+     *
+     * @example method('addEmail')->withArguments('john.doe@gmail.com', 'John Doe')
+     * @param mixed ...$args
+     * @return $this
+     */
+    public function withArguments(mixed ...$args): self
+    {
+        $inst = $this;
+        foreach ($args as $key => $value) {
+            $inst = $inst->withArgumentAt($key, $value);
+        }
+        return $inst;
+    }
+
+    /**
+     * Validates arguments for multiple method calls with different argument sets
+     *
+     * @example method('addEmail')->withArguments(
+     *              ['john.doe@gmail.com', 'John Doe'], ['jane.doe@gmail.com', 'Jane Doe']
+     *          )
+     * @param mixed ...$args
+     * @return $this
+     */
+    public function withArgumentsForCalls(mixed ...$args): self
+    {
+        $inst = $this;
+        foreach ($args as $called => $data) {
+            if(!is_array($data)) {
+                throw new InvalidArgumentException(
+                    'The argument must be a array that contains the expected method arguments.'
+                );
+            }
+            foreach ($data as $key => $value) {
+                $inst = $inst->withArgumentAt($key, $value, $called);
+            }
+        }
+        return $inst;
+    }
+
+    /**
+     * This will validate an argument at position
+     *
+     * @param int $called
+     * @param int $position
+     * @param mixed $value
+     * @return $this
+     */
+    public function withArgumentAt(int $position, mixed $value, int $called = 0): self
+    {
+        $inst = $this;
+        $inst->arguments[] = [
+            "validateInData" => ["$called.$position", "equal", [$value]],
+        ];
         return $inst;
     }
 

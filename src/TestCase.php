@@ -399,6 +399,7 @@ final class TestCase
                 continue;
             }
 
+
             if(!property_exists($row, $property)) {
                 throw new ErrorException(
                     "The mock method meta data property name '$property' is undefined in mock object. " .
@@ -407,11 +408,12 @@ final class TestCase
                 );
             }
             $currentValue = $row->{$property};
+
             if (is_array($value)) {
                 $validPool = $this->validateArrayValue($value, $currentValue);
                 $valid = $validPool->isValid();
-
                 if (is_array($currentValue)) {
+
                     $this->compareFromValidCollection($validPool, $value, $currentValue);
                 }
             } else {

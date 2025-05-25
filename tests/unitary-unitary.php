@@ -111,6 +111,19 @@ class UserService {
 }
 
 $unit = new Unit();
+$unit->group("Advanced Mailer Test", function (TestCase $case) use($unit) {
+    $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
+        $method->method("addFromEmail")
+            ->withArguments("john.doe@gmail.com", "John Doe")
+            ->withArgumentsForCalls(["john.doe@gmail.com", "John Doe"], ["jane.doe@gmail.com", "Jane Doe"])
+            ->called(2);
+    });
+
+    $mail->addFromEmail("john.doe@gmail.com", "John Doe");
+    $mail->addFromEmail("jane.doe@gmail.com", "Jane Doe");
+});
+
+/*
 
 $unit->group("Mocking a PSR-7 Stream", function(TestCase $case) {
     // Create a mock of a PSR-7 StreamInterface
@@ -124,13 +137,7 @@ $unit->group("Mocking a PSR-7 Stream", function(TestCase $case) {
     });
 });
 
-$unit->group("Advanced Mailer Test", function (TestCase $case) use($unit) {
-    $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
-        $method->method("send")->keepOriginal();
 
-    });
-    echo $mail->send();
-});
 
 $unit->group("Example API Request", function(TestCase $case) {
 
@@ -186,8 +193,6 @@ $unit->case($config->withSubject("Validate old Unitary case syntax"), function (
     ], "Failed to validate");;
 });
 
-
-/*
 
 
 $unit->group("Advanced Mailer Test", function (TestCase $case) use($unit) {
