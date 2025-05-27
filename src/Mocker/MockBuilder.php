@@ -75,6 +75,7 @@ final class MockBuilder
         $data['mocker'] = $mockClassName;
         $data['return'] = ($methodItem && $methodItem->hasReturn()) ? $methodItem->return : eval($returnValue);
         $data['keepOriginal'] = ($methodItem && $methodItem->keepOriginal) ? $methodItem->keepOriginal : false;
+        $data['throwOnce'] = ($methodItem && $methodItem->throwOnce) ? $methodItem->throwOnce : false;
         return $data;
     }
 
@@ -281,12 +282,18 @@ final class MockBuilder
                 }
             }
 
+            $exception = ($methodItem && $methodItem->getThrowable()) ? $this->handleTrownExceptions($methodItem->getThrowable()) : "";
+
             $safeJson = base64_encode($info);
             $overrides .= "
                 $modifiers function $methodName($paramList){$returnType}
                 {
                     \$obj = \\MaplePHP\\Unitary\\Mocker\\MockController::getInstance()->buildMethodData('$safeJson', func_get_args(), true);
                     \$data = \\MaplePHP\\Unitary\\Mocker\\MockController::getDataItem(\$obj->mocker, \$obj->name);
+                    
+                    if(\$data->throwOnce === false || \$data->called <= 1) {
+                        {$exception}
+                    }
                     {$returnValue}
                 }
                 ";
@@ -294,6 +301,32 @@ final class MockBuilder
         return $overrides;
     }
 
+    protected function handleTrownExceptions(\Throwable $exception) {
+        $class = get_class($exception);
+        $reflection = new \ReflectionClass($exception);
+        $constructor = $reflection->getConstructor();
+        $args = [];
+        if ($constructor) {
+            foreach ($constructor->getParameters() as $param) {
+                $name = $param->getName();
+                $value = $exception->{$name} ?? null;
+                switch ($name) {
+                    case 'message':
+                        $value = $exception->getMessage();
+                        break;
+                    case 'code':
+                        $value = $exception->getCode();
+                        break;
+                    case 'previous':
+                        $value = null;
+                        break;
+                }
+                $args[] = var_export($value, true);
+            }
+        }
+
+        return "throw new \\{$class}(" . implode(', ', $args) . ");";
+    }
 
     /**
      * Will build the wrapper return

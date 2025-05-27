@@ -116,11 +116,18 @@ $unit->group("Advanced Mailer Test", function (TestCase $case) use($unit) {
         $method->method("addFromEmail")
             ->withArguments("john.doe@gmail.com", "John Doe")
             ->withArgumentsForCalls(["john.doe@gmail.com", "John Doe"], ["jane.doe@gmail.com", "Jane Doe"])
+            ->willThrowOnce(new Exception("Lorem ipsum"))
             ->called(2);
     });
 
-    $mail->addFromEmail("john.doe@gmail.com", "John Doe");
+    try {
+        $mail->addFromEmail("john.doe@gmail.com", "John Doe");
+    } catch (Exception $e) {
+
+    }
+
     $mail->addFromEmail("jane.doe@gmail.com", "Jane Doe");
+
 });
 
 /*

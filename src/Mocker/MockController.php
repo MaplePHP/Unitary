@@ -89,6 +89,7 @@ final class MockController extends MethodRegistry
                 // You can prepare values here with defaults
                 $data->called = 0;
                 $data->arguments = [];
+                $data->throw = null;
                 self::$data[$mocker][$name] = $data;
                 // Mocked method has trigger "once"!
             } else {

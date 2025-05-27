@@ -6,6 +6,7 @@ use BadMethodCallException;
 use InvalidArgumentException;
 use Closure;
 use MaplePHP\Unitary\TestUtils\ExecutionWrapper;
+use Throwable;
 
 /**
  * @psalm-suppress PossiblyUnusedProperty
@@ -13,7 +14,10 @@ use MaplePHP\Unitary\TestUtils\ExecutionWrapper;
 final class MockedMethod
 {
     private ?MockBuilder $mocker;
+    private ?Throwable $throwable = null;
+
     public mixed $return = null;
+    public array $throw = [];
     public int|array|null $called = null;
 
     public ?string $class = null;
@@ -36,8 +40,10 @@ final class MockedMethod
     public ?int $endLine = null;
     public ?string $fileName = null;
     public bool $keepOriginal = false;
+    public bool $throwOnce = false;
     protected bool $hasReturn = false;
     protected ?Closure $wrapper = null;
+
 
     public function __construct(?MockBuilder $mocker = null)
     {
@@ -81,6 +87,16 @@ final class MockedMethod
     public function getWrap(): ?Closure
     {
         return $this->wrapper;
+    }
+
+    /**
+     * Get the throwable if added as Throwable
+     *
+     * @return Throwable|null
+     */
+    public function getThrowable(): ?Throwable
+    {
+        return $this->throwable;
     }
 
     /**
@@ -128,11 +144,10 @@ final class MockedMethod
      */
     public function withArguments(mixed ...$args): self
     {
-        $inst = $this;
         foreach ($args as $key => $value) {
-            $inst = $inst->withArgumentAt($key, $value);
+            $this->withArgumentAt($key, $value);
         }
-        return $inst;
+        return $this;
     }
 
     /**
@@ -233,6 +248,20 @@ final class MockedMethod
         $inst->hasReturn = true;
         $inst->return = $value;
         return $inst;
+    }
+
+    public function willThrow(Throwable $throwable)
+    {
+        $this->throwable = $throwable;
+        $this->throw = [];
+        return $this;
+    }
+
+    public function willThrowOnce(Throwable $throwable)
+    {
+        $this->throwOnce = true;
+        $this->willThrow($throwable);
+        return $this;
     }
 
     /**

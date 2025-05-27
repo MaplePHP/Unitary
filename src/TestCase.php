@@ -180,6 +180,7 @@ final class TestCase
         $test->setTestValue($this->value);
         if ($validation instanceof Closure) {
             $listArr = $this->buildClosureTest($validation, $description);
+
             foreach ($listArr as $list) {
                 if(is_bool($list)) {
                     $test->setUnit($list, "Validation");
