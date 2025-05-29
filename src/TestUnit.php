@@ -216,6 +216,9 @@ class TestUnit
         if (is_array($value)) {
             return '"' . $this->excerpt(json_encode($value)) . '"' . ($minify ? "" : " (type: array)");
         }
+        if (is_callable($value)) {
+            return '"' . $this->excerpt(get_class((object)$value)) . '"' . ($minify ? "" : " (type: callable)");
+        }
         if (is_object($value)) {
             return '"' . $this->excerpt(get_class($value)) . '"' . ($minify ? "" : " (type: object)");
         }

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 /**
  * @Package:    MaplePHP - Lightweight test mocker
@@ -164,8 +165,7 @@ final class MockBuilder
             }
         ";
 
-        //print_r($code);
-        //die;
+        //Helpers::createFile()
         eval($code);
 
         /**

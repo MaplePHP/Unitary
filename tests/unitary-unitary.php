@@ -111,27 +111,89 @@ class UserService {
 }
 
 $unit = new Unit();
-$unit->group("Advanced Mailer Test", function (TestCase $case) use($unit) {
+
+$unit->group("Test mocker", function (TestCase $case) use($unit) {
+
     $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
         $method->method("addFromEmail")
             ->withArguments("john.doe@gmail.com", "John Doe")
             ->withArgumentsForCalls(["john.doe@gmail.com", "John Doe"], ["jane.doe@gmail.com", "Jane Doe"])
-            ->willThrowOnce(new Exception("Lorem ipsum"))
+            ->willThrowOnce(new InvalidArgumentException("Lorem ipsum"))
             ->called(2);
+
+        $method->method("addBCC")
+            ->isPublic()
+            ->hasDocComment()
+            ->hasParams()
+            ->paramHasType(0)
+            ->paramIsType(0, "string")
+            ->paramHasDefault(1, "Daniel")
+            ->paramIsOptional(1)
+            ->paramIsReference(2)
+            ->called(0);
     });
 
-    try {
-        $mail->addFromEmail("john.doe@gmail.com", "John Doe");
-    } catch (Exception $e) {
-
-    }
+    $case->validate(fn() => $mail->addFromEmail("john.doe@gmail.com", "John Doe"), function(Expect $inst) {
+        $inst->isThrowable(InvalidArgumentException::class);
+    });
 
     $mail->addFromEmail("jane.doe@gmail.com", "Jane Doe");
 
+    $case->error("Test all exception validations")
+        ->validate(fn() => throw new ErrorException("Lorem ipsum", 1, 1, "example.php", 22), function(Expect $inst, Traverse $obj) {
+            $inst->isThrowable(ErrorException::class);
+            $inst->hasThrowableMessage("Lorem ipsum");
+            $inst->hasThrowableSeverity(1);
+            $inst->hasThrowableCode(1);
+            $inst->hasThrowableFile("example.php");
+            $inst->hasThrowableLine(22);
+        });
+
+    $case->validate(fn() => throw new TypeError("Lorem ipsum"), function(Expect $inst, Traverse $obj) {
+        $inst->isThrowable(TypeError::class);
+    });
 });
 
-/*
+$config = TestConfig::make("Mocking response")->withName("unitary");
 
+$unit->group($config, function (TestCase $case) use($unit) {
+
+    $stream = $case->mock(Stream::class, function (MethodRegistry $method) {
+        $method->method("getContents")
+            ->willReturn('HelloWorld')
+            ->calledAtLeast(1);
+    });
+    $response = new Response($stream);
+
+    $case->validate($response->getBody()->getContents(), function(Expect $inst) {
+        $inst->hasResponse();
+        $inst->isEqualTo('HelloWorld');
+        $inst->notIsEqualTo('HelloWorldNot');
+    });
+});
+
+$unit->group($config->withSubject("Assert validations"), function ($case) {
+    $case->validate("HelloWorld", function(Expect $inst) {
+        assert($inst->isEqualTo("HelloWorld")->isValid(), "Assert has failed");
+    });
+    assert(1 === 1, "Assert has failed");
+});
+
+$unit->case($config->withSubject("Old validation syntax"), function ($case) {
+    $case->add("HelloWorld", [
+        "isString" => [],
+        "User validation" => function($value) {
+            return $value === "HelloWorld";
+        }
+    ], "Is not a valid port number");
+
+    $this->add("HelloWorld", [
+        "isEqualTo" => ["HelloWorld"],
+    ], "Failed to validate");
+});
+
+
+/*
 $unit->group("Mocking a PSR-7 Stream", function(TestCase $case) {
     // Create a mock of a PSR-7 StreamInterface
     $stream = $case->mock(StreamInterface::class);

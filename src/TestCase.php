@@ -179,7 +179,8 @@ final class TestCase
         $test = new TestUnit($message);
         $test->setTestValue($this->value);
         if ($validation instanceof Closure) {
-            $listArr = $this->buildClosureTest($validation, $description);
+            $validPool = new Expect($this->value);
+            $listArr = $this->buildClosureTest($validation, $validPool, $description);
 
             foreach ($listArr as $list) {
                 if(is_bool($list)) {
@@ -190,6 +191,11 @@ final class TestCase
                     }
                 }
             }
+            // In some rare cases the validation value might change along the rode
+            // tell the test to use the new value
+            $initValue = $validPool->getInitValue();
+            $initValue = ($initValue !== null) ? $initValue : $this->getValue();
+            $test->setTestValue($initValue);
         } else {
             foreach ($validation as $method => $args) {
                 if (!($args instanceof Closure) && !is_array($args)) {
@@ -636,10 +642,9 @@ final class TestCase
      * @param string|null $message
      * @return array
      */
-    protected function buildClosureTest(Closure $validation, ?string $message = null): array
+    protected function buildClosureTest(Closure $validation, Expect $validPool, ?string $message = null): array
     {
         //$bool = false;
-        $validPool = new Expect($this->value);
         $validation = $validation->bindTo($validPool);
         $error = [];
         if ($validation !== null) {
