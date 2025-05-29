@@ -112,6 +112,8 @@ class UserService {
 
 $unit = new Unit();
 
+
+
 $unit->group("Test mocker", function (TestCase $case) use($unit) {
 
     $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
@@ -192,86 +194,20 @@ $unit->case($config->withSubject("Old validation syntax"), function ($case) {
     ], "Failed to validate");
 });
 
-
-/*
-$unit->group("Mocking a PSR-7 Stream", function(TestCase $case) {
-    // Create a mock of a PSR-7 StreamInterface
-    $stream = $case->mock(StreamInterface::class);
-
-    // Inject the mock into a Response object
-    $response = new Response($stream);
-
-    $case->validate($response->getBody(), function(Expect $expect) {
-        $expect->isInstanceOf(StreamInterface::class);
-    });
-});
-
-
-
-$unit->group("Example API Request", function(TestCase $case) {
-
-    $request = new Request("GET", "https://example.com/?page=1&slug=hello-world");
-
-    $case->validate($request->getMethod(), function(Expect $expect) {
-        $expect->isRequestMethod();
-    });
-
-    $case->validate($request->getUri()->getQuery(), function(Expect $expect) {
-        $expect->hasQueryParam("page", 1);
-        $expect->hasQueryParam("slug", "hello-world");
-    });
-});
-
-$config = TestConfig::make("Testing mocking library")->withName("unitary")->withSkip();
-
-$unit->group($config, function (TestCase $case) use($unit) {
-
-    $stream = $case->mock(Stream::class, function (MethodRegistry $method) {
-        $method->method("getContents")
-            ->willReturn('')
-            ->calledAtLeast(1);
-    });
-    $response = new Response($stream);
-
-    $case->validate($response->getBody()->getContents(), function(Expect $inst) {
-        $inst->hasResponse();
-    });
-});
-
-$unit->group($config->withSubject("Testing custom validations"), function ($case) {
-
-    $case->validate("HelloWorld", function(Expect $inst) {
-        assert($inst->isEqualTo("HelloWorld")->isValid(), "Assert has failed");
-    });
-
-    assert(1 === 1, "Assert has failed");
-
-});
-
-$unit->case($config->withSubject("Validate old Unitary case syntax"), function ($case) {
-
-    $case->add("HelloWorld", [
-        "isString" => [],
-        "User validation" => function($value) {
-            return $value === "HelloWorld";
-        }
-    ], "Is not a valid port number");
-
-    $this->add("HelloWorld", [
-        "isEqualTo" => ["HelloWorld"],
-    ], "Failed to validate");;
-});
-
-
-
-$unit->group("Advanced Mailer Test", function (TestCase $case) use($unit) {
+$unit->group("Validate partial mock", function (TestCase $case) use($unit) {
     $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
         $method->method("send")->keepOriginal();
+        $method->method("isValidEmail")->keepOriginal();
         $method->method("sendEmail")->keepOriginal();
     });
-    $mail->send();
+
+    $case->validate(fn() => $mail->send(), function(Expect $inst) {
+        $inst->hasThrowableMessage("Invalid email");
+    });
 });
 
+
+/*
 $unit->group("Advanced App Response Test", function (TestCase $case) use($unit) {
 
 

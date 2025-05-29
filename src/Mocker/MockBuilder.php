@@ -165,7 +165,9 @@ final class MockBuilder
             }
         ";
 
-        //Helpers::createFile()
+        //print_r($code);
+        //die;
+        //Helpers::createFile($this->mockClassName, $code);
         eval($code);
 
         /**
@@ -276,7 +278,7 @@ final class MockBuilder
             }
 
             if($methodItem && $methodItem->keepOriginal) {
-                $returnValue = "parent::$methodName($paramList);";
+                $returnValue = "parent::$methodName(...func_get_args());";
                 if (!in_array('void', $types)) {
                     $returnValue = "return $returnValue";
                 }
