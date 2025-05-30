@@ -35,8 +35,8 @@ final class FileIterator
      */
     public function executeAll(string $path, string|bool $rootDir = false): void
     {
-        $rootDir = $rootDir !== false ? realpath($rootDir) : false;
-        $path = (!$path && $rootDir) ? $rootDir : $path;
+        $rootDir = is_string($rootDir) ? realpath($rootDir) : false;
+        $path = (!$path && $rootDir !== false) ? $rootDir : $path;
         if($rootDir !== false && !str_starts_with($path, "/") && !str_starts_with($path, $rootDir)) {
             $path = $rootDir . "/" . $path;
         }
@@ -89,7 +89,6 @@ final class FileIterator
             if(is_file($path)) {
                 $path = dirname($path) . "/";
             }
-
             if(is_dir($path)) {
                 $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path));
                 /** @var string $pattern */
@@ -104,12 +103,10 @@ final class FileIterator
                 }
             }
         }
-
-        if($rootDir && count($files) <= 0 && str_starts_with($path, $rootDir) && isset($this->args['smart-search'])) {
-            $path = realpath($path . "/..") . "/";
+        if($rootDir !== false && count($files) <= 0 && str_starts_with($path, $rootDir) && isset($this->args['smart-search'])) {
+            $path = (string)realpath($path . "/..") . "/";
             return $this->findFiles($path, $rootDir);
         }
-
         return $files;
     }
 
@@ -146,8 +143,7 @@ final class FileIterator
     {
         $file = $this->getNaturalPath($file);
         foreach ($exclArr as $excl) {
-            /* @var string $excl */
-            $relativeExclPath = $this->getNaturalPath($relativeDir . DIRECTORY_SEPARATOR . $excl);
+            $relativeExclPath = $this->getNaturalPath($relativeDir . DIRECTORY_SEPARATOR . (string)$excl);
             if (fnmatch($relativeExclPath, $file)) {
                 return true;
             }

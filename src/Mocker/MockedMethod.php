@@ -242,7 +242,7 @@ final class MockedMethod
      * @param mixed $value
      * @return $this
      */
-    public function willReturn(mixed $value): self
+    public function willReturn(mixed ...$value): self
     {
         $inst = $this;
         $inst->hasReturn = true;
@@ -250,14 +250,14 @@ final class MockedMethod
         return $inst;
     }
 
-    public function willThrow(Throwable $throwable)
+    public function willThrow(Throwable $throwable): self
     {
         $this->throwable = $throwable;
         $this->throw = [];
         return $this;
     }
 
-    public function willThrowOnce(Throwable $throwable)
+    public function willThrowOnce(Throwable $throwable): self
     {
         $this->throwOnce = true;
         $this->willThrow($throwable);

@@ -12,10 +12,11 @@ use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Prompts\Themes\Blocks;
 use MaplePHP\Unitary\Handlers\HandlerInterface;
+use MaplePHP\Unitary\Utils\Helpers;
 use MaplePHP\Unitary\Utils\Performance;
 use RuntimeException;
 
-class Unit
+final class Unit
 {
     private ?HandlerInterface $handler = null;
     private Command $command;
@@ -178,11 +179,11 @@ class Unit
         $this->command->message($line);
         $this->command->message(
             $this->command->getAnsi()->style(["bold"], "Execution time: ") .
-            (round($start->getExecutionTime(), 3) . " seconds")
+            ((string)round($start->getExecutionTime(), 3) . " seconds")
         );
         $this->command->message(
             $this->command->getAnsi()->style(["bold"], "Memory Usage: ") .
-            (round($start->getMemoryUsage(), 2) . " KB")
+            ((string)round($start->getMemoryUsage(), 2) . " KB")
         );
         /*
          $this->command->message(
@@ -211,7 +212,7 @@ class Unit
 
         // LOOP through each case
         ob_start();
-        $countCases = count($this->cases);
+        //$countCases = count($this->cases);
         foreach ($this->cases as $index => $row) {
             if (!($row instanceof TestCase)) {
                 throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestCase.");
@@ -220,7 +221,7 @@ class Unit
             $errArg = self::getArgs("errors-only");
             $row->dispatchTest($row);
             $tests = $row->runDeferredValidations();
-            $checksum = (self::$headers['checksum'] ?? "") . $index;
+            $checksum = (string)(self::$headers['checksum'] ?? "") . $index;
             $color = ($row->hasFailed() ? "brightRed" : "brightBlue");
             $flag = $this->command->getAnsi()->style(['blueBg', 'brightWhite'], " PASS ");
             if ($row->hasFailed()) {
@@ -251,7 +252,7 @@ class Unit
             if($show && !$row->hasFailed()) {
                 $this->command->message("");
                 $this->command->message(
-                    $this->command->getAnsi()->style(["italic", $color], "Test file: " . self::$headers['file'])
+                    $this->command->getAnsi()->style(["italic", $color], "Test file: " . (string)self::$headers['file'])
                 );
             }
 
@@ -276,29 +277,25 @@ class Unit
                             $this->command->message($this->command->getAnsi()->style(["grey"], " → {$trace['code']}"));
                         }
 
-                        /** @var array<string, string> $unit */
                         foreach ($test->getUnits() as $unit) {
-                            if (is_string($unit['validation']) && !$unit['valid']) {
+
+                            /** @var array{validation: string, valid: bool|null, args: array, compare: array} $unit */
+                            if ($unit['valid'] === false) {
                                 $lengthA = $test->getValidationLength();
-                                $addArgs = is_array($unit['args']) ? "(" . implode(", ", $unit['args']) . ")" : "";
+                                $addArgs = ($unit['args'] !== []) ? "(" . Helpers::stringifyArgs($unit['args']) . ")" : "()";
                                 $validation = "{$unit['validation']}{$addArgs}";
                                 $title = str_pad($validation, $lengthA);
 
                                 $compare = "";
-                                if ($unit['compare']) {
+                                if ($unit['compare'] !== []) {
                                     $expectedValue = array_shift($unit['compare']);
                                     $compare = "Expected: $expectedValue | Actual: " . implode(":", $unit['compare']);
                                 }
 
-                                $failedMsg = "   " .$title . ((!$unit['valid']) ? " → failed" : "");
-                                $this->command->message(
-                                    $this->command->getAnsi()->style(
-                                        ((!$unit['valid']) ? $color : null),
-                                        $failedMsg
-                                    )
-                                );
+                                $failedMsg = "   " .$title . " → failed";
+                                $this->command->message($this->command->getAnsi()->style($color, $failedMsg));
 
-                                if (!$unit['valid'] && $compare) {
+                                if ($compare) {
                                     $lengthB = (strlen($compare) + strlen($failedMsg) - 8);
                                     $comparePad = str_pad($compare, $lengthB, " ", STR_PAD_LEFT);
                                     $this->command->message(
@@ -340,7 +337,7 @@ class Unit
             $this->command->message($footer);
             $this->command->message("");
         }
-        $this->output .= ob_get_clean();
+        $this->output .= (string)ob_get_clean();
 
         if ($this->output) {
             $this->buildNotice("Note:", $this->output, 80);
@@ -476,7 +473,7 @@ class Unit
      */
     public static function getUnit(): ?Unit
     {
-        if (self::hasUnit() === null) {
+        if (self::hasUnit() === false) {
             throw new Exception("Unit has not been set yet. It needs to be set first.");
         }
         return self::$current;
@@ -496,7 +493,7 @@ class Unit
                 self::$current->command->getAnsi()->style(
                     ["italic", "grey"],
                     "Total: " . self::$totalPassedTests . "/" . self::$totalTests . " $dot " .
-                    "Peak memory usage: " . round(memory_get_peak_usage() / 1024, 2) . " KB"
+                    "Peak memory usage: " . (string)round(memory_get_peak_usage() / 1024, 2) . " KB"
                 )
             );
             self::$current->command->message("");

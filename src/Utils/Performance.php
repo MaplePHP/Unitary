@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MaplePHP\Unitary\Utils;
 
-class Performance
+final class Performance
 {
     private float $startTime;
     private int $startMemory;

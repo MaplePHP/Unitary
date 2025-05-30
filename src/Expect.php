@@ -6,6 +6,9 @@ use Exception;
 use Throwable;
 use MaplePHP\Validate\ValidationChain;
 
+/**
+ * @api
+ */
 class Expect extends ValidationChain
 {
 
@@ -24,7 +27,8 @@ class Expect extends ValidationChain
         if($except = $this->getException()) {
             $this->setValue($except);
         }
-        $this->validateExcept(__METHOD__, $compare, fn() => $this->isClass($compare));
+        /** @psalm-suppress PossiblyInvalidCast */
+        $this->validateExcept(__METHOD__, $compare, fn() => $this->isClass((string)$compare));
         return $this;
     }
 
@@ -40,6 +44,7 @@ class Expect extends ValidationChain
         if($except = $this->getException()) {
             $this->setValue($except->getMessage());
         }
+        /** @psalm-suppress PossiblyInvalidCast */
         $this->validateExcept(__METHOD__, $compare, fn() => $this->isEqualTo($compare));
         return $this;
     }
@@ -56,6 +61,7 @@ class Expect extends ValidationChain
         if($except = $this->getException()) {
             $this->setValue($except->getCode());
         }
+        /** @psalm-suppress PossiblyInvalidCast */
         $this->validateExcept(__METHOD__, $compare, fn() => $this->isEqualTo($compare));
         return $this;
     }
@@ -73,6 +79,7 @@ class Expect extends ValidationChain
             $value = method_exists($except, 'getSeverity') ? $except->getSeverity() : 0;
             $this->setValue($value);
         }
+        /** @psalm-suppress PossiblyInvalidCast */
         $this->validateExcept(__METHOD__, $compare, fn() => $this->isEqualTo($compare));
         return $this;
     }
@@ -89,6 +96,7 @@ class Expect extends ValidationChain
         if($except = $this->getException()) {
             $this->setValue($except->getFile());
         }
+        /** @psalm-suppress PossiblyInvalidCast */
         $this->validateExcept(__METHOD__, $compare, fn() => $this->isEqualTo($compare));
         return $this;
     }
@@ -105,6 +113,7 @@ class Expect extends ValidationChain
         if($except = $this->getException()) {
             $this->setValue($except->getLine());
         }
+        /** @psalm-suppress PossiblyInvalidCast */
         $this->validateExcept(__METHOD__, $compare, fn() => $this->isEqualTo($compare));
         return $this;
     }
@@ -113,11 +122,11 @@ class Expect extends ValidationChain
      * Helper to validate the exception instance against the provided callable.
      *
      * @param string $name
-     * @param string|object|callable $compare
+     * @param string|int|object|callable $compare
      * @param callable $fall
      * @return self
      */
-    protected function validateExcept(string $name, string|object|callable $compare, callable $fall): self
+    protected function validateExcept(string $name, int|string|object|callable $compare, callable $fall): self
     {
         $pos = strrpos($name, '::');
         $name = ($pos !== false) ? substr($name, $pos + 2) : $name;
@@ -162,11 +171,11 @@ class Expect extends ValidationChain
             return $this->except;
         }
 
-        if(!is_callable($this->getValue())) {
+        $expect = $this->getValue();
+        if(!is_callable($expect)) {
             throw new Exception("Except method only accepts callable");
         }
         try {
-            $expect = $this->getValue();
             $expect();
             $this->except = false;
         } catch (Throwable $exception) {

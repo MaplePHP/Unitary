@@ -28,19 +28,23 @@ use Throwable;
  */
 final class TestCase
 {
+    /**
+     * List of properties to exclude from validation
+     * (some properties are not valid for comparison)
+     *
+     * @var array<string>
+     */
+    private const EXCLUDE_VALIDATE = ["return"];
+
     private mixed $value;
     private TestConfig $config;
-    private ?string $message = null;
     private array $test = [];
     private int $count = 0;
     private ?Closure $bind = null;
     private ?string $errorMessage = null;
     private array $deferredValidation = [];
-    /** @var MockBuilder<T> */
-    private MockBuilder $mocker;
-    /**
-     * @var true
-     */
+
+    private ?MockBuilder $mocker = null;
     private bool $hasAssertError = false;
 
     /**
@@ -51,7 +55,7 @@ final class TestCase
     public function __construct(TestConfig|string|null $config = null)
     {
         if (!($config instanceof TestConfig)) {
-            $this->config = new TestConfig($config);
+            $this->config = new TestConfig((string)$config);
         } else {
             $this->config = $config;
         }
@@ -114,7 +118,7 @@ final class TestCase
                 );
             } catch (Throwable $e) {
                 if(str_contains($e->getFile(), "eval()")) {
-                    throw new BlunderErrorException($e->getMessage(), $e->getCode());
+                    throw new BlunderErrorException($e->getMessage(), (int)$e->getCode());
                 }
                 throw $e;
             }
@@ -187,6 +191,7 @@ final class TestCase
                     $test->setUnit($list, "Validation");
                 } else {
                     foreach ($list as $method => $valid) {
+                        /** @var array<mixed>|bool $valid */
                         $test->setUnit(false, (string)$method, $valid);
                     }
                 }
@@ -205,7 +210,7 @@ final class TestCase
             }
         }
         if (!$test->isValid()) {
-            if(!$trace) {
+            if($trace === null || $trace === []) {
                 $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1];
             }
 
@@ -292,6 +297,9 @@ final class TestCase
      */
     public function buildMock(?Closure $validate = null): mixed
     {
+        if(!($this->mocker instanceof MockBuilder)) {
+            throw new BadMethodCallException("The mocker is not set yet!");
+        }
         if (is_callable($validate)) {
             $this->prepareValidation($this->mocker, $validate);
         }
@@ -299,7 +307,7 @@ final class TestCase
             /** @psalm-suppress MixedReturnStatement */
             return $this->mocker->execute();
         } catch (Throwable $e) {
-            throw new BlunderErrorException($e->getMessage(), $e->getCode());
+            throw new BlunderErrorException($e->getMessage(), (int)$e->getCode());
         }
     }
 
@@ -310,7 +318,6 @@ final class TestCase
      * A validation closure can also be provided to define mock expectations. These
      * validations are deferred and will be executed later via runDeferredValidations().
      *
-     * @template T of object
      * @param class-string<T> $class
      * @param Closure|null $validate
      * @param array $args
@@ -325,6 +332,9 @@ final class TestCase
 
     public function getMocker(): MockBuilder
     {
+        if(!($this->mocker instanceof MockBuilder)) {
+            throw new BadMethodCallException("The mocker is not set yet!");
+        }
         return $this->mocker;
     }
 
@@ -373,8 +383,8 @@ final class TestCase
             throw new ErrorException("Could not get data from mocker!");
         }
         foreach ($data as $row) {
-            if (is_object($row) && isset($row->name) && $pool->has($row->name)) {
-                $error[(string)$row->name] = $this->validateRow($row, $pool);
+            if (is_object($row) && isset($row->name) && is_string($row->name) && $pool->has($row->name)) {
+                $error[$row->name] = $this->validateRow($row, $pool);
             }
         }
         return $error;
@@ -400,12 +410,10 @@ final class TestCase
         }
 
         $errors = [];
-
         foreach (get_object_vars($item) as $property => $value) {
             if ($value === null) {
                 continue;
             }
-
 
             if(!property_exists($row, $property)) {
                 throw new ErrorException(
@@ -416,24 +424,24 @@ final class TestCase
             }
             $currentValue = $row->{$property};
 
-            if (is_array($value)) {
-                $validPool = $this->validateArrayValue($value, $currentValue);
-                $valid = $validPool->isValid();
-                if (is_array($currentValue)) {
-
-                    $this->compareFromValidCollection($validPool, $value, $currentValue);
+            if(!in_array($property, self::EXCLUDE_VALIDATE)) {
+                if (is_array($value)) {
+                    $validPool = $this->validateArrayValue($value, $currentValue);
+                    $valid = $validPool->isValid();
+                    if (is_array($currentValue)) {
+                        $this->compareFromValidCollection($validPool, $value, $currentValue);
+                    }
+                } else {
+                    /** @psalm-suppress MixedArgument */
+                    $valid = Validator::value($currentValue)->equal($value);
                 }
-            } else {
-                /** @psalm-suppress MixedArgument */
-                $valid = Validator::value($currentValue)->equal($value);
+                $errors[] = [
+                    "property" => $property,
+                    "currentValue" => $currentValue,
+                    "expectedValue" => $value,
+                    "valid" => $valid
+                ];
             }
-
-            $errors[] = [
-                "property" => $property,
-                "currentValue" => $currentValue,
-                "expectedValue" => $value,
-                "valid" => $valid
-            ];
         }
 
         return $errors;
@@ -529,6 +537,7 @@ final class TestCase
             /** @var callable $row['call'] */
             $error = $row['call']();
             $hasValidated = [];
+            /** @var string $method */
             foreach ($error as $method => $arr) {
                 $test = new TestUnit("Mock method \"$method\" failed");
                 if (isset($row['trace']) && is_array($row['trace'])) {
@@ -536,12 +545,13 @@ final class TestCase
                 }
                 foreach ($arr as $data) {
                     // We do not want to validate the return here automatically
-                    if($data['property'] !== "return") {
-                        /** @var array{expectedValue: mixed, currentValue: mixed} $data */
+                    /** @var array{property: string} $data */
+                    if(!in_array($data['property'], self::EXCLUDE_VALIDATE)) {
+                        /** @var array{valid: bool|null, expectedValue: mixed, currentValue: mixed} $data  */
                         $test->setUnit($data['valid'], $data['property'], [], [
                             $data['expectedValue'], $data['currentValue']
                         ]);
-                        if (!isset($hasValidated[$method]) && !$data['valid']) {
+                        if (!isset($hasValidated[$method]) && $data['valid'] === null || $data['valid'] === false) {
                             $hasValidated[$method] = true;
                             $this->count++;
                         }
@@ -747,8 +757,8 @@ final class TestCase
             }
 
             $params = array_map(function ($param) {
-                $type = $param->hasType() ? $param->getType() . ' ' : '';
-                $value = $param->isDefaultValueAvailable() ? ' = ' . Str::value($param->getDefaultValue())->exportReadableValue()->get() : null;
+                $type = $param->hasType() ? (string)$param->getType() . ' ' : '';
+                $value = $param->isDefaultValueAvailable() ? ' = ' . (string)Str::value($param->getDefaultValue())->exportReadableValue()->get() : "";
                 return $type . '$' . $param->getName() . $value;
             }, $method->getParameters());
 

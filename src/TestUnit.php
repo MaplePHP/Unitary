@@ -6,8 +6,9 @@ namespace MaplePHP\Unitary;
 
 use ErrorException;
 use MaplePHP\DTO\Format\Str;
+use MaplePHP\Unitary\Utils\Helpers;
 
-class TestUnit
+final class TestUnit
 {
     private bool $valid;
     private mixed $value = null;
@@ -56,7 +57,7 @@ class TestUnit
      *
      * @param bool|null $valid can be null if validation should execute later
      * @param string|null|\Closure $validation
-     * @param array $args
+     * @param array|bool $args
      * @param array $compare
      * @return $this
      * @throws ErrorException
@@ -73,8 +74,8 @@ class TestUnit
             $this->count++;
         }
 
-        if (!is_callable($validation)) {
-            $addArgs = is_array($args) ? "(" . implode(", ", $args) . ")" : "";
+        if (is_string($validation)) {
+            $addArgs = is_array($args) ? "(" . Helpers::stringifyArgs($args) . ")" : "";
             $valLength = strlen($validation . $addArgs);
             if ($validation && $this->valLength < $valLength) {
                 $this->valLength = $valLength;
@@ -113,20 +114,22 @@ class TestUnit
     public function setCodeLine(array $trace): self
     {
         $this->codeLine = [];
-        $file = $trace['file'] ?? '';
-        $line = $trace['line'] ?? 0;
-        if ($file && $line) {
-            $lines = file($file);
+        $file = (string)($trace['file'] ?? '');
+        $line = (int)($trace['line'] ?? 0);
+        $lines = file($file);
+        $code = "";
+        if($lines !== false) {
             $code = trim($lines[$line - 1] ?? '');
             if (str_starts_with($code, '->')) {
                 $code = substr($code, 2);
             }
             $code = $this->excerpt($code);
-
-            $this->codeLine['line'] = $line;
-            $this->codeLine['file'] = $file;
-            $this->codeLine['code'] = $code;
         }
+
+        $this->codeLine['line'] = $line;
+        $this->codeLine['file'] = $file;
+        $this->codeLine['code'] = $code;
+
         return $this;
     }
 
@@ -195,10 +198,10 @@ class TestUnit
      *
      * @param mixed|null $value
      * @param bool $minify
-     * @return string|bool
+     * @return string
      * @throws ErrorException
      */
-    public function getReadValue(mixed $value = null, bool $minify = false): string|bool
+    public function getReadValue(mixed $value = null, bool $minify = false): string
     {
         $value = $value === null ? $this->value : $value;
         if (is_bool($value)) {
@@ -214,7 +217,11 @@ class TestUnit
             return '"' . $this->excerpt($value) . '"' . ($minify ? "" : " (type: string)");
         }
         if (is_array($value)) {
-            return '"' . $this->excerpt(json_encode($value)) . '"' . ($minify ? "" : " (type: array)");
+            $json = json_encode($value);
+            if($json === false) {
+                return "(unknown type)";
+            }
+            return '"' . $this->excerpt($json) . '"' . ($minify ? "" : " (type: array)");
         }
         if (is_callable($value)) {
             return '"' . $this->excerpt(get_class((object)$value)) . '"' . ($minify ? "" : " (type: callable)");

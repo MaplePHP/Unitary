@@ -12,7 +12,7 @@ use MaplePHP\Log\InvalidArgumentException;
  * This class is particularly useful for testing type-specific functionality
  * and generating test data with specific data types.
  */
-class DataTypeMock
+final class DataTypeMock
 {
 
     /**
@@ -26,7 +26,7 @@ class DataTypeMock
     private ?array $types = null;
 
     /**
-     * @var array|null Stores bound arguments with their associated keys
+     * @var array<string, array<string, mixed>>|null
      */
     private ?array $bindArguments = null;
 
@@ -121,6 +121,9 @@ class DataTypeMock
     {
         $inst = clone $this;
         $tempInst = $this->withCustomDefault($dataType, $value);
+        if($inst->bindArguments === null) {
+            $inst->bindArguments = [];
+        }
         $inst->bindArguments[$key][$dataType] = $tempInst->defaultArguments[$dataType];
         return $inst;
     }
@@ -141,23 +144,23 @@ class DataTypeMock
      * Initializes types' array if not already set
      *
      * @param string $dataType The data type to get the value for
-     * @return mixed The string representation of the value for the specified data type
+     * @return string The string representation of the value for the specified data type
      * @throws InvalidArgumentException If the specified data type is invalid
      */
-    public function getDataTypeValue(string $dataType, ?string $bindKey = null): mixed
+    public function getDataTypeValue(string $dataType, ?string $bindKey = null): string
     {
         if(is_string($bindKey) && isset($this->bindArguments[$bindKey][$dataType])) {
             return self::exportValue($this->bindArguments[$bindKey][$dataType]);
         }
 
         if($this->types === null) {
-            $this->types = $this->getDataTypeListToString();    
+            $this->types = $this->getDataTypeListToString();
         }
 
         if(!isset($this->types[$dataType])) {
             throw new InvalidArgumentException("Invalid data type: $dataType");
         }
-        return $this->types[$dataType];
+        return (string)$this->types[$dataType];
         
     }
     

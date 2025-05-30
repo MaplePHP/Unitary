@@ -96,6 +96,7 @@ final class MockController extends MethodRegistry
                 // This is the mocked method
                 // You can overwrite the default with the expected mocked values here
                 if (isset(self::$data[$mocker][$name])) {
+                    /** @psalm-suppress MixedArrayAssignment */
                     self::$data[$mocker][$name]->arguments[] = $args;
                     self::$data[$mocker][$name]->called = (int)self::$data[$mocker][$name]->called + 1;
                     // Mocked method has trigger "More Than" once!

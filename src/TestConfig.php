@@ -2,7 +2,7 @@
 
 namespace MaplePHP\Unitary;
 
-class TestConfig
+final class TestConfig
 {
 
     public ?string $message;

@@ -61,6 +61,11 @@ final class MockBuilder
          */
     }
 
+    protected function getMockClass(?MockedMethod $methodItem, callable $call, mixed $fallback = null): mixed
+    {
+        return ($methodItem instanceof MockedMethod) ? $call($methodItem) : $fallback;
+    }
+
     /**
      * Adds metadata to the mock method, including the mock class name, return value.
      * This is possible custom-added data that "has to" validate against the MockedMethod instance
@@ -71,12 +76,12 @@ final class MockBuilder
      * @param mixed $methodItem
      * @return array The data array with added metadata
      */
-    protected function addMockMetadata(array $data, string $mockClassName, mixed $returnValue, mixed $methodItem): array
+    protected function addMockMetadata(array $data, string $mockClassName, mixed $returnValue, ?MockedMethod $methodItem): array
     {
         $data['mocker'] = $mockClassName;
-        $data['return'] = ($methodItem && $methodItem->hasReturn()) ? $methodItem->return : eval($returnValue);
-        $data['keepOriginal'] = ($methodItem && $methodItem->keepOriginal) ? $methodItem->keepOriginal : false;
-        $data['throwOnce'] = ($methodItem && $methodItem->throwOnce) ? $methodItem->throwOnce : false;
+        $data['return'] = ($methodItem instanceof MockedMethod && $methodItem->hasReturn()) ? $methodItem->return : eval($returnValue);
+        $data['keepOriginal'] = ($methodItem instanceof MockedMethod && $methodItem->keepOriginal) ? $methodItem->keepOriginal : false;
+        $data['throwOnce'] = ($methodItem instanceof MockedMethod && $methodItem->throwOnce) ? $methodItem->throwOnce : false;
         return $data;
     }
 
@@ -118,7 +123,7 @@ final class MockBuilder
      */
     public function getMockedClassName(): string
     {
-        return $this->mockClassName;
+        return (string)$this->mockClassName;
     }
 
     /**
@@ -132,7 +137,7 @@ final class MockBuilder
      */
     public function mockDataType(string $dataType, mixed $value, ?string $bindToMethod = null): self
     {
-        if($bindToMethod) {
+        if($bindToMethod !== null && $bindToMethod) {
             $this->dataTypeMock = $this->dataTypeMock->withCustomBoundDefault($bindToMethod,  $dataType, $value);
         } else {
             $this->dataTypeMock = $this->dataTypeMock->withCustomDefault($dataType, $value);
@@ -149,7 +154,7 @@ final class MockBuilder
     public function execute(): mixed
     {
         $className = $this->reflection->getName();
-        $overrides = $this->generateMockMethodOverrides($this->mockClassName);
+        $overrides = $this->generateMockMethodOverrides((string)$this->mockClassName);
         $unknownMethod = $this->errorHandleUnknownMethod($className, !$this->reflection->isInterface());
         $extends = $this->reflection->isInterface() ? "implements $className" : "extends $className";
 
@@ -169,6 +174,10 @@ final class MockBuilder
         //die;
         //Helpers::createFile($this->mockClassName, $code);
         eval($code);
+
+        if(!is_string($this->mockClassName)) {
+            throw new Exception("Mock class name is not a string");
+        }
 
         /**
          * @psalm-suppress MixedMethodCall
@@ -215,7 +224,10 @@ final class MockBuilder
     {
         // Will overwrite the auto generated value
         if ($methodItem && $methodItem->hasReturn()) {
-            return "return " . var_export($methodItem->return, true) . ";";
+            return "  
+            \$returnData = " . var_export($methodItem->return, true) . ";
+            return \$returnData[\$data->called-1] ?? \$returnData[0];
+            ";
         }
         if ($types) {
             return (string)$this->getMockValueForType((string)$types[0], $method);
@@ -284,7 +296,7 @@ final class MockBuilder
                 }
             }
 
-            $exception = ($methodItem && $methodItem->getThrowable()) ? $this->handleTrownExceptions($methodItem->getThrowable()) : "";
+            $exception = ($methodItem && $methodItem->getThrowable()) ? $this->handleThrownExceptions($methodItem->getThrowable()) : "";
 
             $safeJson = base64_encode($info);
             $overrides .= "
@@ -303,7 +315,14 @@ final class MockBuilder
         return $overrides;
     }
 
-    protected function handleTrownExceptions(\Throwable $exception) {
+    /**
+     * Will mocked handle the thrown exception
+     *
+     * @param \Throwable $exception
+     * @return string
+     */
+    protected function handleThrownExceptions(\Throwable $exception): string
+    {
         $class = get_class($exception);
         $reflection = new \ReflectionClass($exception);
         $constructor = $reflection->getConstructor();
@@ -403,7 +422,7 @@ final class MockBuilder
 
         } elseif ($returnType instanceof ReflectionIntersectionType) {
             $intersect = array_map(
-                fn ($type) => $type instanceof ReflectionNamedType ? $type->getName() : (string) $type,
+                fn (ReflectionNamedType $type) => $type->getName(),
                 $returnType->getTypes()
             );
             $types[] = $intersect;

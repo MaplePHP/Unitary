@@ -104,8 +104,6 @@ class UserService {
         if(!filter_var($this->mailer->getFromEmail(), FILTER_VALIDATE_EMAIL)) {
             throw new \Exception("Invalid email");
         }
-        //echo $this->mailer->sendEmail($email, $name)."\n";
-        //echo $this->mailer->sendEmail($email, $name);
         return true;
     }
 }
@@ -114,9 +112,86 @@ $unit = new Unit();
 
 
 
+$unit->group("Advanced App Response Test", function (TestCase $case) use($unit) {
+
+
+    // Quickly mock the Stream class
+    $stream = $case->mock(Stream::class, function (MethodRegistry $method) {
+        $method->method("getContents")
+            ->willReturn('{"test":"test"}')
+            ->calledAtLeast(1);
+
+        $method->method("fopen")->isPrivate();
+    });
+    // Mock with configuration
+    //
+    // Notice: this will handle TestCase as immutable, and because of this
+    // the new instance of TestCase must be return to the group callable below
+    //
+    // By passing the mocked Stream class to the Response constructor, we
+    // will actually also test that the argument has the right data type
+    $case = $case->withMock(Response::class, [$stream]);
+
+    // We can override all "default" mocking values tide to TestCase Instance
+    // to use later on in out in the validations, you can also tie the mock
+    // value to a method
+    $case->getMocker()
+        ->mockDataType("string", "myCustomMockStringValue")
+        ->mockDataType("array", ["myCustomMockArrayItem"])
+        ->mockDataType("int", 200, "getStatusCode");
+
+    // List all default mock values that will be automatically used in
+    // parameters and return values
+    //print_r(\MaplePHP\Unitary\TestUtils\DataTypeMock::inst()->getMockValues());
+
+    $response = $case->buildMock(function (MethodRegistry $method) use($stream) {
+        // Even tho Unitary mocker tries to automatically mock the return type of methods,
+        // it might fail if the return type is an expected Class instance, then you will
+        // need to manually set the return type to tell Unitary mocker what class to expect,
+        // which is in this example a class named "Stream".
+        // You can do this by either passing the expected class directly into the `return` method
+        // or even better by mocking the expected class and then passing the mocked class.
+        $method->method("getBody")->willReturn($stream);
+    });
+
+    $case->validate($response->getHeader("lorem"), function(Expect $inst) {
+        // Validate against the new default array item value
+        // If we weren't overriding the default the array would be ['item1', 'item2', 'item3']
+        $inst->isInArray(["myCustomMockArrayItem"]);
+    });
+
+
+    $case->validate($response->getBody()->getContents(), function(Expect $inst) {
+        $inst->isString();
+        $inst->isJson();
+    });
+
+    $case->validate($response->getStatusCode(), function(Expect $inst) {
+        // Will validate to the default int data type set above
+        // and bounded to "getStatusCode" method
+        $inst->isHttpSuccess();
+    });
+
+    $case->validate($response->getProtocolVersion(), function(Expect $inst) {
+        // MockedValue is the default value that the mocked class will return
+        // if you do not specify otherwise, either by specify what the method should return
+        // or buy overrides the default mocking data type values.
+        $inst->isEqualTo("MockedValue");
+    });
+
+    $case->validate($response->getBody(), function(Expect $inst) {
+        $inst->isInstanceOf(Stream::class);
+    });
+
+    // You need to return a new instance of TestCase for new mocking settings
+    return $case;
+});
+
+
+
 $unit->group("Test mocker", function (TestCase $case) use($unit) {
 
-    $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
+     $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
         $method->method("addFromEmail")
             ->withArguments("john.doe@gmail.com", "John Doe")
             ->withArgumentsForCalls(["john.doe@gmail.com", "John Doe"], ["jane.doe@gmail.com", "Jane Doe"])
@@ -139,6 +214,7 @@ $unit->group("Test mocker", function (TestCase $case) use($unit) {
         $inst->isThrowable(InvalidArgumentException::class);
     });
 
+
     $mail->addFromEmail("jane.doe@gmail.com", "Jane Doe");
 
     $case->error("Test all exception validations")
@@ -154,6 +230,13 @@ $unit->group("Test mocker", function (TestCase $case) use($unit) {
     $case->validate(fn() => throw new TypeError("Lorem ipsum"), function(Expect $inst, Traverse $obj) {
         $inst->isThrowable(TypeError::class);
     });
+
+
+    $case->validate(fn() => throw new TypeError("Lorem ipsum"), function(Expect $inst, Traverse $obj) {
+        $inst->isThrowable(function(Expect $inst) {
+            $inst->isClass(TypeError::class);
+        });
+    });
 });
 
 $config = TestConfig::make("Mocking response")->withName("unitary");
@@ -162,15 +245,19 @@ $unit->group($config, function (TestCase $case) use($unit) {
 
     $stream = $case->mock(Stream::class, function (MethodRegistry $method) {
         $method->method("getContents")
-            ->willReturn('HelloWorld')
+            ->willReturn('HelloWorld', 'HelloWorld2')
             ->calledAtLeast(1);
     });
     $response = new Response($stream);
 
     $case->validate($response->getBody()->getContents(), function(Expect $inst) {
         $inst->hasResponse();
-        $inst->isEqualTo('HelloWorld');
+        $inst->isEqualTo('Hello1World');
         $inst->notIsEqualTo('HelloWorldNot');
+    });
+
+    $case->validate($response->getBody()->getContents(), function(Expect $inst) {
+        $inst->isEqualTo('Hello2World2');
     });
 });
 
@@ -183,7 +270,8 @@ $unit->group($config->withSubject("Assert validations"), function ($case) {
 
 $unit->case($config->withSubject("Old validation syntax"), function ($case) {
     $case->add("HelloWorld", [
-        "isString" => [],
+        "isInt" => [],
+        "isBool" => [],
         "User validation" => function($value) {
             return $value === "HelloWorld";
         }
@@ -202,7 +290,7 @@ $unit->group("Validate partial mock", function (TestCase $case) use($unit) {
     });
 
     $case->validate(fn() => $mail->send(), function(Expect $inst) {
-        $inst->hasThrowableMessage("Invalid email");
+        $inst->hasThrowableMessage("Invalid email 2");
     });
 });
 

@@ -2,17 +2,69 @@
 
 namespace MaplePHP\Unitary\Utils;
 
-class Helpers
+final class Helpers
 {
 
+    /**
+     * Used to stringify arguments to show in test
+     *
+     * @param array $args
+     * @return string
+     */
+    public static function stringifyArgs(array $args): string
+    {
+        $levels = 0;
+        $str = self::stringify($args, $levels);
+        if($levels > 1) {
+            return "[$str]";
+        }
+        return $str;
+    }
+
+    /**
+     * Stringify an array and objects
+     *
+     * @param mixed $arg
+     * @param int $levels
+     * @return string
+     */
+    public static function stringify(mixed $arg, int &$levels = 0): string
+    {
+        if (is_array($arg)) {
+            $items = array_map(function($item) use(&$levels) {
+                $levels++;
+                return self::stringify($item, $levels);
+            }, $arg);
+            return implode(', ', $items);
+        }
+
+        if (is_object($arg)) {
+            return get_class($arg);
+        }
+
+        return (string)$arg;
+    }
+
+    /**
+     * Create a file instead of eval for improved debug
+     *
+     * @param string $filename
+     * @param string $input
+     * @return void
+     */
     public static function createFile(string $filename, string $input)
     {
-        $tempDir = getenv('UNITARY_TEMP_DIR') ?: sys_get_temp_dir();
+        $temp = getenv('UNITARY_TEMP_DIR');
+        $tempDir = $temp !== false ? $temp : sys_get_temp_dir();
         if (!is_dir($tempDir)) {
             mkdir($tempDir, 0777, true);
         }
         $tempFile = rtrim($tempDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $filename;
         file_put_contents($tempFile, "<?php\n" . $input);
+
+        if(!is_file($tempFile)) {
+            throw new \Exception("Unable to create file $tempFile");
+        }
         include $tempFile;
 
         /*

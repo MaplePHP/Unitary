@@ -19,6 +19,7 @@ abstract class ExecutionWrapper
 {
     protected Reflection $ref;
     protected object $instance;
+    /** @var array<string, callable> */
     private array $methods = [];
 
     /**
@@ -45,7 +46,11 @@ abstract class ExecutionWrapper
      */
     public function bind(Closure $call): Closure
     {
-        return $call->bindTo($this->instance);
+        $closure = $call->bindTo($this->instance);
+        if(!is_callable($closure)) {
+            throw new Exception("Closure is not callable.");
+        }
+        return $closure;
     }
 
     /**
@@ -64,6 +69,9 @@ abstract class ExecutionWrapper
             );
         }
         $call = $call->bindTo($this->instance);
+        if (!is_callable($call)) {
+            throw new Exception("Closure is not callable.");
+        }
         $this->methods[$method] = $call;
         return $this;
     }
@@ -84,6 +92,9 @@ abstract class ExecutionWrapper
             );
         }
         $call = $call->bindTo($this->instance);
+        if (!is_callable($call)) {
+            throw new Exception("Closure is not callable.");
+        }
         $this->methods[$method] = $call;
         return $this;
     }
