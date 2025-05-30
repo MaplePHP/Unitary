@@ -1,14 +1,13 @@
 <?php
-declare(strict_types=1);
-
 /**
- * @Package:    MaplePHP - Lightweight test wrapper for class method overrides.
- *              Extend this class to a new mock class or anonymous class
- *              and override specific methods for testing.
- * @Author:     Daniel Ronkainen
- * @Licence:    Apache-2.0 license, Copyright © Daniel Ronkainen
+ * ExecutionWrapper — Part of the MaplePHP Unitary Testing Library
+ *
+ * @package:    MaplePHP\Unitary
+ * @author:     Daniel Ronkainen
+ * @licence:    Apache-2.0 license, Copyright © Daniel Ronkainen
  *              Don't delete this comment, it's part of the license.
  */
+declare(strict_types=1);
 
 namespace MaplePHP\Unitary\TestUtils;
 
