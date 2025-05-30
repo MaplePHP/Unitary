@@ -1,12 +1,12 @@
 <?php
-declare(strict_types=1);
-
 /**
  * @Package:    MaplePHP - Lightweight test mocker
  * @Author:     Daniel Ronkainen
  * @Licence:    Apache-2.0 license, Copyright © Daniel Ronkainen
  *              Don't delete this comment, it's part of the license.
  */
+
+declare(strict_types=1);
 
 namespace MaplePHP\Unitary\Mocker;
 

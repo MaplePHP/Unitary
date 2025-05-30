@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 /**
  * @Package:    MaplePHP - Lightweight test wrapper for class method overrides.
@@ -11,9 +12,11 @@
 
 namespace MaplePHP\Unitary\TestUtils;
 
+use BadMethodCallException;
 use Closure;
 use Exception;
 use MaplePHP\Container\Reflection;
+use ReflectionException;
 
 abstract class ExecutionWrapper
 {
@@ -43,6 +46,7 @@ abstract class ExecutionWrapper
      *
      * @param Closure $call
      * @return Closure
+     * @throws Exception
      */
     public function bind(Closure $call): Closure
     {
@@ -59,11 +63,12 @@ abstract class ExecutionWrapper
      * @param string $method
      * @param Closure $call
      * @return $this
+     * @throws Exception
      */
     public function override(string $method, Closure $call): self
     {
         if (!method_exists($this->instance, $method)) {
-            throw new \BadMethodCallException(
+            throw new BadMethodCallException(
                 "Method '$method' does not exist in the class '" . get_class($this->instance) .
                 "' and therefore cannot be overridden or called."
             );
@@ -82,11 +87,12 @@ abstract class ExecutionWrapper
      * @param string $method
      * @param Closure $call
      * @return $this
+     * @throws Exception
      */
     public function add(string $method, Closure $call): self
     {
         if (method_exists($this->instance, $method)) {
-            throw new \BadMethodCallException(
+            throw new BadMethodCallException(
                 "Method '$method' already exists in the class '" . get_class($this->instance) .
                 "'. Use the 'override' method in TestWrapper instead."
             );
@@ -125,7 +131,7 @@ abstract class ExecutionWrapper
      * @param Reflection $ref
      * @param array $args
      * @return mixed|object
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     final protected function createInstance(Reflection $ref, array $args): mixed
     {
