@@ -287,17 +287,20 @@ final class Unit
                         foreach ($test->getUnits() as $unit) {
 
                             /** @var array{validation: string, valid: bool|null, args: array, compare: array} $unit */
-                            if ($unit['valid'] === false) {
+                            if (!$unit['item']->isValid()) {
                                 $lengthA = $test->getValidationLength();
                                 $addArgs = ($unit['args'] !== []) ? "(" . Helpers::stringifyArgs($unit['args']) . ")" : "()";
                                 $validation = "{$unit['validation']}{$addArgs}";
                                 $title = str_pad($validation, $lengthA);
 
+                                $compare = $unit['item']->hasComparison() ? $unit['item']->getComparison() : "";
+                                /*
                                 $compare = "";
                                 if ($unit['compare'] !== []) {
                                     $expectedValue = array_shift($unit['compare']);
                                     $compare = "Expected: $expectedValue | Actual: " . implode(":", $unit['compare']);
                                 }
+                                 */
 
                                 $failedMsg = "   " .$title . " → failed";
                                 $this->command->message($this->command->getAnsi()->style($color, $failedMsg));

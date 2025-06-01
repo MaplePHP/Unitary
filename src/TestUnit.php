@@ -70,8 +70,8 @@ final class TestUnit
      * @throws ErrorException
      */
     public function setUnit(
-        bool|null $valid,
-        null|string|\Closure $validation = null,
+        bool $valid,
+        string $validation = "",
         array|bool $args = [],
         array $compare = []
     ): self {
@@ -89,14 +89,36 @@ final class TestUnit
             }
         }
 
+
+
+        $item = new TestItem();
+
+        $item = $item->setIsValid($valid)
+            ->setValidation($validation)
+            //->setValidationArgs($args)
+        ;
         if ($compare && count($compare) > 0) {
+
             $compare = array_map(fn ($value) => $this->getReadValue($value, true), $compare);
+
+            // FIX
+            $newCompare = $compare;
+            if (!is_array($newCompare[1])) {
+                $newCompare[1] = [$newCompare[1]];
+            }
+            $item = $item->setCompare($newCompare[0], ...$newCompare[1]);
+
         }
+
+
+
+
         $this->unit[] = [
             'valid' => $valid,
             'validation' => $validation,
             'args' => $args,
-            'compare' => $compare
+            'compare' => $compare,
+            'item' => $item
         ];
         return $this;
     }
@@ -201,7 +223,7 @@ final class TestUnit
     }
 
     /**
-     * Used to get a readable value
+     * Used to get a readable value (Move to utility)
      *
      * @param mixed|null $value
      * @param bool $minify

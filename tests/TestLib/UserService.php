@@ -17,4 +17,14 @@ class UserService {
         }
         return true;
     }
+
+    private function getUserRole(): string
+    {
+        return "guest";
+    }
+
+    final public function getUserType(): string
+    {
+        return $this->getUserRole();
+    }
 }

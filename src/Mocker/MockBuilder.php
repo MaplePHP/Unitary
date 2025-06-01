@@ -251,6 +251,17 @@ final class MockBuilder
             if (!($method instanceof ReflectionMethod)) {
                 throw new Exception("Method is not a ReflectionMethod");
             }
+
+            /*
+             if ($method->isFinal() || $method->isPrivate()) {
+                trigger_error(
+                    "Cannot mock " . ($method->isFinal() ? "final" : "private") .
+                    " method '" . $method->getName() . "' in '{$this->className}' – the real method will be executed.",
+                    E_USER_WARNING
+                );
+            }
+             */
+
             if ($method->isFinal()) {
                 continue;
             }
@@ -298,7 +309,6 @@ final class MockBuilder
             }
 
             $exception = ($methodItem && $methodItem->getThrowable()) ? $this->handleThrownExceptions($methodItem->getThrowable()) : "";
-
             $safeJson = base64_encode($info);
             $overrides .= "
                 $modifiers function $methodName($paramList){$returnType}

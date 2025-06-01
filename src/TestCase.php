@@ -310,12 +310,8 @@ final class TestCase
         if (is_callable($validate)) {
             $this->prepareValidation($this->mocker, $validate);
         }
-        try {
-            /** @psalm-suppress MixedReturnStatement */
-            return $this->mocker->execute();
-        } catch (Throwable $e) {
-            throw new BlunderErrorException($e->getMessage(), (int)$e->getCode());
-        }
+        /** @psalm-suppress MixedReturnStatement */
+        return $this->mocker->execute();
     }
 
     /**
