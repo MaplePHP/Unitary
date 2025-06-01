@@ -13,27 +13,23 @@ use TestLib\UserService;
 
 $unit = new Unit();
 
-
-
-$unit->group("Mock final method in UserService", function(TestCase $case) {
-
+$unit->group("Can not mock final or private", function(TestCase $case) {
     $user = $case->mock(UserService::class, function(MethodRegistry $method) {
         $method->method("getUserRole")->willReturn("admin");
         $method->method("getUserType")->willReturn("admin");
     });
 
     $case->validate($user->getUserType(), function(Expect $expect) {
-        $expect->isEqualTo("admin");
+        $expect->isEqualTo("guest");
     });
 });
-
 
 $unit->group("Test mocker", function (TestCase $case) use($unit) {
 
      $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
         $method->method("addFromEmail")
-            ->withArguments("john.doe@gwmail.com", "John Doe")
-            ->withArgumentsForCalls(["john.doe@wgmail.com", "John Doe"], ["jane.doe@gmail.com", "Jane Doe"])
+            ->withArguments("john.doe@gmail.com", "John Doe")
+            ->withArgumentsForCalls(["john.doe@gmail.com", "John Doe"], ["jane.doe@gmail.com", "Jane Doe"])
             ->willThrowOnce(new InvalidArgumentException("Lowrem ipsum"))
             ->called(2);
 
@@ -79,7 +75,6 @@ $unit->group("Test mocker", function (TestCase $case) use($unit) {
 });
 
 $config = TestConfig::make("Mocking response")->withName("unitary");
-
 $unit->group($config, function (TestCase $case) use($unit) {
 
     $stream = $case->mock(Stream::class, function (MethodRegistry $method) {
