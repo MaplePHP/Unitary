@@ -12,7 +12,6 @@ declare(strict_types=1);
 namespace MaplePHP\Unitary;
 
 use ErrorException;
-use MaplePHP\DTO\Format\Str;
 use MaplePHP\Unitary\Utils\Helpers;
 
 final class TestUnit
@@ -59,67 +58,26 @@ final class TestUnit
         $this->hasValue = true;
     }
 
-    /**
-     * Set the test unit
-     *
-     * @param bool|null $valid can be null if validation should execute later
-     * @param string|null|\Closure $validation
-     * @param array|bool $args
-     * @param array $compare
-     * @return $this
-     * @throws ErrorException
-     */
-    public function setUnit(
-        bool $valid,
-        string $validation = "",
-        array|bool $args = [],
-        array $compare = []
-    ): self {
 
-        if (!$valid) {
+    /**
+     * Create a test item
+     *
+     * @param TestItem $item
+     * @return $this
+     */
+    public function setTestItem(TestItem $item): self
+    {
+        if (!$item->isValid()) {
             $this->valid = false;
             $this->count++;
         }
 
-        if (is_string($validation)) {
-            $addArgs = is_array($args) ? "(" . Helpers::stringifyArgs($args) . ")" : "";
-            $valLength = strlen($validation . $addArgs);
-            if ($validation && $this->valLength < $valLength) {
-                $this->valLength = $valLength;
-            }
+        $valLength = $item->getValidationLengthWithArgs();
+        if ($this->valLength < $valLength) {
+            $this->valLength = $valLength;
         }
 
-
-
-        $item = new TestItem();
-
-        $item = $item->setIsValid($valid)
-            ->setValidation($validation)
-            //->setValidationArgs($args)
-        ;
-        if ($compare && count($compare) > 0) {
-
-            $compare = array_map(fn ($value) => $this->getReadValue($value, true), $compare);
-
-            // FIX
-            $newCompare = $compare;
-            if (!is_array($newCompare[1])) {
-                $newCompare[1] = [$newCompare[1]];
-            }
-            $item = $item->setCompare($newCompare[0], ...$newCompare[1]);
-
-        }
-
-
-
-
-        $this->unit[] = [
-            'valid' => $valid,
-            'validation' => $validation,
-            'args' => $args,
-            'compare' => $compare,
-            'item' => $item
-        ];
+        $this->unit[] = $item;
         return $this;
     }
 
@@ -142,23 +100,7 @@ final class TestUnit
      */
     public function setCodeLine(array $trace): self
     {
-        $this->codeLine = [];
-        $file = (string)($trace['file'] ?? '');
-        $line = (int)($trace['line'] ?? 0);
-        $lines = file($file);
-        $code = "";
-        if($lines !== false) {
-            $code = trim($lines[$line - 1] ?? '');
-            if (str_starts_with($code, '->')) {
-                $code = substr($code, 2);
-            }
-            $code = $this->excerpt($code);
-        }
-
-        $this->codeLine['line'] = $line;
-        $this->codeLine['file'] = $file;
-        $this->codeLine['code'] = $code;
-
+        $this->codeLine = Helpers::getTrace($trace);
         return $this;
     }
 
@@ -220,65 +162,5 @@ final class TestUnit
     public function getValue(): mixed
     {
         return $this->value;
-    }
-
-    /**
-     * Used to get a readable value (Move to utility)
-     *
-     * @param mixed|null $value
-     * @param bool $minify
-     * @return string
-     * @throws ErrorException
-     */
-    public function getReadValue(mixed $value = null, bool $minify = false): string
-    {
-        $value = $value === null ? $this->value : $value;
-        if (is_bool($value)) {
-            return '"' . ($value ? "true" : "false") . '"' . ($minify ? "" : " (type: bool)");
-        }
-        if (is_int($value)) {
-            return '"' . $this->excerpt((string)$value) . '"' . ($minify ? "" : " (type: int)");
-        }
-        if (is_float($value)) {
-            return '"' . $this->excerpt((string)$value) . '"' . ($minify ? "" : " (type: float)");
-        }
-        if (is_string($value)) {
-            return '"' . $this->excerpt($value) . '"' . ($minify ? "" : " (type: string)");
-        }
-        if (is_array($value)) {
-            $json = json_encode($value);
-            if($json === false) {
-                return "(unknown type)";
-            }
-            return '"' . $this->excerpt($json) . '"' . ($minify ? "" : " (type: array)");
-        }
-        if (is_callable($value)) {
-            return '"' . $this->excerpt(get_class((object)$value)) . '"' . ($minify ? "" : " (type: callable)");
-        }
-        if (is_object($value)) {
-            return '"' . $this->excerpt(get_class($value)) . '"' . ($minify ? "" : " (type: object)");
-        }
-        if ($value === null) {
-            return '"null"'. ($minify ? '' : ' (type: null)');
-        }
-        if (is_resource($value)) {
-            return '"' . $this->excerpt(get_resource_type($value)) . '"' . ($minify ? "" : " (type: resource)");
-        }
-
-        return "(unknown type)";
-    }
-
-    /**
-     * Used to get exception to the readable value
-     *
-     * @param string $value
-     * @param int $length
-     * @return string
-     * @throws ErrorException
-     */
-    final protected function excerpt(string $value, int $length = 80): string
-    {
-        $format = new Str($value);
-        return (string)$format->excerpt($length)->get();
     }
 }

@@ -194,12 +194,22 @@ final class TestCase
             $listArr = $this->buildClosureTest($validation, $validPool, $description);
 
             foreach ($listArr as $list) {
+
                 if(is_bool($list)) {
-                    $test->setUnit($list, "Validation");
+                    $item = new TestItem();
+                    $item = $item->setIsValid($list)->setValidation("Validation");
+                    $test->setTestItem($item);
                 } else {
                     foreach ($list as $method => $valid) {
-                        /** @var array<mixed>|bool $valid */
-                        $test->setUnit(false, (string)$method, $valid);
+                        $item = new TestItem();
+                        /** @var array|bool $valid */
+                        $item = $item->setIsValid(false)->setValidation((string)$method);
+                        if(is_array($valid)) {
+                            $item = $item->setValidationArgs($valid);
+                        } else {
+                            $item = $item->setHasArgs(false);
+                        }
+                        $test->setTestItem($item);
                     }
                 }
             }
@@ -213,7 +223,11 @@ final class TestCase
                 if (!($args instanceof Closure) && !is_array($args)) {
                     $args = [$args];
                 }
-                $test->setUnit($this->buildArrayTest($method, $args), $method, (is_array($args) ? $args : []));
+                $item = new TestItem();
+                $item = $item->setIsValid($this->buildArrayTest($method, $args))
+                    ->setValidation($method)
+                    ->setValidationArgs((is_array($args) ? $args : []));
+                $test->setTestItem($item);
             }
         }
         if (!$test->isValid()) {
@@ -438,12 +452,13 @@ final class TestCase
                     /** @psalm-suppress MixedArgument */
                     $valid = Validator::value($currentValue)->equal($value);
                 }
-                $errors[] = [
-                    "property" => $property,
-                    "currentValue" => $currentValue,
-                    "expectedValue" => $value,
-                    "valid" => $valid
-                ];
+
+                $item = new TestItem();
+                $item = $item->setIsValid($valid)
+                    ->setValidation($property)
+                    ->setValue($value)
+                    ->setCompareToValue($currentValue);
+                $errors[] = $item;
             }
         }
 
@@ -548,18 +563,16 @@ final class TestCase
                 }
                 foreach ($arr as $data) {
                     // We do not want to validate the return here automatically
-                    /** @var array{property: string} $data */
-                    if(!in_array($data['property'], self::EXCLUDE_VALIDATE)) {
-                        /** @var array{valid: bool|null, expectedValue: mixed, currentValue: mixed} $data  */
-                        $test->setUnit($data['valid'], $data['property'], [], [
-                            $data['expectedValue'], $data['currentValue']
-                        ]);
-                        if (!isset($hasValidated[$method]) && $data['valid'] === null || $data['valid'] === false) {
+                    /** @var TestItem $data */
+                    if(!in_array($data->getValidation(), self::EXCLUDE_VALIDATE)) {
+                        $test->setTestItem($data);
+                        if (!isset($hasValidated[$method]) && !$data->isValid()) {
                             $hasValidated[$method] = true;
                             $this->count++;
                         }
                     }
                 }
+
                 $this->test[] = $test;
             }
         }
@@ -652,6 +665,7 @@ final class TestCase
      * This will build the closure test
      *
      * @param Closure $validation
+     * @param Expect $validPool
      * @param string|null $message
      * @return array
      */

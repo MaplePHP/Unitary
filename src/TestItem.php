@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace MaplePHP\Unitary;
 
-use Closure;
+use ErrorException;
 use MaplePHP\Unitary\Utils\Helpers;
 
 final class TestItem
@@ -21,6 +21,7 @@ final class TestItem
     protected string $validation = "";
     protected array $args = [];
     protected mixed $value = null;
+    protected bool $hasArgs = true;
     protected array $compareValues = [];
 
 
@@ -28,6 +29,11 @@ final class TestItem
     {
     }
 
+    /**
+     * Set if the test item is valid
+     * @param bool $isValid
+     * @return $this
+     */
     public function setIsValid(bool $isValid): self
     {
         $inst = clone $this;
@@ -35,6 +41,12 @@ final class TestItem
         return $inst;
     }
 
+    /**
+     * Sets the validation type that has been used.
+     *
+     * @param string $validation
+     * @return $this
+     */
     public function setValidation(string $validation): self
     {
         $inst = clone $this;
@@ -42,6 +54,12 @@ final class TestItem
         return $inst;
     }
 
+    /**
+     * Sets the validation arguments.
+     *
+     * @param array $args
+     * @return $this
+     */
     public function setValidationArgs(array $args): self
     {
         $inst = clone $this;
@@ -49,56 +67,180 @@ final class TestItem
         return $inst;
     }
 
-    public function setCompare(mixed $value, mixed ...$compareValue): self
+    /**
+     * Sets if the validation has arguments. If not, it will not be enclosed in parentheses.
+     *
+     * @param bool $enable
+     * @return $this
+     */
+    public function setHasArgs(bool $enable): self
+    {
+        $inst = clone $this;
+        $inst->hasArgs = $enable;
+        return $inst;
+    }
+
+    /**
+     * Sets the value that has been used in validation.
+     *
+     * @param mixed $value
+     * @return $this
+     */
+    public function setValue(mixed $value): self
     {
         $inst = clone $this;
         $inst->value = $value;
+        return $inst;
+    }
+
+    /**
+     * Sets a compare value for the current value.
+     *
+     * @param mixed ...$compareValue
+     * @return $this
+     */
+    public function setCompareToValue(mixed ...$compareValue): self
+    {
+        $inst = clone $this;
         $inst->compareValues = $compareValue;
         return $inst;
     }
 
+    /**
+     * Converts the value to its string representation using a helper function.
+     *
+     * @return string The stringify representation of the value.
+     * @throws ErrorException
+     */
+    public function getStringifyValue(): string
+    {
+        return Helpers::stringifyDataTypes($this->value, true);
+    }
+
+    /**
+     * Converts the comparison values to their string representations using a helper function.
+     *
+     * @return array The array of stringify comparison values.
+     * @throws ErrorException
+     */
+    public function getCompareToValue(): array
+    {
+        $compare = array_map(fn ($value) => Helpers::stringifyDataTypes($value, true), $this->compareValues);
+        return $compare;
+    }
+
+    /**
+     * Checks if the current state is valid.
+     *
+     * @return bool True if the state is valid, false otherwise.
+     */
     public function isValid(): bool
     {
         return $this->valid;
     }
 
+    /**
+     * Retrieves the validation string associated with the object.
+     *
+     * @return string The validation string.
+     */
     public function getValidation(): string
     {
         return $this->validation;
     }
 
+    /**
+     * Retrieves the validation arguments.
+     *
+     * @return array The validation arguments.
+     */
     public function getValidationArgs(): array
     {
         return $this->args;
     }
 
+    /**
+     * Retrieves the stored raw value.
+     *
+     * @return mixed
+     */
     public function getValue(): mixed
     {
         return $this->value;
     }
 
+    /**
+     * Determines if there are any comparison values present.
+     *
+     * @return bool
+     */
     public function hasComparison(): bool
     {
         return ($this->compareValues !== []);
     }
 
-    public function getCompareValues(): mixed
+    /**
+     * Returns the RAW comparison collection.
+     *
+     * @return array
+     */
+    public function getCompareValues(): array
     {
         return $this->compareValues;
     }
 
+    /**
+     * Return a string representation of the comparison between expected and actual values.
+     *
+     * @return string
+     * @throws ErrorException
+     */
     public function getComparison(): string
     {
-        return "Expected: " . $this->getValue() . " | Actual: " . implode(":", $this->getCompareValues());
+        return "Expected: " . $this->getStringifyValue() . " | Actual: " . implode(":", $this->getCompareToValue());
     }
 
+    /**
+     * Retrieves the string representation of the arguments, enclosed in parentheses if present.
+     *
+     * @return string
+     */
     public function getStringifyArgs(): string
     {
-        return Helpers::stringifyArgs($this->args);
+        if($this->hasArgs) {
+            $args = array_map(fn ($value) => Helpers::stringifyArgs($value), $this->args);
+            return "(" . implode(", ", $args) . ")";
+        }
+        return "";
     }
 
+    /**
+     * Retrieves the validation title by combining validation data and arguments.
+     *
+     * @return string
+     */
+    public function getValidationTitle(): string
+    {
+        return $this->getValidation() . $this->getStringifyArgs();
+    }
+
+    /**
+     * Retrieves the length of the validation string.
+     *
+     * @return int
+     */
     public function getValidationLength(): int
     {
         return strlen($this->getValidation());
+    }
+
+    /**
+     * Retrieves the length of the validation title.
+     *
+     * @return int
+     */
+    public function getValidationLengthWithArgs(): int
+    {
+        return strlen($this->getValidationTitle());
     }
 }

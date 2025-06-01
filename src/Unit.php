@@ -22,6 +22,7 @@ use MaplePHP\Unitary\Handlers\HandlerInterface;
 use MaplePHP\Unitary\Utils\Helpers;
 use MaplePHP\Unitary\Utils\Performance;
 use RuntimeException;
+use Throwable;
 
 final class Unit
 {
@@ -207,7 +208,7 @@ final class Unit
      * @return bool
      * @throws ErrorException
      * @throws BlunderErrorException
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function execute(): bool
     {
@@ -286,21 +287,12 @@ final class Unit
 
                         foreach ($test->getUnits() as $unit) {
 
-                            /** @var array{validation: string, valid: bool|null, args: array, compare: array} $unit */
-                            if (!$unit['item']->isValid()) {
+                            /** @var TestItem $unit */
+                            if (!$unit->isValid()) {
                                 $lengthA = $test->getValidationLength();
-                                $addArgs = ($unit['args'] !== []) ? "(" . Helpers::stringifyArgs($unit['args']) . ")" : "()";
-                                $validation = "{$unit['validation']}{$addArgs}";
+                                $validation = $unit->getValidationTitle();
                                 $title = str_pad($validation, $lengthA);
-
-                                $compare = $unit['item']->hasComparison() ? $unit['item']->getComparison() : "";
-                                /*
-                                $compare = "";
-                                if ($unit['compare'] !== []) {
-                                    $expectedValue = array_shift($unit['compare']);
-                                    $compare = "Expected: $expectedValue | Actual: " . implode(":", $unit['compare']);
-                                }
-                                 */
+                                $compare = $unit->hasComparison() ? $unit->getComparison() : "";
 
                                 $failedMsg = "   " .$title . " → failed";
                                 $this->command->message($this->command->getAnsi()->style($color, $failedMsg));
@@ -318,7 +310,7 @@ final class Unit
                             $this->command->message("");
                             $this->command->message(
                                 $this->command->getAnsi()->bold("Input value: ") .
-                                $test->getReadValue()
+                                Helpers::stringifyDataTypes($test->getValue())
                             );
                         }
                     }

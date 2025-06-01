@@ -11,16 +11,20 @@ declare(strict_types=1);
 
 namespace MaplePHP\Unitary\Utils;
 
+use ErrorException;
+use Exception;
+use MaplePHP\DTO\Format\Str;
+
 final class Helpers
 {
 
     /**
-     * Used to stringify arguments to show in test
+     * Used to stringify arguments to show in a test
      *
-     * @param array $args
+     * @param mixed $args
      * @return string
      */
-    public static function stringifyArgs(array $args): string
+    public static function stringifyArgs(mixed $args): string
     {
         $levels = 0;
         $str = self::stringify($args, $levels);
@@ -60,8 +64,9 @@ final class Helpers
      * @param string $filename
      * @param string $input
      * @return void
+     * @throws Exception
      */
-    public static function createFile(string $filename, string $input)
+    public static function createFile(string $filename, string $input): void
     {
         $temp = getenv('UNITARY_TEMP_DIR');
         $tempDir = $temp !== false ? $temp : sys_get_temp_dir();
@@ -72,7 +77,7 @@ final class Helpers
         file_put_contents($tempFile, "<?php\n" . $input);
 
         if(!is_file($tempFile)) {
-            throw new \Exception("Unable to create file $tempFile");
+            throw new Exception("Unable to create file $tempFile");
         }
         include $tempFile;
 
@@ -83,4 +88,92 @@ final class Helpers
          */
     }
 
+    /**
+     * Processes a trace array to retrieve specific details about the file, line, and code context.
+     *
+     * @param array $trace The trace array containing details such as file and line.
+     * @return array An associative array with keys 'line', 'file', and 'code' representing the line number, file path, and contextual code respectively.
+     * @throws ErrorException
+     */
+    public static function getTrace(array $trace): array
+    {
+        $codeLine = [];
+        $file = (string)($trace['file'] ?? '');
+        $line = (int)($trace['line'] ?? 0);
+        $lines = file($file);
+        $code = "";
+        if($lines !== false) {
+            $code = trim($lines[$line - 1] ?? '');
+            if (str_starts_with($code, '->')) {
+                $code = substr($code, 2);
+            }
+            $code = self::excerpt($code);
+        }
+
+        $codeLine['line'] = $line;
+        $codeLine['file'] = $file;
+        $codeLine['code'] = $code;
+
+        return $codeLine;
+    }
+
+
+    /**
+     * Generates an excerpt from the given string with a specified maximum length.
+     *
+     * @param string $value The input string to be excerpted.
+     * @param int $length The maximum length of the excerpt. Defaults to 80.
+     * @return string The resulting excerpted string.
+     * @throws ErrorException
+     */
+    final public static function excerpt(string $value, int $length = 80): string
+    {
+        $format = new Str($value);
+        return (string)$format->excerpt($length)->get();
+    }
+
+    /**
+     * Used to get a readable value (Move to utility)
+     *
+     * @param mixed|null $value
+     * @param bool $minify
+     * @return string
+     * @throws ErrorException
+     */
+    public static function stringifyDataTypes(mixed $value = null, bool $minify = false): string
+    {
+        if (is_bool($value)) {
+            return '"' . ($value ? "true" : "false") . '"' . ($minify ? "" : " (type: bool)");
+        }
+        if (is_int($value)) {
+            return '"' . self::excerpt((string)$value) . '"' . ($minify ? "" : " (type: int)");
+        }
+        if (is_float($value)) {
+            return '"' . self::excerpt((string)$value) . '"' . ($minify ? "" : " (type: float)");
+        }
+        if (is_string($value)) {
+            return '"' . self::excerpt($value) . '"' . ($minify ? "" : " (type: string)");
+        }
+        if (is_array($value)) {
+            $json = json_encode($value);
+            if($json === false) {
+                return "(unknown type)";
+            }
+            return '"' . self::excerpt($json) . '"' . ($minify ? "" : " (type: array)");
+        }
+        if (is_callable($value)) {
+            return '"' . self::excerpt(get_class((object)$value)) . '"' . ($minify ? "" : " (type: callable)");
+        }
+        if (is_object($value)) {
+            return '"' . self::excerpt(get_class($value)) . '"' . ($minify ? "" : " (type: object)");
+        }
+        if ($value === null) {
+            return '"null"'. ($minify ? '' : ' (type: null)');
+        }
+        if (is_resource($value)) {
+            return '"' . self::excerpt(get_resource_type($value)) . '"' . ($minify ? "" : " (type: resource)");
+        }
+
+        return "(unknown type)";
+    }
 }

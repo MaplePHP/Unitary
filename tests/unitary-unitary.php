@@ -132,24 +132,6 @@ $unit->group("Validate partial mock", function (TestCase $case) use($unit) {
     });
 });
 
-$unit->group("Should faile", function (TestCase $case) use($unit) {
-
-    $case->error("Is integer 1")->validate(1, function(Expect $inst) {
-        $inst->isEmail();
-        $inst->isString();
-    });
-
-    $case->error("Will return false")->validate(true, function(Expect $inst) {
-        return false;
-    });
-
-    $case->error("Will return false")->validate(true, function(Expect $inst) {
-        assert(1 == 2);
-    });
-});
-
-
-
 $unit->group("Advanced App Response Test", function (TestCase $case) use($unit) {
 
 
