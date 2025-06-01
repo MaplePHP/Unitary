@@ -72,7 +72,7 @@ final class FileIterator
                 }
             }
             Unit::completed();
-            exit((int)Unit::isSuccessful());
+            exit((int)!Unit::isSuccessful());
         }
     }
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * TestUnit — Part of the MaplePHP Unitary Testing Library
+ * TestItem — Part of the MaplePHP Unitary Testing Library
  *
  * @package:    MaplePHP\Unitary
  * @author:     Daniel Ronkainen

@@ -78,5 +78,4 @@ final class TestConfig
         $inst->skip = $bool;
         return $inst;
     }
-
 }

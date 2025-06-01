@@ -1,19 +1,12 @@
 <?php
-
 require_once(__DIR__ . "/TestLib/Mailer.php");
 require_once(__DIR__ . "/TestLib/UserService.php");
 
-use MaplePHP\DTO\Traverse;
-use MaplePHP\Http\Response;
-use MaplePHP\Http\Stream;
 use MaplePHP\Unitary\{Mocker\MethodRegistry, TestCase, TestConfig, Expect, Unit};
 use TestLib\Mailer;
-use TestLib\UserService;
-
 
 $unit = new Unit();
-
-$config = TestConfig::make("All A should fail")->withName("fail")->withSkip(true);
+$config = TestConfig::make("All A should fail")->withName("fail")->withSkip();
 $unit->group($config, function (TestCase $case) use($unit) {
 
     $case->error("Default validations")->validate(1, function(Expect $inst) {
@@ -38,15 +31,12 @@ $unit->group($config, function (TestCase $case) use($unit) {
         assert($inst->isEmail()->isString()->isValid(), "Is not email");
     });
 
-
-
     $case->add("HelloWorld", [
         "isInt" => [],
         "User validation" => function($value) {
             return $value === 2;
         }
     ], "Old validation syntax");
-
 
     $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
         $method->method("send")->keepOriginal()->called(0);

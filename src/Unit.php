@@ -14,6 +14,8 @@ namespace MaplePHP\Unitary;
 use Closure;
 use ErrorException;
 use Exception;
+use RuntimeException;
+use Throwable;
 use MaplePHP\Blunder\BlunderErrorException;
 use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Prompts\Command;
@@ -21,8 +23,6 @@ use MaplePHP\Prompts\Themes\Blocks;
 use MaplePHP\Unitary\Handlers\HandlerInterface;
 use MaplePHP\Unitary\Utils\Helpers;
 use MaplePHP\Unitary\Utils\Performance;
-use RuntimeException;
-use Throwable;
 
 final class Unit
 {
@@ -317,7 +317,9 @@ final class Unit
                 }
             }
 
-            self::$totalPassedTests += $row->getCount();
+            // Important to add test from skip as successfully count to make sure that
+            // the total passed tests are correct, and it will not exit with code 1
+            self::$totalPassedTests += ($row->getConfig()->skip) ? $row->getTotal() : $row->getCount();
             self::$totalTests += $row->getTotal();
             if ($row->getConfig()->select) {
                 $checksum .= " (" . $row->getConfig()->select . ")";
@@ -365,7 +367,6 @@ final class Unit
         }
         return false;
     }
-
 
     /**
      * Validate method that must be called within a group method
@@ -508,7 +509,7 @@ final class Unit
      */
     public static function isSuccessful(): bool
     {
-        return (self::$totalPassedTests !== self::$totalTests);
+        return (self::$totalPassedTests === self::$totalTests);
     }
 
     /**
