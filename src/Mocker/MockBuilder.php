@@ -13,6 +13,7 @@ namespace MaplePHP\Unitary\Mocker;
 
 use Closure;
 use Exception;
+use MaplePHP\Http\Stream;
 use MaplePHP\Unitary\TestUtils\DataTypeMock;
 use Reflection;
 use ReflectionClass;
@@ -27,11 +28,13 @@ final class MockBuilder
     protected ReflectionClass $reflection;
     protected string $className;
     /** @var class-string|null */
-    protected ?string $mockClassName = null;
+    protected string $mockClassName;
+    protected string $copyClassName;
     /** @var array<array-key, mixed> */
     protected array $constructorArgs = [];
     protected array $methods;
     protected array $methodList = [];
+    protected array $isFinal = [];
     private DataTypeMock $dataTypeMock;
 
     /**
@@ -53,7 +56,8 @@ final class MockBuilder
          * @var class-string $shortClassName
          * @psalm-suppress PropertyTypeCoercion
          */
-        $this->mockClassName = 'Unitary_' . uniqid() . "_Mock_" . $shortClassName;
+        $this->mockClassName = "Unitary_" . uniqid() . "_Mock_" . $shortClassName;
+        $this->copyClassName = "Unitary_Mock_" . $shortClassName;
         /*
         // Auto fill the Constructor args!
         $test = $this->reflection->getConstructor();
@@ -128,6 +132,17 @@ final class MockBuilder
     }
 
     /**
+     * Gets the list of methods that are mocked.
+     *
+     * @param string $methodName
+     * @return bool
+     */
+    public function isFinal(string $methodName): bool
+    {
+        return isset($this->isFinal[$methodName]);
+    }
+
+    /**
      * Sets a custom mock value for a specific data type. The mock value can be bound to a specific method
      * or used as a global default for the data type.
      *
@@ -157,7 +172,19 @@ final class MockBuilder
         $className = $this->reflection->getName();
         $overrides = $this->generateMockMethodOverrides((string)$this->mockClassName);
         $unknownMethod = $this->errorHandleUnknownMethod($className, !$this->reflection->isInterface());
-        $extends = $this->reflection->isInterface() ? "implements $className" : "extends $className";
+
+        if($this->reflection->isInterface()) {
+            $extends = "implements $className";
+        } else {
+
+            $m = new ClassSourceNormalizer($className);
+            $m->addNamespace("\MaplePHP\Unitary\Mocker\MockedClass");
+            eval($m->getMockableSource());
+            $extends = "extends \\" . $m->getClassName();
+            //$extends = "extends $className";
+        }
+
+
 
         $code = "
             class $this->mockClassName $extends {
@@ -171,9 +198,7 @@ final class MockBuilder
             }
         ";
 
-        //print_r($code);
-        //die;
-        //Helpers::createFile($this->mockClassName, $code);
+
         eval($code);
 
         if(!is_string($this->mockClassName)) {
@@ -186,6 +211,7 @@ final class MockBuilder
          */
         return new $this->mockClassName(...$this->constructorArgs);
     }
+
 
     /**
      * Handles the situation where an unknown method is called on the mock class.
@@ -260,11 +286,11 @@ final class MockBuilder
                     E_USER_WARNING
                 );
             }
-             */
-
             if ($method->isFinal()) {
+                $this->isFinal[$methodName] = true;
                 continue;
             }
+             */
 
             $methodName = $method->getName();
             $this->methodList[] = $methodName;
@@ -285,8 +311,7 @@ final class MockBuilder
             }
             $returnType = ($types) ? ': ' . implode('|', $types) : '';
             $modifiersArr = Reflection::getModifierNames($method->getModifiers());
-            $modifiersArr = array_filter($modifiersArr, fn($val) => $val !==  "abstract");
-            $modifiers = implode(" ", $modifiersArr);
+            $modifiers = $this->handleModifiers($modifiersArr);
 
             $arr = $this->getMethodInfoAsArray($method);
             $arr = $this->addMockMetadata($arr, $mockClassName, $returnValue, $methodItem);
@@ -324,6 +349,22 @@ final class MockBuilder
                 ";
         }
         return $overrides;
+    }
+
+    /**
+     * Will handle modifier correctly
+     *
+     * @param array $modifiersArr
+     * @return string
+     */
+    protected function handleModifiers(array $modifiersArr): string
+    {
+        $modifiersArr = array_filter($modifiersArr, fn($val) => $val !==  "abstract");
+        $modifiersArr = array_map(function($val) {
+            return ($val === "private") ? "protected" : $val;
+        }, $modifiersArr);
+
+        return implode(" ", $modifiersArr);
     }
 
     /**

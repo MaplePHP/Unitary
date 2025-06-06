@@ -29,7 +29,7 @@ final class TestConfig
      * @param string $message
      * @return self
      */
-    public static function make(string $message): self
+    public static function make(string $message = "Validating"): self
     {
         return new self($message);
     }

@@ -2,7 +2,8 @@
 
 namespace TestLib;
 
-class UserService {
+final class UserService {
+    private $test = 1;
     public function __construct(private Mailer $mailer) {}
 
     public function registerUser(string $email): bool {

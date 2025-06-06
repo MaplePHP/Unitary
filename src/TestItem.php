@@ -125,8 +125,7 @@ final class TestItem
      */
     public function getCompareToValue(): array
     {
-        $compare = array_map(fn ($value) => Helpers::stringifyDataTypes($value, true), $this->compareValues);
-        return $compare;
+        return array_map(fn ($value) => Helpers::stringifyDataTypes($value, true), $this->compareValues);
     }
 
     /**

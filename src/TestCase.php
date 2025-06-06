@@ -42,7 +42,6 @@ final class TestCase
      * @var array<string>
      */
     private const EXCLUDE_VALIDATE = ["return"];
-
     private mixed $value;
     private TestConfig $config;
     private array $test = [];
@@ -124,9 +123,11 @@ final class TestCase
                     true, fn() => false, $msg, $e->getMessage(), $e->getTrace()[0]
                 );
             } catch (Throwable $e) {
-                if(str_contains($e->getFile(), "eval()")) {
+                /*
+                 if(str_contains($e->getFile(), "eval()")) {
                     throw new BlunderErrorException($e->getMessage(), (int)$e->getCode());
                 }
+                 */
                 throw $e;
             }
             if ($newInst instanceof self) {
@@ -341,7 +342,7 @@ final class TestCase
      * @return T
      * @throws Exception
      */
-    public function mock(string $class, ?Closure $validate = null, array $args = [])
+    public function mock(string $class, ?Closure $validate = null, array $args = []): mixed
     {
         $this->mocker = new MockBuilder($class, $args);
         return $this->buildMock($validate);
@@ -808,5 +809,4 @@ final class TestCase
         }
         return $traitMethods;
     }
-
 }

@@ -212,7 +212,8 @@ final class FileIterator
     {
         $unit = Unit::getUnit();
         if ($unit === null) {
-            throw new RuntimeException("The Unit instance has not been initiated.");
+            $unit = new Unit();
+            //throw new RuntimeException("The Unit instance has not been initiated.");
         }
         return $unit;
 

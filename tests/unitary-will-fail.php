@@ -6,7 +6,7 @@ use MaplePHP\Unitary\{Mocker\MethodRegistry, TestCase, TestConfig, Expect, Unit}
 use TestLib\Mailer;
 
 $unit = new Unit();
-$config = TestConfig::make("All A should fail")->withName("fail")->withSkip();
+$config = TestConfig::make("All A should fail")->withName("unitary-fail")->withSkip();
 $unit->group($config, function (TestCase $case) use($unit) {
 
     $case->error("Default validations")->validate(1, function(Expect $inst) {

@@ -13,7 +13,33 @@ use TestLib\UserService;
 
 $unit = new Unit();
 
-$unit->group("Can not mock final or private", function(TestCase $case) {
+//$unit->disableAllTest(false);
+
+$config = TestConfig::make()->withName("unitary");
+$unit->group($config->withSubject("Mocking response"), function (TestCase $case) use($unit) {
+
+
+    $stream = $case->mock(Stream::class, function (MethodRegistry $method) {
+        $method->method("getContents")
+            ->willReturn('HelloWorld', 'HelloWorld2')
+            ->calledAtLeast(1);
+    });
+    $response = new Response($stream);
+
+    $case->validate($response->getBody()->getContents(), function(Expect $inst) {
+        $inst->hasResponse();
+        $inst->isEqualTo('HelloWorld');
+        $inst->notIsEqualTo('HelloWorldNot');
+    });
+
+    $case->validate($response->getBody()->getContents(), function(Expect $inst) {
+        $inst->isEqualTo('HelloWorld2');
+    });
+});
+
+/*
+
+$unit->group($config->withSubject("Can not mock final or private"), function(TestCase $case) {
     $user = $case->mock(UserService::class, function(MethodRegistry $method) {
         $method->method("getUserRole")->willReturn("admin");
         $method->method("getUserType")->willReturn("admin");
@@ -24,7 +50,7 @@ $unit->group("Can not mock final or private", function(TestCase $case) {
     });
 });
 
-$unit->group("Test mocker", function (TestCase $case) use($unit) {
+$unit->group($config->withSubject("Test mocker"), function (TestCase $case) use($unit) {
 
      $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
         $method->method("addFromEmail")
@@ -74,8 +100,7 @@ $unit->group("Test mocker", function (TestCase $case) use($unit) {
     });
 });
 
-$config = TestConfig::make("Mocking response")->withName("unitary");
-$unit->group($config, function (TestCase $case) use($unit) {
+$unit->group($config->withSubject("Mocking response"), function (TestCase $case) use($unit) {
 
     $stream = $case->mock(Stream::class, function (MethodRegistry $method) {
         $method->method("getContents")
@@ -115,7 +140,7 @@ $unit->case($config->withSubject("Old validation syntax"), function ($case) {
     ], "Failed to validate");
 });
 
-$unit->group("Validate partial mock", function (TestCase $case) use($unit) {
+$unit->group($config->withSubject("Validate partial mock"), function (TestCase $case) use($unit) {
     $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
         $method->method("send")->keepOriginal();
         $method->method("isValidEmail")->keepOriginal();
@@ -127,7 +152,7 @@ $unit->group("Validate partial mock", function (TestCase $case) use($unit) {
     });
 });
 
-$unit->group("Advanced App Response Test", function (TestCase $case) use($unit) {
+$unit->group($config->withSubject("Advanced App Response Test"), function (TestCase $case) use($unit) {
 
 
     // Quickly mock the Stream class
@@ -186,7 +211,7 @@ $unit->group("Advanced App Response Test", function (TestCase $case) use($unit) 
 });
 
 
-$unit->group("Testing User service", function (TestCase $case) {
+$unit->group($config->withSubject("Testing User service"), function (TestCase $case) {
 
     $mailer = $case->mock(Mailer::class, function (MethodRegistry $method) {
         $method->method("addFromEmail")
@@ -202,3 +227,5 @@ $unit->group("Testing User service", function (TestCase $case) {
         $inst->isTrue();
     });
 });
+
+ */

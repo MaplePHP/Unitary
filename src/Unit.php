@@ -31,7 +31,7 @@ final class Unit
     private string $output = "";
     private int $index = 0;
     private array $cases = [];
-    private bool $skip = false;
+    private bool $disableAllTests = false;
     private bool $executed = false;
     private static array $headers = [];
     private static ?Unit $current;
@@ -60,16 +60,15 @@ final class Unit
     }
 
     /**
-     * This will skip "ALL" tests in the test file
+     * This will disable "ALL" tests in the test file
      * If you want to skip a specific test, use the TestConfig class instead
      *
-     * @param bool $skip
-     * @return $this
+     * @param bool $disable
+     * @return void
      */
-    public function skip(bool $skip): self
+    public function disableAllTest(bool $disable): void
     {
-        $this->skip = $skip;
-        return $this;
+        $this->disableAllTests = $disable;
     }
 
     /**
@@ -214,7 +213,7 @@ final class Unit
     {
         $this->template();
         $this->help();
-        if ($this->executed || $this->skip) {
+        if ($this->executed || $this->disableAllTests) {
             return false;
         }
 
@@ -476,9 +475,11 @@ final class Unit
      */
     public static function getUnit(): ?Unit
     {
-        if (self::hasUnit() === false) {
+        /*
+         if (self::hasUnit() === false) {
             throw new Exception("Unit has not been set yet. It needs to be set first.");
         }
+         */
         return self::$current;
     }
 
