@@ -47,7 +47,8 @@ final class TestCase
     private array $test = [];
     private int $count = 0;
     private ?Closure $bind = null;
-    private ?string $errorMessage = null;
+    private ?string $error = null;
+    private ?string $warning = null;
     private array $deferredValidation = [];
 
     private ?MockBuilder $mocker = null;
@@ -101,6 +102,40 @@ final class TestCase
     }
 
     /**
+     * Get a possible warning message if exists
+     *
+     * @return string|null
+     */
+    public function getWarning(): ?string
+    {
+        return $this->warning;
+    }
+
+    /**
+     * Set a possible warning in the test group
+     *
+     * @param string $message
+     * @return $this
+     */
+    public function warning(string $message): self
+    {
+        $this->warning = $message;
+        return $this;
+    }
+
+    /**
+     * Add custom error message if validation fails
+     *
+     * @param string $message
+     * @return $this
+     */
+    public function error(string $message): self
+    {
+        $this->error = $message;
+        return $this;
+    }
+
+    /**
      * Will dispatch the case tests and return them as an array
      *
      * @param self $row
@@ -136,18 +171,6 @@ final class TestCase
     }
 
     /**
-     * Add custom error message if validation fails
-     *
-     * @param string $message
-     * @return $this
-     */
-    public function error(string $message): self
-    {
-        $this->errorMessage = $message;
-        return $this;
-    }
-
-    /**
      * Add a test unit validation using the provided expectation and validation logic
      *
      * @param mixed $expect The expected value
@@ -159,7 +182,7 @@ final class TestCase
     {
         $this->expectAndValidate($expect, function (mixed $value, Expect $inst) use ($validation) {
             return $validation($inst, new Traverse($value));
-        }, $this->errorMessage);
+        }, $this->error);
 
         return $this;
     }
@@ -238,7 +261,7 @@ final class TestCase
             $this->count++;
         }
         $this->test[] = $test;
-        $this->errorMessage = null;
+        $this->error = null;
         return $this;
     }
 
@@ -321,10 +344,17 @@ final class TestCase
             throw new BadMethodCallException("The mocker is not set yet!");
         }
         if (is_callable($validate)) {
-            $this->prepareValidation($this->mocker, $validate);
+            $pool = $this->prepareValidation($this->mocker, $validate);
         }
         /** @psalm-suppress MixedReturnStatement */
-        return $this->mocker->execute();
+        $class =  $this->mocker->execute();
+        if($this->mocker->hasFinal()) {
+            $finalMethods = $pool->getSelected($this->mocker->getFinalMethods());
+            if($finalMethods !== []) {
+                $this->warning = "Warning: It is not possible to mock final methods: " .  implode(", ", $finalMethods);
+            }
+        }
+        return $class;
     }
 
     /**
@@ -363,10 +393,10 @@ final class TestCase
      *
      * @param MockBuilder $mocker The mocker instance containing the mock object
      * @param Closure $validate The closure containing validation rules
-     * @return void
+     * @return MethodRegistry
      * @throws ErrorException
      */
-    private function prepareValidation(MockBuilder $mocker, Closure $validate): void
+    private function prepareValidation(MockBuilder $mocker, Closure $validate): MethodRegistry
     {
         $pool = new MethodRegistry($mocker);
         $fn = $validate->bindTo($pool);
@@ -374,8 +404,8 @@ final class TestCase
             throw new ErrorException("A callable Closure could not be bound to the method pool!");
         }
         $fn($pool);
-
         $this->deferValidation(fn () => $this->runValidation($mocker, $pool));
+        return $pool;
     }
 
     /**

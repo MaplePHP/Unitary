@@ -16,28 +16,7 @@ $unit = new Unit();
 //$unit->disableAllTest(false);
 
 $config = TestConfig::make()->withName("unitary");
-$unit->group($config->withSubject("Mocking response"), function (TestCase $case) use($unit) {
 
-
-    $stream = $case->mock(Stream::class, function (MethodRegistry $method) {
-        $method->method("getContents")
-            ->willReturn('HelloWorld', 'HelloWorld2')
-            ->calledAtLeast(1);
-    });
-    $response = new Response($stream);
-
-    $case->validate($response->getBody()->getContents(), function(Expect $inst) {
-        $inst->hasResponse();
-        $inst->isEqualTo('HelloWorld');
-        $inst->notIsEqualTo('HelloWorldNot');
-    });
-
-    $case->validate($response->getBody()->getContents(), function(Expect $inst) {
-        $inst->isEqualTo('HelloWorld2');
-    });
-});
-
-/*
 
 $unit->group($config->withSubject("Can not mock final or private"), function(TestCase $case) {
     $user = $case->mock(UserService::class, function(MethodRegistry $method) {
@@ -228,4 +207,23 @@ $unit->group($config->withSubject("Testing User service"), function (TestCase $c
     });
 });
 
- */
+$unit->group($config->withSubject("Mocking response"), function (TestCase $case) use($unit) {
+
+
+    $stream = $case->mock(Stream::class, function (MethodRegistry $method) {
+        $method->method("getContents")
+            ->willReturn('HelloWorld', 'HelloWorld2')
+            ->calledAtLeast(1);
+    });
+    $response = new Response($stream);
+
+    $case->validate($response->getBody()->getContents(), function(Expect $inst) {
+        $inst->hasResponse();
+        $inst->isEqualTo('HelloWorld');
+        $inst->notIsEqualTo('HelloWorldNot');
+    });
+
+    $case->validate($response->getBody()->getContents(), function(Expect $inst) {
+        $inst->isEqualTo('HelloWorld2');
+    });
+});

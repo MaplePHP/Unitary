@@ -132,14 +132,23 @@ final class MockBuilder
     }
 
     /**
+     * Return all final methods
+     *
+     * @return array
+     */
+    public function getFinalMethods(): array
+    {
+        return $this->isFinal;
+    }
+
+    /**
      * Gets the list of methods that are mocked.
      *
-     * @param string $methodName
      * @return bool
      */
-    public function isFinal(string $methodName): bool
+    public function hasFinal(): bool
     {
-        return isset($this->isFinal[$methodName]);
+        return $this->isFinal !== [];
     }
 
     /**
@@ -198,7 +207,6 @@ final class MockBuilder
          */
         return new $this->mockClassName(...$this->constructorArgs);
     }
-
 
     /**
      * Handles the situation where an unknown method is called on the mock class.
@@ -265,19 +273,9 @@ final class MockBuilder
                 throw new Exception("Method is not a ReflectionMethod");
             }
 
-            /*
-             if ($method->isFinal() || $method->isPrivate()) {
-                trigger_error(
-                    "Cannot mock " . ($method->isFinal() ? "final" : "private") .
-                    " method '" . $method->getName() . "' in '{$this->className}' – the real method will be executed.",
-                    E_USER_WARNING
-                );
-            }
-             */
-
             $methodName = $method->getName();
             if ($method->isFinal()) {
-                $this->isFinal[$methodName] = true;
+                $this->isFinal[] = $methodName;
                 continue;
             }
             $this->methodList[] = $methodName;

@@ -12,7 +12,6 @@ declare(strict_types=1);
 namespace MaplePHP\Unitary;
 
 use Exception;
-use MaplePHP\Validate\Validator;
 use Throwable;
 use MaplePHP\Validate\ValidationChain;
 

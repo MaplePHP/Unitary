@@ -100,4 +100,13 @@ class MethodRegistry
         return isset(self::$methods[$this->mocker->getMockedClassName()][$name]);
     }
 
+    public function getSelected(array $names): array
+    {
+        if(is_null($this->mocker)) {
+            throw new \BadMethodCallException("MockBuilder is not set yet.");
+        }
+
+        return array_filter($names, fn($name) => $this->has($name));
+    }
+
 }

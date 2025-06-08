@@ -271,6 +271,13 @@ final class Unit
             }
 
             if (($show || !$row->getConfig()->skip)) {
+                // Show possible warnings
+                if($row->getWarning()) {
+                    $this->command->message("");
+                    $this->command->message(
+                        $this->command->getAnsi()->style(["italic", "yellow"], $row->getWarning())
+                    );
+                }
                 foreach ($tests as $test) {
                     if (!($test instanceof TestUnit)) {
                         throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestUnit.");

@@ -2,7 +2,7 @@
 
 namespace TestLib;
 
-final class UserService {
+class UserService {
     private $test = 1;
     public function __construct(private Mailer $mailer) {}
 
