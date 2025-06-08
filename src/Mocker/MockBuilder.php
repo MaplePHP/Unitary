@@ -172,19 +172,7 @@ final class MockBuilder
         $className = $this->reflection->getName();
         $overrides = $this->generateMockMethodOverrides((string)$this->mockClassName);
         $unknownMethod = $this->errorHandleUnknownMethod($className, !$this->reflection->isInterface());
-
-        if($this->reflection->isInterface()) {
-            $extends = "implements $className";
-        } else {
-
-            $m = new ClassSourceNormalizer($className);
-            $m->addNamespace("\MaplePHP\Unitary\Mocker\MockedClass");
-            eval($m->getMockableSource());
-            $extends = "extends \\" . $m->getClassName();
-            //$extends = "extends $className";
-        }
-
-
+        $extends = $this->reflection->isInterface() ? "implements $className" : "extends $className";
 
         $code = "
             class $this->mockClassName $extends {
@@ -197,7 +185,6 @@ final class MockBuilder
                 }
             }
         ";
-
 
         eval($code);
 
@@ -286,13 +273,13 @@ final class MockBuilder
                     E_USER_WARNING
                 );
             }
+             */
+
+            $methodName = $method->getName();
             if ($method->isFinal()) {
                 $this->isFinal[$methodName] = true;
                 continue;
             }
-             */
-
-            $methodName = $method->getName();
             $this->methodList[] = $methodName;
 
             // The MethodItem contains all items that are validatable
@@ -360,15 +347,11 @@ final class MockBuilder
     protected function handleModifiers(array $modifiersArr): string
     {
         $modifiersArr = array_filter($modifiersArr, fn($val) => $val !==  "abstract");
-        $modifiersArr = array_map(function($val) {
-            return ($val === "private") ? "protected" : $val;
-        }, $modifiersArr);
-
         return implode(" ", $modifiersArr);
     }
 
     /**
-     * Will mocked handle the thrown exception
+     * Will mocked a handle the thrown exception
      *
      * @param \Throwable $exception
      * @return string

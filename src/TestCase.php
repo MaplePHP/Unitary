@@ -123,11 +123,9 @@ final class TestCase
                     true, fn() => false, $msg, $e->getMessage(), $e->getTrace()[0]
                 );
             } catch (Throwable $e) {
-                /*
-                 if(str_contains($e->getFile(), "eval()")) {
+                if(str_contains($e->getFile(), "eval()")) {
                     throw new BlunderErrorException($e->getMessage(), (int)$e->getCode());
                 }
-                 */
                 throw $e;
             }
             if ($newInst instanceof self) {

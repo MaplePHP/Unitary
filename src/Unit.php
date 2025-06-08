@@ -71,6 +71,13 @@ final class Unit
         $this->disableAllTests = $disable;
     }
 
+    // Deprecated: Almost same as `disableAllTest`, for older versions
+    public function skip(bool $disable): self
+    {
+        $this->disableAllTests = $disable;
+        return $this;
+    }
+
     /**
      * DEPRECATED: Use TestConfig::setSelect instead
      * See documentation for more information
@@ -476,7 +483,10 @@ final class Unit
     public static function getUnit(): ?Unit
     {
         /*
-         if (self::hasUnit() === false) {
+        // Testing to comment out Exception in Unit instance is missing
+        // because this will trigger as soon as it finds a file name with unitary-*
+        // and can become tedious that this makes the test script stop.
+        if (self::hasUnit() === false) {
             throw new Exception("Unit has not been set yet. It needs to be set first.");
         }
          */
