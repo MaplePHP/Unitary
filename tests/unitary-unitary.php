@@ -17,15 +17,20 @@ $unit = new Unit();
 
 $config = TestConfig::make()->withName("unitary");
 
-
 $unit->group($config->withSubject("Can not mock final or private"), function(TestCase $case) {
     $user = $case->mock(UserService::class, function(MethodRegistry $method) {
         $method->method("getUserRole")->willReturn("admin");
         $method->method("getUserType")->willReturn("admin");
     });
 
+    // You cannot mock final with data (should return a warning)
     $case->validate($user->getUserType(), function(Expect $expect) {
         $expect->isEqualTo("guest");
+    });
+
+    // You can of course mock regular methods with data
+    $case->validate($user->getUserRole(), function(Expect $expect) {
+        $expect->isEqualTo("admin");
     });
 });
 

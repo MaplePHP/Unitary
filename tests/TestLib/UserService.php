@@ -19,13 +19,18 @@ class UserService {
         return true;
     }
 
-    private function getUserRole(): string
+    private function test(): string
+    {
+        return "guest";
+    }
+
+    public function getUserRole(): string
     {
         return "guest";
     }
 
     final public function getUserType(): string
     {
-        return $this->getUserRole();
+        return "guest";
     }
 }
