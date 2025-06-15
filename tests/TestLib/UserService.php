@@ -19,11 +19,6 @@ class UserService {
         return true;
     }
 
-    private function test(): string
-    {
-        return "guest";
-    }
-
     public function getUserRole(): string
     {
         return "guest";
@@ -32,5 +27,13 @@ class UserService {
     final public function getUserType(): string
     {
         return "guest";
+    }
+
+    public function issueToken(): string {
+        return $this->generateToken(); // private
+    }
+
+    private function generateToken(): string {
+        return bin2hex(random_bytes(16));
     }
 }

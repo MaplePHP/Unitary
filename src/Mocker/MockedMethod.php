@@ -109,29 +109,6 @@ final class MockedMethod
     }
 
     /**
-     * Check if a return value has been added
-     *
-     * @return bool
-     */
-    public function hasReturn(): bool
-    {
-        return $this->hasReturn;
-    }
-
-    /**
-     * Preserve the original method functionality instead of mocking it.
-     * When this is set, the method will execute its original implementation instead of any mock behavior.
-     *
-     * @return $this Method chain
-     */
-    public function keepOriginal(): self
-    {
-        $inst = $this;
-        $inst->keepOriginal = true;
-        return $inst;
-    }
-
-    /**
      * Check if a method has been called x times
      * 
      * @param int $times
@@ -141,6 +118,50 @@ final class MockedMethod
     {
         $inst = $this;
         $inst->called = $times;
+        return $inst;
+    }
+
+    /**
+     * Check if a method has been called x times
+     * 
+     * @return $this
+     */
+    public function hasBeenCalled(): self
+    {
+        $inst = $this;
+        $inst->called = [
+            "isAtLeast" => [1],
+        ];
+        return $inst;
+    }
+
+    /**
+     * Check if a method has been called x times
+     *
+     * @param int $times
+     * @return $this
+     */
+    public function calledAtLeast(int $times): self
+    {
+        $inst = $this;
+        $inst->called = [
+            "isAtLeast" => [$times],
+        ];
+        return $inst;
+    }
+
+    /**
+     * Check if a method has been called x times
+     *
+     * @param int $times
+     * @return $this
+     */
+    public function calledAtMost(int $times): self
+    {
+        $inst = $this;
+        $inst->called = [
+            "isAtMost" => [$times],
+        ];
         return $inst;
     }
 
@@ -202,47 +223,26 @@ final class MockedMethod
     }
 
     /**
-     * Check if a method has been called x times
-     * 
-     * @return $this
+     * Preserve the original method functionality instead of mocking it.
+     * When this is set, the method will execute its original implementation instead of any mock behavior.
+     *
+     * @return $this Method chain
      */
-    public function hasBeenCalled(): self
+    public function keepOriginal(): self
     {
         $inst = $this;
-        $inst->called = [
-            "isAtLeast" => [1],
-        ];
+        $inst->keepOriginal = true;
         return $inst;
     }
 
     /**
-     * Check if a method has been called x times
+     * Check if a return value has been added
      *
-     * @param int $times
-     * @return $this
+     * @return bool
      */
-    public function calledAtLeast(int $times): self
+    public function hasReturn(): bool
     {
-        $inst = $this;
-        $inst->called = [
-            "isAtLeast" => [$times],
-        ];
-        return $inst;
-    }
-
-    /**
-     * Check if a method has been called x times
-     *
-     * @param int $times
-     * @return $this
-     */
-    public function calledAtMost(int $times): self
-    {
-        $inst = $this;
-        $inst->called = [
-            "isAtMost" => [$times],
-        ];
-        return $inst;
+        return $this->hasReturn;
     }
 
     /**
@@ -259,6 +259,12 @@ final class MockedMethod
         return $inst;
     }
 
+    /**
+     * Configures the method to throw an exception every time it's called
+     *
+     * @param Throwable $throwable
+     * @return $this
+     */
     public function willThrow(Throwable $throwable): self
     {
         $this->throwable = $throwable;
@@ -266,6 +272,12 @@ final class MockedMethod
         return $this;
     }
 
+    /**
+     * Configures the method to throw an exception only once
+     *
+     * @param Throwable $throwable
+     * @return $this
+     */
     public function willThrowOnce(Throwable $throwable): self
     {
         $this->throwOnce = true;
@@ -274,7 +286,7 @@ final class MockedMethod
     }
 
     /**
-     * Set the class name.
+     * Compare if method has expected class name.
      *
      * @param string $class
      * @return self
@@ -287,7 +299,7 @@ final class MockedMethod
     }
 
     /**
-     * Set the method name.
+     * Compare if method has expected method name.
      *
      * @param string $name
      * @return self
@@ -300,7 +312,7 @@ final class MockedMethod
     }
 
     /**
-     * Mark the method as static.
+     * Check if the method is expected to be static
      *
      * @return self
      */
@@ -312,7 +324,7 @@ final class MockedMethod
     }
 
     /**
-     * Mark the method as public.
+     * Check if the method is expected to be public
      *
      * @return self
      */
@@ -324,7 +336,7 @@ final class MockedMethod
     }
 
     /**
-     * Mark the method as private.
+     * Check if the method is expected to be private
      *
      * @return self
      */
@@ -336,7 +348,7 @@ final class MockedMethod
     }
 
     /**
-     * Mark the method as protected.
+     * Check if the method is expected to be protected.
      *
      * @return self
      */
@@ -348,7 +360,7 @@ final class MockedMethod
     }
 
     /**
-     * Mark the method as abstract.
+     * Check if the method is expected to be abstract.
      *
      * @return self
      */
@@ -360,7 +372,7 @@ final class MockedMethod
     }
 
     /**
-     * Mark the method as final.
+     * Check if the method is expected to be final.
      *
      * @return self
      */
@@ -372,7 +384,7 @@ final class MockedMethod
     }
 
     /**
-     * Mark the method as returning by reference.
+     * Check if the method is expected to return a reference
      *
      * @return self
      */
@@ -384,7 +396,7 @@ final class MockedMethod
     }
 
     /**
-     * Mark the method as having a return type.
+     * Check if the method has a return type.
      *
      * @return self
      */
@@ -396,7 +408,7 @@ final class MockedMethod
     }
 
     /**
-     * Set the return type of the method.
+     * Check if the method return type has expected type
      *
      * @param string $type
      * @return self
@@ -409,7 +421,7 @@ final class MockedMethod
     }
 
     /**
-     * Mark the method as a constructor.
+     * Check if the method is the constructor.
      *
      * @return self
      */
@@ -421,7 +433,7 @@ final class MockedMethod
     }
 
     /**
-     * Mark the method as a destructor.
+     * Check if the method is the destructor.
      *
      * @return self
      */
@@ -433,7 +445,7 @@ final class MockedMethod
     }
 
     /**
-     * Check if parameter exists
+     * Check if the method parameters exists
      *
      * @return $this
      */
@@ -447,7 +459,7 @@ final class MockedMethod
     }
 
     /**
-     * Check if all parameters have a data type
+     * Check if the method has parameter types
      *
      * @return $this
      */
@@ -461,7 +473,7 @@ final class MockedMethod
     }
 
     /**
-     * Check if parameter does not exist
+     * Check if the method is missing parameters
      *
      * @return $this
      */
@@ -475,7 +487,7 @@ final class MockedMethod
     }
 
     /**
-     * Check a parameter type for method
+     * Check if the method has equal number of parameters as expected
      *
      * @param int $length
      * @return $this
@@ -490,7 +502,7 @@ final class MockedMethod
     }
 
     /**
-     * Check a parameter type for method
+     * Check if the method parameter at given index location has expected data type
      *
      * @param int $paramPosition
      * @param string $dataType
@@ -506,7 +518,7 @@ final class MockedMethod
     }
 
     /**
-     * Check parameter default value for method
+     * Check if the method parameter at given index location has a default value
      *
      * @param int $paramPosition
      * @param string $defaultArgValue
@@ -522,7 +534,7 @@ final class MockedMethod
     }
 
     /**
-     * Check a parameter type for method
+     * Check if the method parameter at given index location has a data type
      *
      * @param int $paramPosition
      * @return $this
@@ -537,7 +549,7 @@ final class MockedMethod
     }
 
     /**
-     * Check a parameter type for method
+     * Check if the method parameter at given index location is optional
      *
      * @param int $paramPosition
      * @return $this
@@ -552,7 +564,7 @@ final class MockedMethod
     }
 
     /**
-     * Check parameter is Reference for method
+     * Check if the method parameter at given index location is a reference
      *
      * @param int $paramPosition
      * @return $this
@@ -567,7 +579,7 @@ final class MockedMethod
     }
 
     /**
-     * Check the parameter is variadic (spread) for a method
+     * Check if the method parameter at given index location is a variadic (spread)
      *
      * @param int $paramPosition
      * @return $this
@@ -588,7 +600,7 @@ final class MockedMethod
     }
 
     /**
-     * Set the doc comment for the method.
+     * Check if the method has comment block
      *
      * @return self
      */
@@ -603,7 +615,7 @@ final class MockedMethod
     }
 
     /**
-     * Set the file name where the method is declared.
+     * Check if the method exist in file with name
      *
      * @param string $file
      * @return self
@@ -616,7 +628,7 @@ final class MockedMethod
     }
 
     /**
-     * Set the starting line number of the method.
+     * Check if the method starts at line number
      *
      * @param int $line
      * @return self
@@ -629,7 +641,7 @@ final class MockedMethod
     }
 
     /**
-     * Set the ending line number of the method.
+     * Check if the method return ends at line number
      *
      * @param int $line
      * @return self

@@ -365,7 +365,7 @@ final class TestCase
      * validations are deferred and will be executed later via runDeferredValidations().
      *
      * @param class-string<T> $class
-     * @param Closure|null $validate
+     * @param (Closure(MethodRegistry): void)|null $callback
      * @param array $args
      * @return T
      * @throws Exception
