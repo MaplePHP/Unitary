@@ -30,6 +30,7 @@ $unit->group($config->withSubject("Test mocker"), function (TestCase $case) use(
     $mail->addFromEmail("john.doe@gmail.com", "John Doe");
 });
 
+
 $unit->group("Example of assert in group", function(TestCase $case) {
     assert(1 === 2, "This is a error message");
 });

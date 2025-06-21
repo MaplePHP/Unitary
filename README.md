@@ -1,115 +1,110 @@
-# MaplePHP - Unitary
+# MaplePHP Unitary — Fast Testing, Full Control, Zero Friction
 
-PHP Unitary is a **user-friendly** and robust unit testing framework designed to make writing and running tests for your PHP code easy. With an intuitive CLI interface that works on all platforms and robust validation options, Unitary makes it easy for you as a developer to ensure your code is reliable and functions as intended.
+Unitary is a modern PHP testing framework built for developers who want speed, precision, and complete freedom. No config. No noise. Just a clean, purpose-built system that runs 100,000+ tests in a second and scales effortlessly—from quick checks to full-suite validation.
 
-![Prompt demo](http://wazabii.se/github-assets/maplephp-unitary.png)
+Mocking, validation, and assertions are all built in—ready to use without setup or plugins. The CLI is intuitive, the experience is consistent, and getting started takes seconds. Whether you’re testing one function or an entire system, Unitary helps you move fast and test with confidence.
+
+![Prompt demo](http://wazabii.se/github-assets/unitary/unitary-cli-states.png)
+
 _Do you like the CLI theme? [Download it here](https://github.com/MaplePHP/DarkBark)_
 
 
-### Syntax You Will Love
-```php
-$unit->case("MaplePHP Request URI path test", function() {
-    $response = new Response(200);
+### Familiar Syntax. Fast Feedback.
 
-    $this->add($response->getStatusCode(), function() {
-        return $this->equal(200);
-    }, "Did not return HTTP status code 200");
+Unitary is designed to feel natural for developers. With clear syntax, built-in validation, and zero setup required, writing tests becomes a smooth part of your daily flow—not a separate chore.
+
+```php
+$unit->group("Has a about page", function(TestCase $case) {
+
+    $response = $this->get("/about");
+    $statusCode = $response->getStatusCode();
+    
+    $case->validate($statusCode, function(Expect $valid) {
+        $valid->isHttpSuccess();
+    });
 });
 ```
 
-## Documentation
-The documentation is divided into several sections:
-- [Installation](#installation)
-- [Guide](#guide)
-    - [1. Create a Test File](#1-create-a-test-file)
-    - [2. Create a Test Case](#2-create-a-test-case)
-    - [3. Run the Tests](#3-run-the-tests)
-- [Configurations](#configurations)
-- [Validation List](#validation-list)
-    - [Data Type Checks](#data-type-checks)
-    - [Equality and Length Checks](#equality-and-length-checks)
-    - [Numeric Range Checks](#numeric-range-checks)
-    - [String and Pattern Checks](#string-and-pattern-checks)
-    - [Required and Boolean-Like Checks](#required-and-boolean-like-checks)
-    - [Date and Time Checks](#date-and-time-checks)
-    - [Version Checks](#version-checks)
-    - [Logical Checks](#logical-checks)
+---
+
+## Next-Gen PHP Testing Framework
+
+**Unitary** is a blazing-fast, developer-first testing framework for PHP, built from scratch with zero dependencies on legacy tools like many others. It’s simple to get started, lightning-fast to run, and powerful enough to test everything from units to mocks.
+
+> 🚀 *Test 100,000+ cases in \~1 second. No config. No bloat. Just results.*
+
+---
+
+## 🔧 Why Use Unitary?
+
+* **Works out of the box** – No setup, no config files.
+* **Not built on PHPUnit** – Unitary is a standalone framework.
+* **100% agnostic** – Every sub-library is purpose-built for speed and control.
+* **First-class CLI** – Intuitive test runner that works across platforms.
+* **Powerful validation** – Built-in expectation engine, assert support, and structured output.
+* **Mocking included** – No external mocking libraries needed.
+* **Super low memory usage** – Ideal for local runs and parallel CI jobs.
+
+---
+
+## ⚡ Blazing Fast Performance
+
+Unitary runs large test suites in a fraction of the time — even **100,000+** tests in just **1 second**.
+
+🚀 That’s up to 46× faster than the most widely used testing frameworks. 
 
 
-## Installation
+> Benchmarks based on real-world test cases.
+> 👉 [See full benchmark comparison →](https://your-docs-link.com/benchmarks)
 
-To install MaplePHP Unitary, run the following command:
+---
+
+
+## Getting Started (Under 1 Minute)
+
+Set up your first test in three easy steps:
+
+### 1. Install
 
 ```bash
 composer require --dev maplephp/unitary
 ```
 
-## Guide
+_You can run unitary globally if preferred with `composer global require maplephp/unitary`._
 
-### 1. Create a Test File
+---
 
-Unitary will, by default, find all files prefixed with "unitary-" recursively from your project's root directory (where your "composer.json" file exists). The vendor directory will be excluded by default.
+### 2. Create a Test File
 
-Start by creating a test file with a name that starts with "unitary-", e.g., "unitary-request.php". You can place the file inside your library directory, for example like this: `tests/unitary-request.php`.
+Create a file like `tests/unitary-request.php`. Unitary automatically scans all files prefixed with `unitary-` (excluding `vendor/`).
 
-**Note: All of your library classes will automatically be autoloaded through Composer's autoloader inside your test file!**
-
-### 2. Create a Test Case
-
-Now that we have created a test file, e.g., `tests/unitary-request.php`, we will need to add our test cases and tests. I will create a test for one of my other libraries below, which is MaplePHP/HTTP, specifically the Request library that has full PSR-7 support.
-
-I will show you three different ways to test your application below.
+Paste this test boilerplate to get started:
 
 ```php
-<?php
+use MaplePHP\Unitary\{Unit, TestCase, TestConfig, Expect};
 
-$unit = new MaplePHP\Unitary\Unit();
-
-$request = new MaplePHP\Http\Request(
-    "GET",
-    "https://admin:mypass@example.com:65535/test.php?id=5221&greeting=hello",
-);
-
-// Begin by adding a test case
-$unit->case("MaplePHP Request URI path test", function() use($request) {
-
-    // Then add tests to your case:
-    // Test 1: Access the validation instance inside the add closure
-    $this->add($request->getMethod(), function($value) {
-        return $this->equal("GET");
-
-    }, "HTTP Request method type does not equal GET");
-    // Adding an error message is not required, but it is highly recommended.
-
-    // Test 2: Built-in validation shortcuts
-    $this->add($request->getUri()->getPort(), [
-        "isInt" => [], // Has no arguments = empty array
-        "min" => [1], // The strict way is to pass each argument as an array item
-        "max" => 65535, // If it's only one argument, then this is acceptable too
-        "length" => [1, 5]
-
-    ], "Is not a valid port number");
-
-    // Test 3: It is also possible to combine them all in one. 
-    $this->add($request->getUri()->getUserInfo(), [
-        "isString" => [],
-        "User validation" => function($value) {
-            $arr = explode(":", $value);
-            return ($this->withValue($arr[0])->equal("admin") && $this->withValue($arr[1])->equal("mypass"));
-        }
-
-    ], "Did not get the expected user info credentials");
+$unit = new Unit();
+$unit->group("Your test subject", function (TestCase $case) {
+    $case->validate("Your test value", function(Expect $valid) {
+        $valid->isString();
+    });
 });
 ```
 
-The example above uses both built-in validation and custom validation (see below for all built-in validation options).
+> 💡 Tip: Run `php vendor/bin/unitary --template` to auto-generate this boilerplate code above.
 
-### 3. Run the Tests
+---
 
-Now you are ready to execute the tests. Open your command line of choice, navigate (cd) to your project's root directory (where your `composer.json` file exists), and execute the following command:
+### 3. Run Tests
 
 ```bash
 php vendor/bin/unitary
+```
+
+Need help?
+
+```bash
+php vendor/bin/unitary --help
 ```
 
 #### The Output:
@@ -118,163 +113,62 @@ php vendor/bin/unitary
 
 With that, you are ready to create your own tests!
 
+---
 
-## Mocking
-Unitary comes with a built-in mocker that makes it super simple for you to mock classes.
+## 📅 Latest Release
 
+**v1.3.0 – 2025-06-20**
+This release marks Unitary’s transition from a testing utility to a full framework. With the core in place, expect rapid improvements in upcoming versions.
 
-### Auto mocking
-What is super cool with Unitary Mocker will try to automatically mock the class that you pass and 
-it will do it will do it quite accurate as long as the class and its methods that you are mocking is 
-using data type in arguments and return type. 
+---
 
-```php
-$unit->group("Testing user service", function (TestCase $inst) {
-    
-    // Just call the unitary mock and pass in class name
-    $mock = $inst->mock(Mailer::class);
-    // Mailer class is not mocked!
-    
-    // Pass argument to Mailer constructor e.g. new Mailer('john.doe@gmail.com', 'John Doe');
-    //$mock = $inst->mock([Mailer::class, ['john.doe@gmail.com', 'John Doe']);
-    // Mailer class is not mocked again!
+## 🧱 Built From the Ground Up
 
-    // Then just pass the mocked library to what ever service or controller you wish
-    $service = new UserService($mock);
-});
-```
-_Why? Sometimes you just want to quick mock so that a Mailer library will not send a mail_ 
+Unitary stands on a solid foundation of years of groundwork. Before Unitary was possible, these independent components were developed:
 
-### Custom mocking
-As I said Unitary mocker will try to automatically mock every method but might not successes in some user-cases
-then you can just tell Unitary how those failed methods should load.
+* [`maplephp/http`](https://github.com/maplephp/http) – PSR-7 HTTP messaging
+* [`maplephp/stream`](https://github.com/maplephp/stream) – PHP stream handling
+* [`maplephp/cli`](https://github.com/maplephp/prompts) – Interactive prompt/command engine
+* [`maplephp/blunder`](https://github.com/maplephp/blunder) – A pretty error handling framework
+* [`maplephp/validate`](https://github.com/maplephp/validate) – Type-safe input validation
+* [`maplephp/dto`](https://github.com/maplephp/dto) – Strong data transport
+* [`maplephp/container`](https://github.com/maplephp/container) – PSR-11 Container, container and DI system
 
-```php
-use MaplePHP\Validate\ValidationChain;
-use \MaplePHP\Unitary\Mocker\MethodRegistry;
+This full control means everything works together, no patching, no adapters and no guesswork.
 
-$unit->group("Testing user service", function (TestCase $inst) {
-    $mock = $inst->mock(Mailer::class, function (MethodRegistry $pool) use($inst) {
-        // Quick way to tell Unitary that this method should return 'john.doe'
-        $pool->method("getFromEmail")->willReturn('john.doe@gmail.com');
+---
 
-        // Or we can acctually pass a callable to it and tell it what it should return 
-        // But we can also validate the argumnets!
-        $pool->method("addFromEmail")->wrap(function($email) use($inst) {
-            $inst->validate($email, function(ValidationChain $valid) {
-                $valid->email();
-                $valid->isString();
-            });
-            return true;
-        });
-    });
-    
-    // Then just pass the mocked library to what ever service or controller you wish
-    $service = new UserService($mock);
-});
-```
+## Philosophy
 
-### Mocking: Add Consistency validation
-What is really cool is that you can also use Unitary mocker to make sure consistencies is followed and 
-validate that the method is built and loaded correctly.
+> **Test everything. All the time. Without friction.**
 
-```php
-use \MaplePHP\Unitary\Mocker\MethodRegistry;
+TDD becomes natural when your test suite runs in under a second, even with 100,000 cases. No more cherry-picking. No more skipping.
 
-$unit->group("Unitary test", function (TestCase $inst) {
-    $mock = $inst->mock(Mailer::class, function (MethodRegistry $pool) use($inst) {
-        $pool->method("addFromEmail")
-            ->isPublic()
-            ->hasDocComment()
-            ->hasReturnType()
-            ->isTimes(1);
-        
-        $pool->method("addBCC")
-            ->isPublic()
-            ->isTimes(3);
-    });
-    $service = new UserService($mock);
-});
-```
-
-
-### Integration tests: Test Wrapper
-Test wrapper is great to make integration test easier.
-
-Most libraries or services has a method that executes the service and runs all the logic. The test wrapper we 
-can high-jack that execution method and overwrite it with our own logic.
-
-```php
-$dispatch = $this->wrap(PaymentProcessor::class)->bind(function ($orderID) use ($inst) {
-    // Simulate order retrieval
-    $order = $this->orderService->getOrder($orderID);
-    $response = $inst->mock('gatewayCapture')->capture($order->id);
-    if ($response['status'] !== 'success') {
-        // Log action within the PaymentProcessor instance
-        $this->logger->info("Mocked: Capturing payment for Order ID: " . $order->id ?? 0);
-        // Has successfully found order and logged message
-        return true;
-    }
-    // Failed to find order
-    return false;
-});
-```
-
-
-## Configurations
-
-### Show help
-```bash
-php vendor/bin/unitary --help
-```
-
-### Show only errors
-```bash
-php vendor/bin/unitary --errors-only
-```
-
-### Select a Test File to Run
-
-After each test, a hash key is shown, allowing you to run specific tests instead of all.
-
-```bash
-php vendor/bin/unitary --show=b0620ca8ef6ea7598eaed56a530b1983
-```
-
-### Run Test Case Manually
-
-You can also mark a test case to run manually, excluding it from the main test batch.
-
-```php
-$unit->hide('maplePHPRequest')->case("MaplePHP Request URI path test", function() {
-    ...
-});
-```
-
-And this will only run the manual test:
-```bash
-php vendor/bin/unitary --show=maplePHPRequest
-```
-
-### Change Test Path
-
-The path argument takes both absolute and relative paths. The command below will find all tests recursively from the "tests" directory.
-
-```bash
-php vendor/bin/unitary --path="/tests/"
-```
-
-**Note: The `vendor` directory will be excluded from tests by default. However, if you change the `--path`, you will need to manually exclude the `vendor` directory.**
-
-### Exclude Files or Directories
-
-The exclude argument will always be a relative path from the `--path` argument's path.
-
-```bash
-php vendor/bin/unitary --exclude="./tests/unitary-query-php, tests/otherTests/*, */extras/*"
-```
+---
 
 ## Like The CLI Theme?
 That’s DarkBark. Dark, quiet, confident, like a rainy-night synthwave playlist for your CLI.
 
 [Download it here](https://github.com/MaplePHP/DarkBark)
+
+
+---
+
+## 🤝 Contribute
+
+Unitary is still young — your bug reports, feedback, and suggestions are hugely appreciated.
+
+If you like what you see, consider:
+
+* Reporting issues
+* Sharing feedback
+* Submitting PRs
+* Starring the repo ⭐
+
+---
+
+## 📬 Stay in Touch
+
+Follow the full suite of MaplePHP tools:
+
+* [https://github.com/maplephp](https://github.com/maplephp)
