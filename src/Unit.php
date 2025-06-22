@@ -7,6 +7,7 @@
  * @licence:    Apache-2.0 license, Copyright © Daniel Ronkainen
  *              Don't delete this comment, it's part of the license.
  */
+
 declare(strict_types=1);
 
 namespace MaplePHP\Unitary;
@@ -219,7 +220,6 @@ final class Unit
     public function execute(): bool
     {
         $this->template();
-        $this->help();
         if ($this->executed || $this->disableAllTests) {
             return false;
         }
@@ -557,57 +557,6 @@ final class Unit
                 });
                 PHP
             );
-            exit(0);
-        }
-    }
-
-    /**
-     * Display help information for the Unitary testing tool
-     * Shows usage instructions, available options and examples
-     * Only displays if --help argument is provided
-     *
-     * @return void True if help was displayed, false otherwise
-     */
-    private function help(): void
-    {
-        if (self::getArgs("help") !== false) {
-
-            $blocks = new Blocks($this->command);
-            $blocks->addHeadline("\n--- Unitary Help ---");
-            $blocks->addSection("Usage", "php vendor/bin/unitary [options]");
-
-            $blocks->addSection("Options", function(Blocks $inst) {
-                return $inst
-                    ->addOption("help", "Show this help message")
-                    ->addOption("show=<hash|name>", "Run a specific test by hash or manual test name")
-                    ->addOption("errors-only", "Show only failing tests and skip passed test output")
-                    ->addOption("template", "Will give you a boilerplate test code")
-                    ->addOption("path=<path>", "Specify test path (absolute or relative)")
-                    ->addOption("exclude=<patterns>", "Exclude files or directories (comma-separated, relative to --path)");
-            });
-
-            $blocks->addSection("Examples", function(Blocks $inst) {
-                return $inst
-                    ->addExamples(
-                        "php vendor/bin/unitary",
-                        "Run all tests in the default path (./tests)"
-                    )->addExamples(
-                        "php vendor/bin/unitary --show=b0620ca8ef6ea7598eaed56a530b1983",
-                        "Run the test with a specific hash ID"
-                    )->addExamples(
-                        "php vendor/bin/unitary --errors-only",
-                        "Run all tests in the default path (./tests)"
-                    )->addExamples(
-                        "php vendor/bin/unitary --show=YourNameHere",
-                        "Run a manually named test case"
-                    )->addExamples(
-                        "php vendor/bin/unitary --template",
-                        "Run a and will give you template code for a new test"
-                    )->addExamples(
-                        'php vendor/bin/unitary --path="tests/" --exclude="tests/legacy/*,*/extras/*"',
-                        'Run all tests under "tests/" excluding specified directories'
-                    );
-            });
             exit(0);
         }
     }

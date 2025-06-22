@@ -5,36 +5,31 @@
  * @example php unitary --path=fullDirPath --exclude="dir1/dir2/
  */
 
-require $GLOBALS['_composer_autoload_path'];
-
+use MaplePHP\Container\Container;
 use MaplePHP\Http\Environment;
 use MaplePHP\Http\ServerRequest;
 use MaplePHP\Http\Uri;
-use MaplePHP\Prompts\Command;
-use MaplePHP\Unitary\Utils\FileIterator;
+use MaplePHP\Unitary\Kernel\Kernel;
 
-$command = new Command();
+$autoload = __DIR__ . '/../vendor/autoload.php';
+if (!file_exists($autoload)) {
+    if (!empty($GLOBALS['_composer_autoload_path'])) {
+        $autoload = $GLOBALS['_composer_autoload_path'];
+    } else {
+        fwrite(STDERR, "Autoloader not found. Run `composer install`.\n");
+        exit(1);
+    }
+}
+
+require $autoload;
+
+$container = new Container();
 $env = new Environment();
+// Pass argv and expected start directory path where to run tests
 $request = new ServerRequest(new Uri($env->getUriParts([
-    "argv" => $argv
+    "argv" => $argv,
+    "dir" => (defined("UNITARY_PATH") ? UNITARY_PATH : "./")
 ])), $env);
 
-$data = $request->getCliArgs();
-$defaultPath = (defined("UNITARY_PATH") ? UNITARY_PATH : "./");
-
-try {
-    $path = ($data['path'] ?? $defaultPath);
-    if(!isset($path)) {
-        throw new Exception("Path not specified: --path=path/to/dir");
-    }
-
-    $testDir = realpath($path);
-    if(!is_dir($testDir)) {
-        throw new Exception("Test directory '$testDir' does not exist");
-    }
-    $unit = new FileIterator($data);
-    $unit->executeAll($testDir, $defaultPath);
-
-} catch (Exception $e) {
-    $command->error($e->getMessage());
-}
+$kernel = new Kernel($request, $container);
+$kernel->dispatch();

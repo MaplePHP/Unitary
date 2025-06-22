@@ -1,0 +1,62 @@
+<?php
+/**
+ * Unit — Part of the MaplePHP Unitary CLI Router
+ *
+ * @package:    MaplePHP\Unitary
+ * @author:     Daniel Ronkainen
+ * @licence:    Apache-2.0 license, Copyright © Daniel Ronkainen
+ *              Don't delete this comment, it's part of the license.
+ */
+
+declare(strict_types=1);
+
+namespace MaplePHP\Unitary\Utils;
+
+class Router
+{
+    private array $controllers = [];
+    private string $needle = "";
+    private array $args = [];
+
+    public function __construct(string $needle, array $argv)
+    {
+        $this->args = $argv;
+        $this->needle = $needle;
+    }
+
+    /**
+     * Map one or more needles to controller
+
+     * @param string|array $needles
+     * @param array $controller
+     * @return $this
+     */
+    public function map(string|array $needles, array $controller): self
+    {
+        if(is_string($needles)) {
+            $needles = [$needles];
+        }
+        foreach ($needles as $key) {
+            $this->controllers[$key] = $controller;
+        }
+        return $this;
+    }
+
+    /**
+     * Dispatch matched router
+     *
+     * @param callable $call
+     * @return bool
+     */
+    function dispatch(callable $call): bool
+    {
+        if(isset($this->controllers[$this->needle])) {
+            $call($this->controllers[$this->needle], $this->args, $this->needle);
+            return true;
+        }
+        if (isset($this->controllers["__404"])) {
+            $call($this->controllers["__404"], $this->args, $this->needle);
+        }
+        return false;
+    }
+}
