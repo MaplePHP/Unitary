@@ -15,6 +15,8 @@ namespace MaplePHP\Unitary;
 use Closure;
 use ErrorException;
 use Exception;
+use MaplePHP\Unitary\Handlers\CliHandler;
+use MaplePHP\Unitary\TestUtils\Configs;
 use RuntimeException;
 use Throwable;
 use MaplePHP\Blunder\BlunderErrorException;
@@ -39,8 +41,6 @@ final class Unit
     public static int $totalPassedTests = 0;
     public static int $totalTests = 0;
 
-
-
     /**
      * Initialize Unit test instance with optional handler
      *
@@ -55,7 +55,7 @@ final class Unit
             $this->handler = $handler;
             $this->command = $this->handler->getCommand();
         } else {
-            $this->command = new Command($handler);
+            $this->command = ($handler === null) ? Configs::getInstance()->getCommand() : new Command($handler);
         }
         self::$current = $this;
     }
@@ -149,7 +149,6 @@ final class Unit
      */
     public function add(string $message, Closure $callback): void
     {
-        //trigger_error('Method ' . __METHOD__ . ' is deprecated', E_USER_DEPRECATED);
         $this->case($message, $callback);
     }
 
@@ -219,7 +218,6 @@ final class Unit
      */
     public function execute(): bool
     {
-        $this->template();
         if ($this->executed || $this->disableAllTests) {
             return false;
         }
@@ -227,6 +225,10 @@ final class Unit
         // LOOP through each case
         ob_start();
         //$countCases = count($this->cases);
+
+        $handler = new CliHandler();
+        $handler->setCommand($this->command);
+
         foreach ($this->cases as $index => $row) {
             if (!($row instanceof TestCase)) {
                 throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestCase.");
@@ -236,15 +238,6 @@ final class Unit
             $row->dispatchTest($row);
             $tests = $row->runDeferredValidations();
             $checksum = (string)(self::$headers['checksum'] ?? "") . $index;
-            $color = ($row->hasFailed() ? "brightRed" : "brightBlue");
-            $flag = $this->command->getAnsi()->style(['blueBg', 'brightWhite'], " PASS ");
-            if ($row->hasFailed()) {
-                $flag = $this->command->getAnsi()->style(['redBg', 'brightWhite'], " FAIL ");
-            }
-            if ($row->getConfig()->skip) {
-                $color = "yellow";
-                $flag = $this->command->getAnsi()->style(['yellowBg', 'black'], " SKIP ");
-            }
 
             $show = ($row->getConfig()->select === self::getArgs('show') || self::getArgs('show') === $checksum);
             if((self::getArgs('show') !== false) && !$show) {
@@ -256,110 +249,29 @@ final class Unit
                 continue;
             }
 
-            $this->command->message("");
-            $this->command->message(
-                $flag . " " .
-                $this->command->getAnsi()->style(["bold"], $this->formatFileTitle((string)(self::$headers['file'] ?? ""))) .
-                " - " .
-                $this->command->getAnsi()->style(["bold", $color], (string)$row->getMessage())
-            );
-            if($show && !$row->hasFailed()) {
-                $this->command->message("");
-                $this->command->message(
-                    $this->command->getAnsi()->style(["italic", $color], "Test file: " . (string)self::$headers['file'])
-                );
-            }
-
-            if (($show || !$row->getConfig()->skip)) {
-                // Show possible warnings
-                if($row->getWarning()) {
-                    $this->command->message("");
-                    $this->command->message(
-                        $this->command->getAnsi()->style(["italic", "yellow"], $row->getWarning())
-                    );
-                }
-                foreach ($tests as $test) {
-                    if (!($test instanceof TestUnit)) {
-                        throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestUnit.");
-                    }
-
-                    if (!$test->isValid()) {
-                        $msg = (string)$test->getMessage();
-                        $this->command->message("");
-                        $this->command->message(
-                            $this->command->getAnsi()->style(["bold", $color], "Error: ") .
-                            $this->command->getAnsi()->bold($msg)
-                        );
-                        $this->command->message("");
-
-                        $trace = $test->getCodeLine();
-                        if (!empty($trace['code'])) {
-                            $this->command->message($this->command->getAnsi()->style(["bold", "grey"], "Failed on {$trace['file']}:{$trace['line']}"));
-                            $this->command->message($this->command->getAnsi()->style(["grey"], " → {$trace['code']}"));
-                        }
-
-                        foreach ($test->getUnits() as $unit) {
-
-                            /** @var TestItem $unit */
-                            if (!$unit->isValid()) {
-                                $lengthA = $test->getValidationLength();
-                                $validation = $unit->getValidationTitle();
-                                $title = str_pad($validation, $lengthA);
-                                $compare = $unit->hasComparison() ? $unit->getComparison() : "";
-
-                                $failedMsg = "   " .$title . " → failed";
-                                $this->command->message($this->command->getAnsi()->style($color, $failedMsg));
-
-                                if ($compare) {
-                                    $lengthB = (strlen($compare) + strlen($failedMsg) - 8);
-                                    $comparePad = str_pad($compare, $lengthB, " ", STR_PAD_LEFT);
-                                    $this->command->message(
-                                        $this->command->getAnsi()->style($color, $comparePad)
-                                    );
-                                }
-                            }
-                        }
-                        if ($test->hasValue()) {
-                            $this->command->message("");
-                            $this->command->message(
-                                $this->command->getAnsi()->bold("Input value: ") .
-                                Helpers::stringifyDataTypes($test->getValue())
-                            );
-                        }
-                    }
-                }
-            }
+            $handler->setCase($row);
+            $handler->setSuitName(self::$headers['file'] ?? "");
+            $handler->setChecksum($checksum);
+            $handler->setTests($tests);
+            $handler->setShow($show);
+            $handler->buildBody();
 
             // Important to add test from skip as successfully count to make sure that
             // the total passed tests are correct, and it will not exit with code 1
             self::$totalPassedTests += ($row->getConfig()->skip) ? $row->getTotal() : $row->getCount();
             self::$totalTests += $row->getTotal();
-            if ($row->getConfig()->select) {
-                $checksum .= " (" . $row->getConfig()->select . ")";
-            }
-            $this->command->message("");
-
-            $passed = $this->command->getAnsi()->bold("Passed: ");
-            if ($row->getHasAssertError()) {
-                $passed .= $this->command->getAnsi()->style(["grey"], "N/A");
-            } else {
-                $passed .= $this->command->getAnsi()->style([$color], $row->getCount() . "/" . $row->getTotal());
-            }
-
-            $footer = $passed .
-                $this->command->getAnsi()->style(["italic", "grey"], " - ". $checksum);
-            if (!$show && $row->getConfig()->skip) {
-                $footer = $this->command->getAnsi()->style(["italic", "grey"], $checksum);
-            }
-            $this->command->message($footer);
-            $this->command->message("");
         }
         $this->output .= (string)ob_get_clean();
-
+        $handler->outputBuffer($this->output);
         if ($this->output) {
-            $this->buildNotice("Note:", $this->output, 80);
+            $handler->buildNotes();
         }
-        $this->handler?->execute();
+        $stream = $handler->returnStream();
+        if ($stream->isSeekable()) {
+            $this->getStream()->rewind();
+            echo $this->getStream()->getContents();
+        }
+
         $this->executed = true;
         return true;
     }
@@ -393,24 +305,7 @@ final class Unit
             "Move this validate() call inside your group() callback function.");
     }
 
-    /**
-     * Build the notification stream
-     * @param string $title
-     * @param string $output
-     * @param int $lineLength
-     * @return void
-     */
-    public function buildNotice(string $title, string $output, int $lineLength): void
-    {
-        $this->output = wordwrap($output, $lineLength);
-        $line = $this->command->getAnsi()->line($lineLength);
 
-        $this->command->message("");
-        $this->command->message($this->command->getAnsi()->style(["bold"], $title));
-        $this->command->message($line);
-        $this->command->message($this->output);
-        $this->command->message($line);
-    }
 
     /**
      * Make a file path into a title
@@ -530,36 +425,6 @@ final class Unit
         return (self::$totalPassedTests === self::$totalTests);
     }
 
-    /**
-     * Display a template for the Unitary testing tool
-     * Shows a basic template for the Unitary testing tool
-     * Only displays if --template argument is provided
-     *
-     * @return void
-     */
-    private function template(): void
-    {
-        if (self::getArgs("template") !== false) {
-
-            $blocks = new Blocks($this->command);
-            $blocks->addHeadline("\n--- Unitary template ---");
-            $blocks->addCode(
-                <<<'PHP'
-                use MaplePHP\Unitary\{Unit, TestCase, TestConfig, Expect};
-                
-                $unit = new Unit();
-                $unit->group("Your test subject", function (TestCase $case) {
-                
-                    $case->validate("Your test value", function(Expect $valid) {
-                        $valid->isString();
-                    });
-                    
-                });
-                PHP
-            );
-            exit(0);
-        }
-    }
 
     /**
      * Adds a test case to the collection.

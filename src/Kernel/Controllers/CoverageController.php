@@ -5,13 +5,14 @@ namespace MaplePHP\Unitary\Kernel\Controllers;
 use Exception;
 use MaplePHP\Container\Interfaces\ContainerExceptionInterface;
 use MaplePHP\Container\Interfaces\NotFoundExceptionInterface;
+use MaplePHP\Http\Stream;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Prompts\Themes\Blocks;
-use MaplePHP\Unitary\TestUtils\Configs;
+use MaplePHP\Unitary\TestUtils\CodeCoverage;
 use MaplePHP\Unitary\Utils\FileIterator;
 use RuntimeException;
 
-class RunTestController extends DefaultController
+class CoverageController extends RunTestController
 {
 
     /**
@@ -20,35 +21,32 @@ class RunTestController extends DefaultController
      * @param array $args
      * @param Command $command
      * @return void
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
      */
     public function run(array $args, Command $command): void
     {
+
+        $coverage = new CodeCoverage();
+
+        $commandInMem = new Command(new Stream(Stream::TEMP));
         $iterator = new FileIterator($args);
-        $this->iterateTest($command, $iterator, $args);
-    }
+        $iterator->enableExitScript(false);
 
-    protected function iterateTest(Command $command, FileIterator $iterator, array $args): void
-    {
-        Configs::getInstance()->setCommand($command);
+        $coverage->start();
+        $this->iterateTest($commandInMem, $iterator, $args);
+        $coverage->end();
 
-        $defaultPath = $this->container->get("request")->getUri()->getDir();
-        try {
-            $path = ($args['path'] ?? $defaultPath);
-            if(!isset($path)) {
-                throw new RuntimeException("Path not specified: --path=path/to/dir");
-            }
-            $testDir = realpath($path);
-            if(!file_exists($testDir)) {
-                throw new RuntimeException("Test directory '$testDir' does not exist");
-            }
+        $result = $coverage->getResponse();
 
-            $iterator->executeAll($testDir, $defaultPath);
+        $block = new Blocks($command);
 
-        } catch (Exception $e) {
-            $command->error($e->getMessage());
-        }
+        $block->addSection("Code coverage", function(Blocks $block) use ($result) {
+            return $block->addList("Total lines:", $result['totalLines'])
+                ->addList("Executed lines:", $result['executedLines'])
+                ->addList("Code coverage percent:", $result['percent']);
+        });
+
+        $command->message("");
+        $iterator->exitScript();
     }
 
     /**

@@ -5,50 +5,45 @@ namespace MaplePHP\Unitary\Kernel\Controllers;
 use Exception;
 use MaplePHP\Container\Interfaces\ContainerExceptionInterface;
 use MaplePHP\Container\Interfaces\NotFoundExceptionInterface;
+use MaplePHP\Http\Stream;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Prompts\Themes\Blocks;
-use MaplePHP\Unitary\TestUtils\Configs;
+use MaplePHP\Unitary\TestUtils\CodeCoverage;
 use MaplePHP\Unitary\Utils\FileIterator;
 use RuntimeException;
 
-class RunTestController extends DefaultController
+class TemplateController extends RunTestController
 {
 
     /**
-     * Main test runner
+     * Display a template for the Unitary testing tool
+     * Shows a basic template for the Unitary testing tool
+     * Only displays if --template argument is provided
      *
      * @param array $args
      * @param Command $command
      * @return void
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
      */
     public function run(array $args, Command $command): void
     {
-        $iterator = new FileIterator($args);
-        $this->iterateTest($command, $iterator, $args);
-    }
 
-    protected function iterateTest(Command $command, FileIterator $iterator, array $args): void
-    {
-        Configs::getInstance()->setCommand($command);
-
-        $defaultPath = $this->container->get("request")->getUri()->getDir();
-        try {
-            $path = ($args['path'] ?? $defaultPath);
-            if(!isset($path)) {
-                throw new RuntimeException("Path not specified: --path=path/to/dir");
-            }
-            $testDir = realpath($path);
-            if(!file_exists($testDir)) {
-                throw new RuntimeException("Test directory '$testDir' does not exist");
-            }
-
-            $iterator->executeAll($testDir, $defaultPath);
-
-        } catch (Exception $e) {
-            $command->error($e->getMessage());
-        }
+        $blocks = new Blocks($command);
+        $blocks->addHeadline("\n--- Unitary template ---");
+        $blocks->addCode(
+            <<<'PHP'
+                use MaplePHP\Unitary\{Unit, TestCase, TestConfig, Expect};
+                
+                $unit = new Unit();
+                $unit->group("Your test subject", function (TestCase $case) {
+                
+                    $case->validate("Your test value", function(Expect $valid) {
+                        $valid->isString();
+                    });
+                    
+                });
+                PHP
+        );
+        exit(0);
     }
 
     /**

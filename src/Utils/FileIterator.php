@@ -16,6 +16,7 @@ use Exception;
 use MaplePHP\Blunder\Exceptions\BlunderSoftException;
 use MaplePHP\Blunder\Handlers\CliHandler;
 use MaplePHP\Blunder\Run;
+use MaplePHP\Prompts\Command;
 use MaplePHP\Unitary\Unit;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -27,6 +28,8 @@ final class FileIterator
     public const PATTERN = 'unitary-*.php';
 
     private array $args;
+    private bool $exitScript = true;
+    private ?Command $command = null;
 
     public function __construct(array $args = [])
     {
@@ -72,8 +75,33 @@ final class FileIterator
                 }
             }
             Unit::completed();
-            exit((int)!Unit::isSuccessful());
+            if ($this->exitScript) {
+                $this->exitScript();
+            }
+
         }
+    }
+
+
+    /**
+     * You can change the default exist script from enabled to disabled
+     *
+     * @param $exitScript
+     * @return void
+     */
+    public function enableExitScript($exitScript): void
+    {
+        $this->exitScript = $exitScript;
+    }
+
+    /**
+     * Exist the script with right expected number
+     *
+     * @return void
+     */
+    public function exitScript(): void
+    {
+        exit((int)!Unit::isSuccessful());
     }
 
     /**
@@ -178,28 +206,17 @@ final class FileIterator
         $clone = clone $this;
         $call = function () use ($file, $clone): void {
             $cli = new CliHandler();
-
             if (Unit::getArgs('trace') !== false) {
                 $cli->enableTraceLines(true);
             }
             $run = new Run($cli);
             $run->setExitCode(1);
             $run->load();
-
-            //ob_start();
             if (!is_file($file)) {
                 throw new RuntimeException("File \"$file\" do not exists.");
             }
             require_once($file);
-
             $clone->getUnit()->execute();
-
-            /*
-            $outputBuffer = ob_get_clean();
-            if (strlen($outputBuffer) && Unit::hasUnit()) {
-                $clone->getUnit()->buildNotice("Note:", $outputBuffer, 80);
-            }
-             */
         };
         return $call->bindTo(null);
     }

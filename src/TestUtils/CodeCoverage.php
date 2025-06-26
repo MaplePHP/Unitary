@@ -28,10 +28,11 @@ class CodeCoverage
     private int $errorCode = 0;
 
     private array $allowedDirs = [];
-    private array $excludeDirs = [
+    private array $exclude = [
         "vendor",
         "tests",
         "test",
+        "unitary-*",
         "unit-tests",
         "spec",
         "bin",
@@ -50,7 +51,6 @@ class CodeCoverage
         ".git",
         ".github"
     ];
-
 
     /**
      * Check if Xdebug is enabled
@@ -88,9 +88,9 @@ class CodeCoverage
     }
 
 
-    public function exclude(string|array $path): void
+    public function exclude(array $exclude): void
     {
-
+        $this->exclude = $exclude;
     }
 
     public function whitelist(string|array $path): void
@@ -126,7 +126,7 @@ class CodeCoverage
      */
     public function end(): void
     {
-        if($this->data === []) {
+        if($this->data === null) {
             throw new BadMethodCallException("You must start code coverage before you can end it");
         }
         if($this->hasXdebugCoverage()) {
@@ -135,6 +135,26 @@ class CodeCoverage
             xdebug_stop_code_coverage();
         }
     }
+
+    protected function excludePattern(string $file): bool
+    {
+        $filename = basename($file);
+
+        foreach ($this->exclude as $pattern) {
+            if (preg_match('#/' . preg_quote($pattern, '#') . '(/|$)#', $file)) {
+                return true;
+            }
+            if (str_ends_with($pattern, '*')) {
+                $prefix = substr($pattern, 0, -1);
+                if (str_starts_with($filename, $prefix)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
 
     /**
      * Get a Coverage result, will return false if there is an error
@@ -146,7 +166,34 @@ class CodeCoverage
         if($this->errorCode > 0) {
             return false;
         }
-        return $this->data;
+
+        $totalLines = 0;
+        $executedLines = 0;
+        foreach ($this->data as $file => $lines) {
+            if ($this->excludePattern($file)) {
+                continue;
+            }
+
+            foreach ($lines as $line => $status) {
+                if ($status === -2) continue;
+                $totalLines++;
+                if ($status === 1) {
+                    $executedLines++;
+                }
+            }
+        }
+
+        $percent = $totalLines > 0 ? round(($executedLines / $totalLines) * 100, 2) : 0;
+        return [
+            'totalLines' => $totalLines,
+            'executedLines' => $executedLines,
+            'percent' => $percent
+        ];
+    }
+
+    public function getRawData(): array
+    {
+        return $this->data ?? [];
     }
 
     /**
