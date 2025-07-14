@@ -7,6 +7,7 @@
 
 use MaplePHP\Container\Container;
 use MaplePHP\Http\Environment;
+use MaplePHP\Http\ResponseFactory;
 use MaplePHP\Http\ServerRequest;
 use MaplePHP\Http\Uri;
 use MaplePHP\Unitary\Kernel\Kernel;
@@ -23,7 +24,7 @@ if (!file_exists($autoload)) {
 
 require $autoload;
 
-$container = new Container();
+
 $env = new Environment();
 // Pass argv and expected start directory path where to run tests
 $request = new ServerRequest(new Uri($env->getUriParts([
@@ -31,5 +32,10 @@ $request = new ServerRequest(new Uri($env->getUriParts([
     "dir" => (defined("UNITARY_PATH") ? UNITARY_PATH : "./")
 ])), $env);
 
-$kernel = new Kernel($request, $container);
+
+$factory = new ResponseFactory();
+$kernel = new Kernel($factory);
+
+$kernel->run($request, new \MaplePHP\Emitron\Emitters\CliEmitter());
+
 $kernel->dispatch();

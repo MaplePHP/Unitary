@@ -5,6 +5,7 @@ namespace MaplePHP\Unitary\Kernel\Controllers;
 use Exception;
 use MaplePHP\Container\Interfaces\ContainerExceptionInterface;
 use MaplePHP\Container\Interfaces\NotFoundExceptionInterface;
+use MaplePHP\Http\Interfaces\ResponseInterface;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Prompts\Themes\Blocks;
 use MaplePHP\Unitary\TestUtils\Configs;
@@ -17,38 +18,42 @@ class RunTestController extends DefaultController
     /**
      * Main test runner
      *
-     * @param array $args
-     * @param Command $command
-     * @return void
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
+     * @return FileIterator
      */
-    public function run(array $args, Command $command): void
+    public function run(): FileIterator
     {
-        $iterator = new FileIterator($args);
-        $this->iterateTest($command, $iterator, $args);
+        $iterator = new FileIterator($this->args);
+        return $this->iterateTest($this->command, $iterator, $this->args);
     }
 
-    protected function iterateTest(Command $command, FileIterator $iterator, array $args): void
+    /**
+     * @param Command $command
+     * @param FileIterator $iterator
+     * @param array $args
+     * @return FileIterator
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \MaplePHP\Blunder\Exceptions\BlunderSoftException
+     */
+    protected function iterateTest(Command $command, FileIterator $iterator, array $args): FileIterator
     {
         Configs::getInstance()->setCommand($command);
 
         $defaultPath = $this->container->get("request")->getUri()->getDir();
-        try {
-            $path = ($args['path'] ?? $defaultPath);
-            if(!isset($path)) {
-                throw new RuntimeException("Path not specified: --path=path/to/dir");
-            }
-            $testDir = realpath($path);
-            if(!file_exists($testDir)) {
-                throw new RuntimeException("Test directory '$testDir' does not exist");
-            }
-
-            $iterator->executeAll($testDir, $defaultPath);
-
-        } catch (Exception $e) {
-            $command->error($e->getMessage());
+        $path = ($args['path'] ?? $defaultPath);
+        if(!isset($path)) {
+            throw new RuntimeException("Path not specified: --path=path/to/dir");
         }
+        $testDir = realpath($path);
+
+
+        if(!file_exists($testDir)) {
+            throw new RuntimeException("Test directory '$testDir' does not exist");
+        }
+
+        $iterator->enableExitScript(false);
+        $iterator->executeAll($testDir, $defaultPath);
+        return $iterator;
     }
 
     /**
@@ -58,9 +63,9 @@ class RunTestController extends DefaultController
      * @param Command $command
      * @return void
      */
-    public function help(array $args, Command $command): void
+    public function help(): void
     {
-        $blocks = new Blocks($command);
+        $blocks = new Blocks($this->command);
         $blocks->addHeadline("\n--- Unitary Help ---");
         $blocks->addSection("Usage", "php vendor/bin/unitary [options]");
 

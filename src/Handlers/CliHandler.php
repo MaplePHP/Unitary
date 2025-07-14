@@ -47,6 +47,7 @@ class CliHandler extends AbstractHandler
         }
 
         if (($this->show || !$this->case->getConfig()->skip)) {
+
             // Show possible warnings
             if($this->case->getWarning()) {
                 $this->command->message("");
@@ -55,6 +56,7 @@ class CliHandler extends AbstractHandler
                 );
             }
 
+            // Show Failed tests
             $this->showFailedTests();
         }
 
@@ -115,13 +117,6 @@ class CliHandler extends AbstractHandler
     protected function showFailedTests(): void
     {
         if (($this->show || !$this->case->getConfig()->skip)) {
-            // Show possible warnings
-            if($this->case->getWarning()) {
-                $this->command->message("");
-                $this->command->message(
-                    $this->command->getAnsi()->style(["italic", "yellow"], $this->case->getWarning())
-                );
-            }
             foreach ($this->tests as $test) {
 
                 if (!($test instanceof TestUnit)) {
@@ -179,6 +174,7 @@ class CliHandler extends AbstractHandler
     protected function initDefault(): void
     {
         $this->color = ($this->case->hasFailed() ? "brightRed" : "brightBlue");
+        $this->flag = $this->command->getAnsi()->style(['blueBg', 'brightWhite'], " PASS ");
         if ($this->case->hasFailed()) {
             $this->flag = $this->command->getAnsi()->style(['redBg', 'brightWhite'], " FAIL ");
         }
@@ -186,6 +182,5 @@ class CliHandler extends AbstractHandler
             $this->color = "yellow";
             $this->flag = $this->command->getAnsi()->style(['yellowBg', 'black'], " SKIP ");
         }
-        $this->flag = $this->command->getAnsi()->style(['blueBg', 'brightWhite'], " PASS ");
     }
 }

@@ -22,9 +22,7 @@ use Throwable;
 use MaplePHP\Blunder\BlunderErrorException;
 use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Prompts\Command;
-use MaplePHP\Prompts\Themes\Blocks;
 use MaplePHP\Unitary\Handlers\HandlerInterface;
-use MaplePHP\Unitary\Utils\Helpers;
 use MaplePHP\Unitary\Utils\Performance;
 
 final class Unit
@@ -266,11 +264,14 @@ final class Unit
         if ($this->output) {
             $handler->buildNotes();
         }
+
+        /*
         $stream = $handler->returnStream();
         if ($stream->isSeekable()) {
             $this->getStream()->rewind();
             echo $this->getStream()->getContents();
         }
+         */
 
         $this->executed = true;
         return true;

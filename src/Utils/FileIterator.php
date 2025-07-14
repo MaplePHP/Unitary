@@ -82,7 +82,6 @@ final class FileIterator
         }
     }
 
-
     /**
      * You can change the default exist script from enabled to disabled
      *
