@@ -13,35 +13,43 @@ declare(strict_types=1);
 
 namespace MaplePHP\Unitary\Kernel;
 
-use MaplePHP\Container\Interfaces\ContainerInterface;
+use Psr\Container\ContainerInterface;
 use MaplePHP\Container\Reflection;
 use MaplePHP\Emitron\Contracts\EmitterInterface;
 use MaplePHP\Emitron\Emitters\CliEmitter;
 use MaplePHP\Emitron\Emitters\HttpEmitter;
 use MaplePHP\Emitron\RequestHandler;
-use MaplePHP\Http\Interfaces\RequestInterface;
-use MaplePHP\Http\Interfaces\ResponseFactoryInterface;
 use MaplePHP\Http\Interfaces\ResponseInterface;
 use MaplePHP\Http\Interfaces\ServerRequestInterface;
-use MaplePHP\Http\Response;
 use MaplePHP\Http\ResponseFactory;
 use MaplePHP\Http\Stream;
+use MaplePHP\Log\InvalidArgumentException;
 use MaplePHP\Prompts\Command;
+use MaplePHP\Unitary\Contracts\RouterInterface;
 use MaplePHP\Unitary\Utils\FileIterator;
 use MaplePHP\Unitary\Utils\Router;
 
 class Kernel
 {
 
-    private ResponseFactoryInterface $responseFactory;
     private ContainerInterface $container;
     private array $userMiddlewares;
+    private ?RouterInterface $router = null;
+    private ?int $exitCode = null;
+    private ?DispatchConfig $dispatchConfig = null;
 
-    function __construct(ResponseFactoryInterface $responseFactory, ContainerInterface $container, array $userMiddlewares = [])
+    function __construct(ContainerInterface $container, array $userMiddlewares = [])
     {
-        $this->responseFactory = $responseFactory;
         $this->userMiddlewares = $userMiddlewares;
         $this->container = $container;
+    }
+
+    public function getDispatchConfig(): DispatchConfig
+    {
+       if ($this->dispatchConfig === null) {
+           $this->dispatchConfig = new DispatchConfig();
+       }
+       return $this->dispatchConfig;
     }
 
     /**
@@ -56,29 +64,44 @@ class Kernel
         Reflection::interfaceFactory($call);
     }
 
+    public function addExitCode(int $exitCode): self
+    {
+        $inst = clone $this;
+        $inst->exitCode = $exitCode;
+        return $inst;
+    }
+
+    public function addRouter(RouterInterface $router): self
+    {
+        $inst = clone $this;
+        $inst->router = $router;
+        return $inst;
+    }
+
     /**
      * Run the emitter and init all routes, middlewares and configs
      *
-     * @param ServerRequestInterface|RequestInterface $request
+     * @param ServerRequestInterface $request
      * @return void
      * @throws \ReflectionException
      */
-    public function run(ServerRequestInterface|RequestInterface $request): void
+    public function run(ServerRequestInterface $request): void
     {
+        $router = $this->createRouter($request->getCliKeyword(), $request->getCliArgs());
 
-        $router = new Router($request->getCliKeyword(), $request->getCliArgs());
-        require_once __DIR__ . "/routes.php";
+        $router->dispatch(function($data, $args) use ($request) {
+            if (!isset($data['handler'])) {
+               throw new InvalidArgumentException("The router dispatch method arg 1 is missing the 'handler' key.");
+            }
 
-        $router->dispatch(function($controller, $args) use ($request) {
-
-            $fileIterator = null;
+            $controller = $data['handler'];
             $response = $this->createResponse();
-            $handler = new RequestHandler($this->userMiddlewares, $response);
-            $command = new Command($response);
 
-            $this->container->set("command", $command);
+            $handler = new RequestHandler($this->userMiddlewares, $response);
+
             $this->container->set("request", $request);
             $this->container->set("args", $args);
+            $this->container->set("dispatchConfig", $this->getDispatchConfig());
 
             $response = $handler->handle($request);
             $this->bindCoreInstToInterfaces($request, $response);
@@ -90,17 +113,16 @@ class Kernel
 
                 // Can replace the active Response instance through Command instance
                 $hasNewResponse = $reflect->dependencyInjector($classInst, $method);
-
                 $response = ($hasNewResponse instanceof ResponseInterface) ? $hasNewResponse : $response;
-                $fileIterator = ($hasNewResponse instanceof FileIterator) ? $hasNewResponse : null;
+
             } else {
                 $response->getBody()->write("\nERROR: Could not load Controller class {$class} and method {$method}()\n");
             }
 
-            $this->getEmitter()->emit($response, $request);
+            $this->createEmitter()->emit($response, $request);
 
-            if ($fileIterator !== null && $this->isCli()) {
-                $fileIterator->exitScript();
+            if ($this->getDispatchConfig()->getExitCode() !== null) {
+                exit($this->exitCode);
             }
         });
     }
@@ -109,16 +131,16 @@ class Kernel
      * Will bind core instances (singletons) to interface classes that then is loaded through
      * the dependency injector preferably that in implementable of that class
      *
-     * @param RequestInterface $request
+     * @param ServerRequestInterface $request
      * @param ResponseInterface $response
      * @return void
      */
-    private function bindCoreInstToInterfaces(RequestInterface $request, ResponseInterface $response): void
+    private function bindCoreInstToInterfaces(ServerRequestInterface $request, ResponseInterface $response): void
     {
         Reflection::interfaceFactory(function ($className) use ($request, $response) {
             return match ($className) {
                 "ContainerInterface" => $this->container,
-                "RequestInterface" => $request,
+                "RequestInterface", "ServerRequestInterface" => $request,
                 "ResponseInterface" => $response,
                 default => null,
             };
@@ -133,6 +155,23 @@ class Kernel
     private function isCli(): bool
     {
         return PHP_SAPI === 'cli';
+    }
+
+    /**
+     * Will create the router
+     *
+     * @param string $needle
+     * @param array $argv
+     * @return RouterInterface
+     */
+    private function createRouter(string $needle, array $argv): RouterInterface
+    {
+        if($this->router !== null) {
+            return $this->router;
+        }
+        $router = new Router($needle, $argv);
+        require_once __DIR__ . "/routes.php";
+        return $router;
     }
 
     /**
@@ -152,7 +191,7 @@ class Kernel
      *
      * @return EmitterInterface
      */
-    private function getEmitter(): EmitterInterface
+    private function createEmitter(): EmitterInterface
     {
         return $this->isCli() ? new CliEmitter() : new HttpEmitter();
     }

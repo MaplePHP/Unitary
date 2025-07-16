@@ -12,7 +12,10 @@ declare(strict_types=1);
 
 namespace MaplePHP\Unitary\Utils;
 
-class Router
+use InvalidArgumentException;
+use MaplePHP\Unitary\Contracts\RouterInterface;
+
+class Router implements RouterInterface
 {
     private array $controllers = [];
     private string $needle = "";
@@ -26,18 +29,27 @@ class Router
 
     /**
      * Map one or more needles to controller
-
+     *
      * @param string|array $needles
      * @param array $controller
+     * @param array $args Pass custom data to router
      * @return $this
      */
-    public function map(string|array $needles, array $controller): self
+    public function map(string|array $needles, array $controller, array $args = []): self
     {
+        if(isset($args['handler'])) {
+            throw new InvalidArgumentException('The handler argument is reserved, you can not use that key.');
+        }
+
         if(is_string($needles)) {
             $needles = [$needles];
         }
+
         foreach ($needles as $key) {
-            $this->controllers[$key] = $controller;
+            $this->controllers[$key] = [
+                "handler" => $controller,
+                ...$args
+            ];
         }
         return $this;
     }

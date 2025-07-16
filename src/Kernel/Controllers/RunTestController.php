@@ -8,6 +8,7 @@ use MaplePHP\Container\Interfaces\NotFoundExceptionInterface;
 use MaplePHP\Http\Interfaces\ResponseInterface;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Prompts\Themes\Blocks;
+use MaplePHP\Unitary\Kernel\DispatchConfig;
 use MaplePHP\Unitary\TestUtils\Configs;
 use MaplePHP\Unitary\Utils\FileIterator;
 use RuntimeException;
@@ -22,8 +23,13 @@ class RunTestController extends DefaultController
      */
     public function run(): FileIterator
     {
+        /** @var DispatchConfig $config */
+        $config = $this->container->get("dispatchConfig");
         $iterator = new FileIterator($this->args);
-        return $this->iterateTest($this->command, $iterator, $this->args);
+        $iterator = $this->iterateTest($this->command, $iterator, $this->args);
+
+        //$config->setExitCode($iterator->getExitCode());
+        return $iterator;
     }
 
     /**

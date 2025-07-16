@@ -100,7 +100,17 @@ final class FileIterator
      */
     public function exitScript(): void
     {
-        exit((int)!Unit::isSuccessful());
+        exit($this->getExitCode());
+    }
+
+    /**
+     * Get expected exit code
+     *
+     * @return int
+     */
+    public function getExitCode(): int
+    {
+        return (int)!Unit::isSuccessful();
     }
 
     /**

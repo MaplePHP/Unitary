@@ -2,7 +2,7 @@
 
 namespace MaplePHP\Unitary\Kernel\Controllers;
 
-use MaplePHP\Container\Interfaces\ContainerInterface;
+use Psr\Container\ContainerInterface;
 use MaplePHP\Http\Interfaces\RequestInterface;
 use MaplePHP\Http\Interfaces\ServerRequestInterface;
 use MaplePHP\Prompts\Command;
