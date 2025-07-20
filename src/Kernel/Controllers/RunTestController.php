@@ -4,7 +4,7 @@ namespace MaplePHP\Unitary\Kernel\Controllers;
 
 use Exception;
 use MaplePHP\Container\Interfaces\ContainerExceptionInterface;
-use MaplePHP\Container\Interfaces\NotFoundExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use MaplePHP\Http\Interfaces\ResponseInterface;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Prompts\Themes\Blocks;
@@ -18,18 +18,20 @@ class RunTestController extends DefaultController
 
     /**
      * Main test runner
-     *
-     * @return FileIterator
      */
-    public function run(): FileIterator
+    public function run(ResponseInterface $response): ResponseInterface
     {
-        /** @var DispatchConfig $config */
-        $config = $this->container->get("dispatchConfig");
+        // /** @var DispatchConfig $config */
+        // $config = $this->container->get("dispatchConfig");
         $iterator = new FileIterator($this->args);
         $iterator = $this->iterateTest($this->command, $iterator, $this->args);
 
-        //$config->setExitCode($iterator->getExitCode());
-        return $iterator;
+        // CLI Response
+        if(PHP_SAPI === 'cli') {
+            return $response->withStatus($iterator->getExitCode());
+        }
+        // Text/Browser Response
+        return $response;
     }
 
     /**

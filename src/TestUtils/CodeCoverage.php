@@ -13,22 +13,15 @@ declare(strict_types=1);
 namespace MaplePHP\Unitary\TestUtils;
 
 use BadMethodCallException;
+use MaplePHP\Unitary\Kernel\Enum\CoverageIssue;
 
 class CodeCoverage
 {
-
-    /** @var array<string> */
-    const ERROR = [
-        "No error",
-        "Xdebug is not available",
-        "Xdebug is enabled, but coverage mode is missing"
-    ];
-
+    private CoverageIssue $coverageIssue = CoverageIssue::None;
     private ?array $data = null;
-    private int $errorCode = 0;
-
-    private array $allowedDirs = [];
-    private array $exclude = [
+    private array $exclude = [];
+    /** @var array<int, string> */
+    private const DEFAULT_EXCLUDED_FILES = [
         "vendor",
         "tests",
         "test",
@@ -59,11 +52,11 @@ class CodeCoverage
      */
     public function hasXdebug(): bool
     {
-        if($this->errorCode > 0) {
+        if($this->hasIssue()) {
             return false;
         }
         if (!function_exists('xdebug_info')) {
-            $this->errorCode = 1;
+            $this->coverageIssue = CoverageIssue::MissingXdebug;
             return false;
         }
         return true;
@@ -81,21 +74,26 @@ class CodeCoverage
         }
         $mode = ini_get('xdebug.mode');
         if ($mode === false || !str_contains($mode, 'coverage')) {
-            $this->errorCode = 1;
+            $this->coverageIssue = CoverageIssue::MissingCoverage;
             return false;
         }
         return true;
     }
 
-
-    public function exclude(array $exclude): void
+    /**
+     * Add files and directories to be excluded from coverage.
+     *
+     * By default, this method includes a set of common files and directories
+     * that are typically excluded. To override and reset the list completely,
+     * pass `true` as the second argument.
+     *
+     * @param array $exclude Additional files or directories to exclude.
+     * @param bool $reset If true, replaces the default excluded list instead of merging with it.
+     * @return void
+     */
+    public function exclude(array $exclude, bool $reset = false): void
     {
-        $this->exclude = $exclude;
-    }
-
-    public function whitelist(string|array $path): void
-    {
-
+        $this->exclude = (!$reset) ? array_merge(self::DEFAULT_EXCLUDED_FILES, $exclude) : $exclude;
     }
 
     /**
@@ -136,6 +134,13 @@ class CodeCoverage
         }
     }
 
+    /**
+     * This is a simple exclude checker used to exclude a file, directories or files in a pattern
+     * with the help of wildcard, for example, "unitary-*" will exclude all files with prefix unitary.
+     *
+     * @param string $file
+     * @return bool
+     */
     protected function excludePattern(string $file): bool
     {
         $filename = basename($file);
@@ -154,8 +159,6 @@ class CodeCoverage
         return false;
     }
 
-
-
     /**
      * Get a Coverage result, will return false if there is an error
      *
@@ -163,7 +166,7 @@ class CodeCoverage
      */
     public function getResponse(): array|false
     {
-        if($this->errorCode > 0) {
+        if($this->hasIssue()) {
             return false;
         }
 
@@ -182,7 +185,6 @@ class CodeCoverage
                 }
             }
         }
-
         $percent = $totalLines > 0 ? round(($executedLines / $totalLines) * 100, 2) : 0;
         return [
             'totalLines' => $totalLines,
@@ -191,29 +193,22 @@ class CodeCoverage
         ];
     }
 
+    /**
+     * Get raw data
+     *
+     * @return array
+     */
     public function getRawData(): array
     {
         return $this->data ?? [];
     }
 
     /**
-     * Get an error message
-     *
-     * @return string
+     * @return CoverageIssue
      */
-    public function getError(): string
+    public function getIssue(): CoverageIssue
     {
-        return self::ERROR[$this->errorCode];
-    }
-
-    /**
-     * Get an error code
-     *
-     * @return int
-     */
-    public function getCode(): int
-    {
-        return $this->errorCode;
+        return $this->coverageIssue;
     }
 
     /**
@@ -221,8 +216,8 @@ class CodeCoverage
      *
      * @return bool
      */
-    public function hasError(): bool
+    public function hasIssue(): bool
     {
-        return ($this->errorCode > 0);
+        return $this->coverageIssue !== CoverageIssue::None;
     }
 }

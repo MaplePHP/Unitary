@@ -21,9 +21,9 @@ class Router implements RouterInterface
     private string $needle = "";
     private array $args = [];
 
-    public function __construct(string $needle, array $argv)
+    public function __construct(string $needle, array $args)
     {
-        $this->args = $argv;
+        $this->args = $args;
         $this->needle = $needle;
     }
 

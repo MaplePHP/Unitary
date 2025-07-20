@@ -2,7 +2,7 @@
 
 namespace MaplePHP\Unitary\Contracts;
 
-interface RouterInterface
+interface RouterInterface extends RouterDispatchInterface
 {
 
     /**
@@ -17,13 +17,4 @@ interface RouterInterface
      * @return $this
      */
     public function map(string|array $needles, array $controller, array $args = []): self;
-
-    /**
-     * Dispatch matched router
-     *
-     * @param callable $call
-     * @return bool
-     */
-    function dispatch(callable $call): bool;
-
 }
