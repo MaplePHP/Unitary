@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace MaplePHP\Unitary\Utils;
 
 use InvalidArgumentException;
-use MaplePHP\Unitary\Contracts\RouterInterface;
+use MaplePHP\Unitary\Interfaces\RouterInterface;
 
 class Router implements RouterInterface
 {

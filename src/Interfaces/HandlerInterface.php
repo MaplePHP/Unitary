@@ -1,6 +1,6 @@
 <?php
 
-namespace MaplePHP\Unitary\Contracts;
+namespace MaplePHP\Unitary\Interfaces;
 
 use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Unitary\TestCase;
@@ -51,12 +51,12 @@ interface HandlerInterface
     public function setShow(bool $show): void;
 
     /**
-     * Will expect to catch a unauthorized output outside the main stream
+     * Will expect to catch an unauthorized output outside the main stream
      *
-     * @param string $outputBuffer
-     * @return void
+     * @param string $addToOutput
+     * @return string
      */
-    public function outputBuffer(string $outputBuffer): void;
+    public function outputBuffer(string $addToOutput = ''): string;
 
     /**
      * Expect to build your handler output

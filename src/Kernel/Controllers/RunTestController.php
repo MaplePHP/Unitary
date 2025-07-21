@@ -2,13 +2,11 @@
 
 namespace MaplePHP\Unitary\Kernel\Controllers;
 
-use Exception;
-use MaplePHP\Container\Interfaces\ContainerExceptionInterface;
+use MaplePHP\Blunder\Exceptions\BlunderSoftException;
 use Psr\Container\NotFoundExceptionInterface;
 use MaplePHP\Http\Interfaces\ResponseInterface;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Prompts\Themes\Blocks;
-use MaplePHP\Unitary\Kernel\DispatchConfig;
 use MaplePHP\Unitary\TestUtils\Configs;
 use MaplePHP\Unitary\Utils\FileIterator;
 use RuntimeException;
@@ -39,9 +37,9 @@ class RunTestController extends DefaultController
      * @param FileIterator $iterator
      * @param array $args
      * @return FileIterator
-     * @throws ContainerExceptionInterface
+     * @throws BlunderSoftException
      * @throws NotFoundExceptionInterface
-     * @throws \MaplePHP\Blunder\Exceptions\BlunderSoftException
+     * @throws \Psr\Container\ContainerExceptionInterface
      */
     protected function iterateTest(Command $command, FileIterator $iterator, array $args): FileIterator
     {
@@ -53,7 +51,6 @@ class RunTestController extends DefaultController
             throw new RuntimeException("Path not specified: --path=path/to/dir");
         }
         $testDir = realpath($path);
-
 
         if(!file_exists($testDir)) {
             throw new RuntimeException("Test directory '$testDir' does not exist");

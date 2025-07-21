@@ -1,10 +1,9 @@
 <?php
 
-namespace MaplePHP\Unitary\Contracts;
+namespace MaplePHP\Unitary\Interfaces;
 
 use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Http\Stream;
-use MaplePHP\Prompts\Command;
 use MaplePHP\Unitary\TestCase;
 
 class AbstractHandler implements HandlerInterface
@@ -15,11 +14,6 @@ class AbstractHandler implements HandlerInterface
     protected bool $show = false;
     protected array $tests;
     protected string $outputBuffer = "";
-
-    function __construct()
-    {
-    }
-
 
     /**
      * {@inheritDoc}
@@ -64,9 +58,11 @@ class AbstractHandler implements HandlerInterface
     /**
      * {@inheritDoc}
      */
-    public function outputBuffer(string $outputBuffer): void
+    public function outputBuffer(string $addToOutput = ''): string
     {
-        $this->outputBuffer = $outputBuffer;
+        $out = (ob_get_level() > 0) ? ob_get_clean() : '';
+        $this->outputBuffer = $out . $addToOutput;
+        return $this->outputBuffer;
     }
 
     /**

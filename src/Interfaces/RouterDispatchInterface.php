@@ -1,6 +1,6 @@
 <?php
 
-namespace MaplePHP\Unitary\Contracts;
+namespace MaplePHP\Unitary\Interfaces;
 
 interface RouterDispatchInterface
 {

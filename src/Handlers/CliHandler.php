@@ -5,7 +5,8 @@ namespace MaplePHP\Unitary\Handlers;
 use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Http\Stream;
 use MaplePHP\Prompts\Command;
-use MaplePHP\Unitary\Contracts\AbstractHandler;
+use MaplePHP\Unitary\Interfaces\AbstractHandler;
+use MaplePHP\Unitary\TestCase;
 use MaplePHP\Unitary\TestItem;
 use MaplePHP\Unitary\TestUnit;
 use MaplePHP\Unitary\Utils\Helpers;
@@ -19,7 +20,12 @@ class CliHandler extends AbstractHandler
     private string $color;
     private string $flag;
 
-    public function setCommand(Command $command)
+    /**
+     * Pass the main command and stream to handler
+     *
+     * @param Command $command
+     */
+    public function __construct(Command $command)
     {
         $this->command = $command;
     }
@@ -82,13 +88,10 @@ class CliHandler extends AbstractHandler
     }
 
     /**
-     * {@inheritDoc}
+     * Footer template part
+     *
+     * @return void
      */
-    public function returnStream(): StreamInterface
-    {
-        return $this->command->getStream();
-    }
-
     protected function showFooter(): void
     {
         $select = $this->checksum;
@@ -114,6 +117,12 @@ class CliHandler extends AbstractHandler
 
     }
 
+    /**
+     * Failed tests template part
+     *
+     * @return void
+     * @throws \ErrorException
+     */
     protected function showFailedTests(): void
     {
         if (($this->show || !$this->case->getConfig()->skip)) {
@@ -171,6 +180,11 @@ class CliHandler extends AbstractHandler
         }
     }
 
+    /**
+     * Init some default styled object
+     *
+     * @return void
+     */
     protected function initDefault(): void
     {
         $this->color = ($this->case->hasFailed() ? "brightRed" : "brightBlue");

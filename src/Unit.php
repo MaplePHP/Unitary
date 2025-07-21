@@ -14,11 +14,10 @@ namespace MaplePHP\Unitary;
 
 use Closure;
 use ErrorException;
-use Exception;
+use Throwable;
 use MaplePHP\Unitary\Handlers\CliHandler;
 use MaplePHP\Unitary\TestUtils\Configs;
 use RuntimeException;
-use Throwable;
 use MaplePHP\Blunder\BlunderErrorException;
 use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Prompts\Command;
@@ -70,25 +69,6 @@ final class Unit
         $this->disableAllTests = $disable;
     }
 
-    // Deprecated: Almost same as `disableAllTest`, for older versions
-    public function skip(bool $disable): self
-    {
-        $this->disableAllTests = $disable;
-        return $this;
-    }
-
-    /**
-     * DEPRECATED: Use TestConfig::setSelect instead
-     * See documentation for more information
-     *
-     * @return void
-     */
-    public function manual(): void
-    {
-        throw new RuntimeException("Manual method has been deprecated, use TestConfig::setSelect instead. " .
-            "See documentation for more information.");
-    }
-
     /**
      * Access command instance
      * @return Command
@@ -129,7 +109,8 @@ final class Unit
     }
 
     /**
-     * confirm for execute
+     * Confirm for execute
+     *
      * @param string $message
      * @return bool
      */
@@ -140,7 +121,9 @@ final class Unit
 
     /**
      * Name has been changed to case
-     * WILL BECOME DEPRECATED VERY SOON
+     *
+     * Note: This will become DEPRECATED in the future with exception
+     *
      * @param string $message
      * @param Closure $callback
      * @return void
@@ -177,35 +160,6 @@ final class Unit
         $this->addCase($message, $callback, true);
     }
 
-    public function performance(Closure $func, ?string $title = null): void
-    {
-        $start = new Performance();
-        $func = $func->bindTo($this);
-        if ($func !== null) {
-            $func($this);
-        }
-        $line = $this->command->getAnsi()->line(80);
-        $this->command->message("");
-        $this->command->message($this->command->getAnsi()->style(["bold", "yellow"], "Performance" . ($title !== null ? " - $title:" : ":")));
-
-        $this->command->message($line);
-        $this->command->message(
-            $this->command->getAnsi()->style(["bold"], "Execution time: ") .
-            ((string)round($start->getExecutionTime(), 3) . " seconds")
-        );
-        $this->command->message(
-            $this->command->getAnsi()->style(["bold"], "Memory Usage: ") .
-            ((string)round($start->getMemoryUsage(), 2) . " KB")
-        );
-        /*
-         $this->command->message(
-            $this->command->getAnsi()->style(["bold", "grey"], "Peak Memory Usage: ") .
-            $this->command->getAnsi()->blue(round($start->getMemoryPeakUsage(), 2) . " KB")
-        );
-         */
-        $this->command->message($line);
-    }
-
     /**
      * Execute tests suite
      *
@@ -224,8 +178,7 @@ final class Unit
         ob_start();
         //$countCases = count($this->cases);
 
-        $handler = new CliHandler();
-        $handler->setCommand($this->command);
+        $handler = new CliHandler($this->command);
 
         foreach ($this->cases as $index => $row) {
             if (!($row instanceof TestCase)) {
@@ -259,39 +212,12 @@ final class Unit
             self::$totalPassedTests += ($row->getConfig()->skip) ? $row->getTotal() : $row->getCount();
             self::$totalTests += $row->getTotal();
         }
-        $this->output .= (string)ob_get_clean();
-        $handler->outputBuffer($this->output);
-        if ($this->output) {
+        $out = $handler->outputBuffer();
+        if ($out) {
             $handler->buildNotes();
         }
-
-        /*
-        $stream = $handler->returnStream();
-        if ($stream->isSeekable()) {
-            $this->getStream()->rewind();
-            echo $this->getStream()->getContents();
-        }
-         */
-
         $this->executed = true;
         return true;
-    }
-
-    /**
-     * Will reset the executing and stream if is a seekable stream
-     *
-     * @return bool
-     */
-    public function resetExecute(): bool
-    {
-        if ($this->executed) {
-            if ($this->getStream()->isSeekable()) {
-                $this->getStream()->rewind();
-            }
-            $this->executed = false;
-            return true;
-        }
-        return false;
     }
 
     /**
@@ -306,31 +232,9 @@ final class Unit
             "Move this validate() call inside your group() callback function.");
     }
 
-
-
     /**
-     * Make a file path into a title
-     * @param string $file
-     * @param int $length
-     * @param bool $removeSuffix
-     * @return string
-     */
-    private function formatFileTitle(string $file, int $length = 3, bool $removeSuffix = true): string
-    {
-        $file = explode("/", $file);
-        if ($removeSuffix) {
-            $pop = array_pop($file);
-            $file[] = substr($pop, (int)strpos($pop, 'unitary') + 8);
-        }
-        $file = array_chunk(array_reverse($file), $length);
-        $file = implode("\\", array_reverse($file[0]));
-        //$exp = explode('.', $file);
-        //$file = reset($exp);
-        return ".." . $file;
-    }
-
-    /**
-     * Global header information
+     * This is custom header information that is passed, that work with both CLI and Browsers
+     *
      * @param array $headers
      * @return void
      */
@@ -340,7 +244,8 @@ final class Unit
     }
 
     /**
-     * Get global header
+     * Get passed CLI arguments
+     *
      * @param string $key
      * @return mixed
      */
@@ -350,18 +255,9 @@ final class Unit
     }
 
     /**
-     * Append to global header
-     * @param string $key
-     * @param mixed $value
-     * @return void
-     */
-    public static function appendHeader(string $key, mixed $value): void
-    {
-        self::$headers[$key] = $value;
-    }
-
-    /**
-     * Used to reset the current instance
+     * The test is liner it also has a current test instance that needs
+     * to be rested when working with loop
+     *
      * @return void
      */
     public static function resetUnit(): void
@@ -370,7 +266,8 @@ final class Unit
     }
 
     /**
-     * Used to check if an instance is set
+     * Check if a current instance exists
+     *
      * @return bool
      */
     public static function hasUnit(): bool
@@ -379,20 +276,26 @@ final class Unit
     }
 
     /**
-     * Used to get instance
+     * Get the current instance
+     *
      * @return ?Unit
-     * @throws Exception
      */
     public static function getUnit(): ?Unit
     {
-        /*
-        // Testing to comment out Exception in Unit instance is missing
-        // because this will trigger as soon as it finds a file name with unitary-*
-        // and can become tedious that this makes the test script stop.
-        if (self::hasUnit() === false) {
-            throw new Exception("Unit has not been set yet. It needs to be set first.");
+        $verbose = self::getArgs('verbose');
+        if ($verbose !== false && self::hasUnit() === false) {
+            $file = self::$headers['file'] ?? "";
+
+            $command = new Command();
+            $command->message(
+                $command->getAnsi()->style(['redBg', 'brightWhite'], " ERROR ") . ' ' .
+                $command->getAnsi()->style(['red', 'bold'], "The Unit instance is missing in the file")
+            );
+            $command->message('');
+            $command->message($command->getAnsi()->bold("In File:"));
+            $command->message($file);
+            $command->message('');
         }
-         */
         return self::$current;
     }
 
@@ -418,14 +321,14 @@ final class Unit
     }
 
     /**
-     * Check if successful
+     * Check if all tests is successful
+     *
      * @return bool
      */
     public static function isSuccessful(): bool
     {
         return (self::$totalPassedTests === self::$totalTests);
     }
-
 
     /**
      * Adds a test case to the collection.
@@ -443,8 +346,71 @@ final class Unit
         $this->index++;
     }
 
+
+    // NOTE: Just a test will be added in a new library and controller.
+    public function performance(Closure $func, ?string $title = null): void
+    {
+        $start = new Performance();
+        $func = $func->bindTo($this);
+        if ($func !== null) {
+            $func($this);
+        }
+        $line = $this->command->getAnsi()->line(80);
+        $this->command->message("");
+        $this->command->message($this->command->getAnsi()->style(["bold", "yellow"], "Performance" . ($title !== null ? " - $title:" : ":")));
+
+        $this->command->message($line);
+        $this->command->message(
+            $this->command->getAnsi()->style(["bold"], "Execution time: ") .
+            ((string)round($start->getExecutionTime(), 3) . " seconds")
+        );
+        $this->command->message(
+            $this->command->getAnsi()->style(["bold"], "Memory Usage: ") .
+            ((string)round($start->getMemoryUsage(), 2) . " KB")
+        );
+        /*
+         $this->command->message(
+            $this->command->getAnsi()->style(["bold", "grey"], "Peak Memory Usage: ") .
+            $this->command->getAnsi()->blue(round($start->getMemoryPeakUsage(), 2) . " KB")
+        );
+         */
+        $this->command->message($line);
+    }
+
+    // Deprecated: Almost same as `disableAllTest`, for older versions
+    public function skip(bool $disable): self
+    {
+        $this->disableAllTests = $disable;
+        return $this;
+    }
+
+    /**
+     * DEPRECATED: Use TestConfig::setSelect instead
+     * See documentation for more information
+     *
+     * @return void
+     */
+    public function manual(): void
+    {
+        throw new RuntimeException("Manual method has been deprecated, use TestConfig::setSelect instead. " .
+            "See documentation for more information.");
+    }
+
+    /**
+     * DEPRECATED: Append to global header
+     *
+     * @param string $key
+     * @param mixed $value
+     * @return void
+     */
+    public static function appendHeader(string $key, mixed $value): void
+    {
+        self::$headers[$key] = $value;
+    }
+
     /**
      * DEPRECATED: Not used anymore
+     *
      * @return $this
      */
     public function addTitle(): self
@@ -452,3 +418,4 @@ final class Unit
         return $this;
     }
 }
+
