@@ -14,12 +14,11 @@ declare(strict_types=1);
 namespace MaplePHP\Unitary\Kernel;
 
 use Exception;
-use MaplePHP\Emitron\DispatchConfig;
-use MaplePHP\Emitron\Middlewares\NoContentMiddleware;
+use MaplePHP\Emitron\Contracts\DispatchConfigInterface;
 use MaplePHP\Http\Interfaces\ServerRequestInterface;
 use MaplePHP\Unitary\Kernel\Middlewares\AddCommandMiddleware;
 use MaplePHP\Unitary\Utils\Router;
-use Psr\Container\ContainerInterface;
+use MaplePHP\Container\Interfaces\ContainerInterface;
 use MaplePHP\Emitron\Kernel as EmitronKernel;
 
 class Kernel
@@ -73,10 +72,10 @@ class Kernel
      * This is the default unitary configuration
      *
      * @param ServerRequestInterface $request
-     * @return DispatchConfig
+     * @return DispatchConfigInterface
      * @throws Exception
      */
-    private function configuration(ServerRequestInterface $request): DispatchConfig
+    private function configuration(ServerRequestInterface $request): DispatchConfigInterface
     {
         $config = new DispatchConfig(EmitronKernel::getConfigFilePath());
         return $config

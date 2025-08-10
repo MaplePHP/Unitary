@@ -14,19 +14,19 @@ namespace MaplePHP\Unitary;
 
 use Closure;
 use ErrorException;
-use Throwable;
-use MaplePHP\Unitary\Handlers\CliHandler;
-use MaplePHP\Unitary\TestUtils\Configs;
+use MaplePHP\Unitary\Interfaces\BodyInterface;
 use RuntimeException;
-use MaplePHP\Blunder\BlunderErrorException;
+use Throwable;
+use MaplePHP\Blunder\Exceptions\BlunderErrorException;
 use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Prompts\Command;
+use MaplePHP\Unitary\Handlers\CliEmitter;
 use MaplePHP\Unitary\Handlers\HandlerInterface;
 use MaplePHP\Unitary\Utils\Performance;
 
 final class Unit
 {
-    private ?HandlerInterface $handler = null;
+    private ?BodyInterface $handler = null;
     private Command $command;
     private string $output = "";
     private int $index = 0;
@@ -46,14 +46,10 @@ final class Unit
      *        If StreamInterface is provided, creates a new Command with it
      *        If null, creates a new Command without a stream
      */
-    public function __construct(HandlerInterface|StreamInterface|null $handler = null)
+    public function __construct(BodyInterface|null $handler = null)
     {
-        if ($handler instanceof HandlerInterface) {
-            $this->handler = $handler;
-            $this->command = $this->handler->getCommand();
-        } else {
-            $this->command = ($handler === null) ? Configs::getInstance()->getCommand() : new Command($handler);
-        }
+
+        $this->handler = ($handler === null) ? new CliEmitter(new Command()) : $handler;
         self::$current = $this;
     }
 
@@ -67,56 +63,6 @@ final class Unit
     public function disableAllTest(bool $disable): void
     {
         $this->disableAllTests = $disable;
-    }
-
-    /**
-     * Access command instance
-     * @return Command
-     */
-    public function getCommand(): Command
-    {
-        return $this->command;
-    }
-
-    /**
-     * Access command instance
-     * @return StreamInterface
-     */
-    public function getStream(): StreamInterface
-    {
-        return $this->command->getStream();
-    }
-
-    /**
-     * Disable ANSI
-     * @param bool $disableAnsi
-     * @return self
-     */
-    public function disableAnsi(bool $disableAnsi): self
-    {
-        $this->command->getAnsi()->disableAnsi($disableAnsi);
-        return $this;
-    }
-
-    /**
-     * Print message
-     * @param string $message
-     * @return false|string
-     */
-    public function message(string $message): false|string
-    {
-        return $this->command->message($message);
-    }
-
-    /**
-     * Confirm for execute
-     *
-     * @param string $message
-     * @return bool
-     */
-    public function confirm(string $message = "Do you wish to continue?"): bool
-    {
-        return $this->command->confirm($message);
     }
 
     /**
@@ -138,12 +84,17 @@ final class Unit
      * The key difference from group() is that this TestCase will NOT be bound the Closure
      *
      * @param string|TestConfig $message The message or configuration for the test case.
-     * @param Closure $callback The closure containing the test case logic.
+     * @param Closure $expect The closure containing the test case logic.
+     * @param TestConfig|null $config
      * @return void
      */
-    public function group(string|TestConfig $message, Closure $callback): void
+    public function group(string|TestConfig $message, Closure $expect, ?TestConfig $config = null): void
     {
-        $this->addCase($message, $callback);
+        if($config !== null && !$config->hasSubject()) {
+            $addMessage = ($message instanceof TestConfig && $message->hasSubject()) ? $message->message : $message;
+            $message = $config->withSubject($addMessage);
+        }
+        $this->addCase($message, $expect);
     }
 
     /**
@@ -178,7 +129,10 @@ final class Unit
         ob_start();
         //$countCases = count($this->cases);
 
-        $handler = new CliHandler($this->command);
+        $handler = $this->handler;
+        if(count($this->cases) === 0) {
+            return false;
+        }
 
         foreach ($this->cases as $index => $row) {
             if (!($row instanceof TestCase)) {
@@ -334,18 +288,17 @@ final class Unit
      * Adds a test case to the collection.
      *
      * @param string|TestConfig $message The description or configuration of the test case.
-     * @param Closure $callback The closure that defines the test case logic.
+     * @param Closure $expect The closure that defines the test case logic.
      * @param bool $bindToClosure Indicates whether the closure should be bound to TestCase.
      * @return void
      */
-    protected function addCase(string|TestConfig $message, Closure $callback, bool $bindToClosure = false): void
+    protected function addCase(string|TestConfig $message, Closure $expect, bool $bindToClosure = false): void
     {
         $testCase = new TestCase($message);
-        $testCase->bind($callback, $bindToClosure);
+        $testCase->bind($expect, $bindToClosure);
         $this->cases[$this->index] = $testCase;
         $this->index++;
     }
-
 
     // NOTE: Just a test will be added in a new library and controller.
     public function performance(Closure $func, ?string $title = null): void

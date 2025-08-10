@@ -1,12 +1,13 @@
 <?php
 
-namespace MaplePHP\Unitary\Interfaces;
+namespace MaplePHP\Unitary\Handlers;
 
 use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Http\Stream;
+use MaplePHP\Unitary\Interfaces\BodyInterface;
 use MaplePHP\Unitary\TestCase;
 
-class AbstractHandler implements HandlerInterface
+class AbstractBodyHandler implements BodyInterface
 {
     protected TestCase $case;
     protected string $suitName = "";
@@ -85,7 +86,15 @@ class AbstractHandler implements HandlerInterface
     /**
      * {@inheritDoc}
      */
-    public function returnStream(): StreamInterface
+    public function getBody(): StreamInterface
+    {
+        return new Stream();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getCommand(): StreamInterface
     {
         return new Stream();
     }

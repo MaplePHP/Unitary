@@ -2,20 +2,14 @@
 
 namespace MaplePHP\Unitary\Handlers;
 
-use MaplePHP\Http\Interfaces\StreamInterface;
-use MaplePHP\Http\Stream;
 use MaplePHP\Prompts\Command;
-use MaplePHP\Unitary\Interfaces\AbstractHandler;
-use MaplePHP\Unitary\TestCase;
 use MaplePHP\Unitary\TestItem;
 use MaplePHP\Unitary\TestUnit;
 use MaplePHP\Unitary\Utils\Helpers;
 use RuntimeException;
 
-
-class CliHandler extends AbstractHandler
+class CliEmitter extends AbstractBodyHandler
 {
-
     private Command $command;
     private string $color;
     private string $flag;

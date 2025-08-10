@@ -17,6 +17,7 @@ final class TestConfig
     public ?string $message;
     public bool $skip = false;
     public string $select = "";
+    private bool $updatedSubject = false;
 
     public function __construct(string $message)
     {
@@ -62,8 +63,19 @@ final class TestConfig
     public function withSubject(string $subject): self
     {
         $inst = clone $this;
+        $inst->updatedSubject = true;
         $inst->message = $subject;
         return $inst;
+    }
+
+    /**
+     * Check if a subject has been added in `withSubject`
+     *
+     * @return bool
+     */
+    public function hasSubject(): bool
+    {
+        return $this->updatedSubject;
     }
 
     /**

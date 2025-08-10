@@ -4,13 +4,14 @@ namespace MaplePHP\Unitary\Kernel\Controllers;
 
 use MaplePHP\Blunder\Exceptions\BlunderSoftException;
 use MaplePHP\Container\Interfaces\ContainerExceptionInterface;
+use MaplePHP\Http\Interfaces\ResponseInterface;
 use MaplePHP\Http\Stream;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Prompts\Themes\Blocks;
 use MaplePHP\Unitary\Kernel\DispatchConfig;
 use MaplePHP\Unitary\TestUtils\CodeCoverage;
 use MaplePHP\Unitary\Utils\FileIterator;
-use Psr\Container\NotFoundExceptionInterface;
+use MaplePHP\Container\Interfaces\NotFoundExceptionInterface;
 
 class CoverageController extends RunTestController
 {
@@ -18,12 +19,8 @@ class CoverageController extends RunTestController
     /**
      * Main test runner
      *
-     * @return void
-     * @throws BlunderSoftException
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
      */
-    public function run(): void
+    public function run(ResponseInterface $response): ResponseInterface
     {
 
         /** @var DispatchConfig $config */
@@ -55,54 +52,6 @@ class CoverageController extends RunTestController
         }
 
         $this->command->message("");
+        return $response;
     }
-
-    /**
-     * Main help page
-     *
-     * @return void
-     */
-    public function help(): void
-    {
-        die();
-        $blocks = new Blocks($this->command);
-        $blocks->addHeadline("\n--- Unitary Help ---");
-        $blocks->addSection("Usage", "php vendor/bin/unitary [options]");
-
-        $blocks->addSection("Options", function(Blocks $inst) {
-            return $inst
-                ->addOption("help", "Show this help message")
-                ->addOption("show=<hash|name>", "Run a specific test by hash or manual test name")
-                ->addOption("errors-only", "Show only failing tests and skip passed test output")
-                ->addOption("template", "Will give you a boilerplate test code")
-                ->addOption("path=<path>", "Specify test path (absolute or relative)")
-                ->addOption("exclude=<patterns>", "Exclude files or directories (comma-separated, relative to --path)");
-        });
-
-        $blocks->addSection("Examples", function(Blocks $inst) {
-            return $inst
-                ->addExamples(
-                    "php vendor/bin/unitary",
-                    "Run all tests in the default path (./tests)"
-                )->addExamples(
-                    "php vendor/bin/unitary --show=b0620ca8ef6ea7598eaed56a530b1983",
-                    "Run the test with a specific hash ID"
-                )->addExamples(
-                    "php vendor/bin/unitary --errors-only",
-                    "Run all tests in the default path (./tests)"
-                )->addExamples(
-                    "php vendor/bin/unitary --show=YourNameHere",
-                    "Run a manually named test case"
-                )->addExamples(
-                    "php vendor/bin/unitary --template",
-                    "Run a and will give you template code for a new test"
-                )->addExamples(
-                    'php vendor/bin/unitary --path="tests/" --exclude="tests/legacy/*,*/extras/*"',
-                    'Run all tests under "tests/" excluding specified directories'
-                );
-        });
-        // Make sure nothing else is executed when help is triggered
-        exit(0);
-    }
-
 }

@@ -32,7 +32,8 @@
   },
   "autoload": {
     "files": [
-      "src/Setup/assert-polyfill.php"
+      "src/Setup/assert-polyfill.php",
+      "src/Setup/unitary-helpers.php"
     ],
     "psr-4": {
       "MaplePHP\\Unitary\\": "src"

@@ -2,7 +2,7 @@
 
 namespace MaplePHP\Unitary\Kernel\Middlewares;
 
-use Psr\Container\ContainerInterface;
+use MaplePHP\Container\Interfaces\ContainerInterface;
 use MaplePHP\Emitron\Contracts\MiddlewareInterface;
 use MaplePHP\Emitron\Contracts\RequestHandlerInterface;
 use MaplePHP\Http\Interfaces\ResponseInterface;

@@ -16,7 +16,7 @@ use BadMethodCallException;
 use Closure;
 use ErrorException;
 use Exception;
-use MaplePHP\Blunder\BlunderErrorException;
+use MaplePHP\Blunder\Exceptions\BlunderErrorException;
 use MaplePHP\DTO\Format\Str;
 use MaplePHP\DTO\Traverse;
 use MaplePHP\Unitary\Mocker\MethodRegistry;
@@ -126,13 +126,21 @@ final class TestCase
     /**
      * Add custom error message if validation fails
      *
-     * @param string $message
+     * @param ?string $message
      * @return $this
      */
-    public function error(string $message): self
+    public function error(?string $message): self
     {
-        $this->error = $message;
+        if($message !== null) {
+            $this->error = $message;
+        }
         return $this;
+    }
+
+    // Alias to error
+    public function message(?string $message): self
+    {
+        return $this->error($message);
     }
 
     /**
@@ -184,6 +192,22 @@ final class TestCase
             return $validation($inst, new Traverse($value));
         }, $this->error);
 
+        return $this;
+    }
+
+    /**
+     * Quickly validate with asserting
+     *
+     * @param bool $expect Assert value should be bool
+     * @param string|null $message
+     * @return $this
+     * @throws ErrorException
+     */
+    public function assert(bool $expect, ?string $message = null): self
+    {
+        $this->expectAndValidate($expect, function () use ($expect, $message) {
+            assert($expect, $assertMsg ?? $message);
+        }, $this->error);
         return $this;
     }
 
@@ -351,7 +375,7 @@ final class TestCase
         if($this->mocker->hasFinal()) {
             $finalMethods = $pool->getSelected($this->mocker->getFinalMethods());
             if($finalMethods !== []) {
-                $this->warning = "Warning: It is not possible to mock final methods: " .  implode(", ", $finalMethods);
+                $this->warning = "Warning: Final methods cannot be mocked or have their behavior modified: " .  implode(", ", $finalMethods);
             }
         }
         return $class;

@@ -14,15 +14,15 @@ declare(strict_types=1);
 namespace MaplePHP\Unitary\Kernel;
 
 use MaplePHP\Container\Reflection;
+use MaplePHP\Emitron\Contracts\DispatchConfigInterface;
 use MaplePHP\Emitron\Contracts\EmitterInterface;
-use MaplePHP\Emitron\DispatchConfig;
 use MaplePHP\Emitron\Emitters\CliEmitter;
 use MaplePHP\Emitron\Emitters\HttpEmitter;
 use MaplePHP\Http\Interfaces\ResponseInterface;
 use MaplePHP\Http\Interfaces\ServerRequestInterface;
 use MaplePHP\Http\ResponseFactory;
 use MaplePHP\Http\Stream;
-use Psr\Container\ContainerInterface;
+use MaplePHP\Container\Interfaces\ContainerInterface;
 
 abstract class AbstractKernel
 {
@@ -33,18 +33,19 @@ abstract class AbstractKernel
 
     protected ContainerInterface $container;
     protected array $userMiddlewares;
-    protected ?DispatchConfig $dispatchConfig = null;
+    protected ?DispatchConfigInterface $dispatchConfig = null;
     protected array $config = [];
 
     /**
      * @param ContainerInterface $container
      * @param array $userMiddlewares
-     * @param DispatchConfig|null $dispatchConfig
+     * @param DispatchConfigInterface|null $dispatchConfig
+     * @throws \Exception
      */
     public function __construct(
         ContainerInterface $container,
         array $userMiddlewares = [],
-        ?DispatchConfig $dispatchConfig = null,
+        ?DispatchConfigInterface $dispatchConfig = null,
     ) {
         $this->userMiddlewares = $userMiddlewares;
         $this->container = $container;
@@ -79,9 +80,9 @@ abstract class AbstractKernel
     /**
      * Get config instance for configure dispatch result
      *
-     * @return DispatchConfig
+     * @return DispatchConfigInterface
      */
-    public function getDispatchConfig(): DispatchConfig
+    public function getDispatchConfig(): DispatchConfigInterface
     {
         return $this->dispatchConfig;
     }

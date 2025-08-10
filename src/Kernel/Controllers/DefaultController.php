@@ -2,7 +2,8 @@
 
 namespace MaplePHP\Unitary\Kernel\Controllers;
 
-use Psr\Container\ContainerInterface;
+use MaplePHP\Unitary\Kernel\DispatchConfig;
+use MaplePHP\Container\Interfaces\ContainerInterface;
 use MaplePHP\Http\Interfaces\RequestInterface;
 use MaplePHP\Http\Interfaces\ServerRequestInterface;
 use MaplePHP\Prompts\Command;
@@ -12,6 +13,7 @@ abstract class DefaultController
     protected readonly ServerRequestInterface|RequestInterface $request;
     protected readonly ContainerInterface $container;
     protected Command $command;
+    protected DispatchConfig $configs;
     protected array $args;
 
     public function __construct(ContainerInterface $container) {
@@ -19,5 +21,6 @@ abstract class DefaultController
         $this->args = $this->container->get("args");
         $this->command = $this->container->get("command");
         $this->request = $this->container->get("request");
+        $this->configs = $this->container->get("dispatchConfig");
     }
 }

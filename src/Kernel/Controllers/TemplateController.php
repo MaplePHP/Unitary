@@ -4,7 +4,7 @@ namespace MaplePHP\Unitary\Kernel\Controllers;
 
 use Exception;
 use MaplePHP\Container\Interfaces\ContainerExceptionInterface;
-use Psr\Container\NotFoundExceptionInterface;
+use MaplePHP\Container\Interfaces\NotFoundExceptionInterface;
 use MaplePHP\Http\Stream;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Prompts\Themes\Blocks;
@@ -28,10 +28,9 @@ class TemplateController extends DefaultController
         $blocks->addHeadline("\n--- Copy and paste code --->");
         $blocks->addCode(
             <<<'PHP'
-                use MaplePHP\Unitary\{Unit, TestCase, TestConfig, Expect};
+                use MaplePHP\Unitary\{TestCase, TestConfig, Expect};
                 
-                $unit = new Unit();
-                $unit->group("Your test subject", function (TestCase $case) {
+                group("Your test subject", function (TestCase $case) {
                 
                     $case->validate("Your test value", function(Expect $valid) {
                         $valid->isString();
@@ -41,7 +40,6 @@ class TemplateController extends DefaultController
                 PHP
         );
         $blocks->addHeadline("---------------------------\n");
-        exit(0);
     }
 
 

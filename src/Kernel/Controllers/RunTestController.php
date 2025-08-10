@@ -2,14 +2,10 @@
 
 namespace MaplePHP\Unitary\Kernel\Controllers;
 
-use MaplePHP\Blunder\Exceptions\BlunderSoftException;
-use Psr\Container\NotFoundExceptionInterface;
+use MaplePHP\Unitary\Handlers\CliEmitter;
+use MaplePHP\Unitary\Kernel\Services\RunTestService;
 use MaplePHP\Http\Interfaces\ResponseInterface;
-use MaplePHP\Prompts\Command;
 use MaplePHP\Prompts\Themes\Blocks;
-use MaplePHP\Unitary\TestUtils\Configs;
-use MaplePHP\Unitary\Utils\FileIterator;
-use RuntimeException;
 
 class RunTestController extends DefaultController
 {
@@ -17,55 +13,15 @@ class RunTestController extends DefaultController
     /**
      * Main test runner
      */
-    public function run(ResponseInterface $response): ResponseInterface
+    public function run(RunTestService $service): ResponseInterface
     {
-        // /** @var DispatchConfig $config */
-        // $config = $this->container->get("dispatchConfig");
-        $iterator = new FileIterator($this->args);
-        $iterator = $this->iterateTest($this->command, $iterator, $this->args);
-
-        // CLI Response
-        if(PHP_SAPI === 'cli') {
-            return $response->withStatus($iterator->getExitCode());
-        }
-        // Text/Browser Response
-        return $response;
-    }
-
-    /**
-     * @param Command $command
-     * @param FileIterator $iterator
-     * @param array $args
-     * @return FileIterator
-     * @throws BlunderSoftException
-     * @throws NotFoundExceptionInterface
-     * @throws \Psr\Container\ContainerExceptionInterface
-     */
-    protected function iterateTest(Command $command, FileIterator $iterator, array $args): FileIterator
-    {
-        Configs::getInstance()->setCommand($command);
-
-        $defaultPath = $this->container->get("request")->getUri()->getDir();
-        $path = ($args['path'] ?? $defaultPath);
-        if(!isset($path)) {
-            throw new RuntimeException("Path not specified: --path=path/to/dir");
-        }
-        $testDir = realpath($path);
-
-        if(!file_exists($testDir)) {
-            throw new RuntimeException("Test directory '$testDir' does not exist");
-        }
-
-        $iterator->enableExitScript(false);
-        $iterator->executeAll($testDir, $defaultPath);
-        return $iterator;
+        $handler = new CliEmitter($this->command);
+        return $service->run($handler);
     }
 
     /**
      * Main help page
      *
-     * @param array $args
-     * @param Command $command
      * @return void
      */
     public function help(): void

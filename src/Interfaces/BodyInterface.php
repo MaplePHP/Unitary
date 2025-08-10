@@ -5,7 +5,7 @@ namespace MaplePHP\Unitary\Interfaces;
 use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Unitary\TestCase;
 
-interface HandlerInterface
+interface BodyInterface
 {
 
     /**
@@ -79,5 +79,5 @@ interface HandlerInterface
      *
      * @return StreamInterface
      */
-    public function returnStream(): StreamInterface;
+    public function getBody(): StreamInterface;
 }

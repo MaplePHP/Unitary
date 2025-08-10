@@ -17,6 +17,7 @@ use MaplePHP\Blunder\Exceptions\BlunderSoftException;
 use MaplePHP\Blunder\Handlers\CliHandler;
 use MaplePHP\Blunder\Run;
 use MaplePHP\Prompts\Command;
+use MaplePHP\Unitary\Interfaces\BodyInterface;
 use MaplePHP\Unitary\Unit;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -28,22 +29,40 @@ final class FileIterator
     public const PATTERN = 'unitary-*.php';
 
     private array $args;
+    private bool $verbose = false;
+    private bool $smartSearch = false;
     private bool $exitScript = true;
     private ?Command $command = null;
+    private BodyInterface $handler;
+    private static ?Unit $unitary = null;
 
-    public function __construct(array $args = [])
+    public function __construct(BodyInterface $handler, array $args = [])
     {
         $this->args = $args;
+        $this->handler = $handler;
+    }
+
+
+    function enableSmartSearch(bool $isVerbose): void
+    {
+        $this->verbose = $isVerbose;
+    }
+
+    function enableVerbose(bool $isVerbose): void
+    {
+        $this->verbose = $isVerbose;
     }
 
     /**
-     * Will Execute all unitary test files.
+     * Will Execute all unitary test files
+     *
      * @param string $path
      * @param string|bool $rootDir
+     * @param callable|null $callback
      * @return void
      * @throws BlunderSoftException
      */
-    public function executeAll(string $path, string|bool $rootDir = false): void
+    public function executeAll(string $path, string|bool $rootDir = false, ?callable $callback = null): void
     {
         $rootDir = is_string($rootDir) ? realpath($rootDir) : false;
         $path = (!$path && $rootDir !== false) ? $rootDir : $path;
@@ -59,19 +78,28 @@ final class FileIterator
         } else {
             foreach ($files as $file) {
                 extract($this->args, EXTR_PREFIX_SAME, "wddx");
+
+                // DELETE
                 Unit::resetUnit();
+
+                // DELETE (BUT PASSS)
                 Unit::setHeaders([
                     "args" => $this->args,
                     "file" => $file,
                     "checksum" => md5((string)$file)
                 ]);
 
+                // Error Handler library
+                $this->runBlunder();
+
                 $call = $this->requireUnitFile((string)$file);
+
                 if ($call !== null) {
                     $call();
                 }
-                if (!Unit::hasUnit()) {
-                    throw new RuntimeException("The Unitary Unit class has not been initiated inside \"$file\".");
+
+                if($callback !== null) {
+                    $callback();
                 }
             }
             Unit::completed();
@@ -83,7 +111,50 @@ final class FileIterator
     }
 
     /**
-     * You can change the default exist script from enabled to disabled
+     * Prepares a callable that will include and execute a unit test file in isolation.
+     *
+     * Wrapping with Closure achieves:
+     * Scope isolation, $this unbinding, State separation, Deferred execution
+     *
+     * @param string $file The full path to the test file to require.
+     * @return Closure|null A callable that, when invoked, runs the test file.
+     */
+    private function requireUnitFile(string $file): ?Closure
+    {
+
+        $handler = $this->handler;
+        $verbose = $this->verbose;
+
+        $call = function () use ($file, $handler, $verbose): void {
+            if (!is_file($file)) {
+                throw new RuntimeException("File \"$file\" do not exists.");
+            }
+            self::$unitary = new Unit($handler);
+            $unitInst = require_once($file);
+            if ($unitInst instanceof Unit) {
+                self::$unitary = $unitInst;
+            }
+            $bool = self::$unitary->execute();
+
+            if(!$bool && $verbose) {
+                throw new BlunderSoftException(
+                    "Could not find any tests inside the test file:\n" .
+                    $file . "\n\n" .
+                    "Possible causes:\n" .
+                    "  • There are not test in test group/case.\n" .
+                    "  • Unitary could not locate the Unit instance.\n" .
+                    "  • You did not use the `group()` function.\n" .
+                    "  • You created a new Unit in the test file but did not return it at the end. \n"
+                );
+
+            }
+        };
+
+        return $call->bindTo(null);
+    }
+
+    /**
+     * You can change the default exist script from enabled to disable
      *
      * @param $exitScript
      * @return void
@@ -94,7 +165,7 @@ final class FileIterator
     }
 
     /**
-     * Exist the script with right expected number
+     * Exist the script with the right expected number
      *
      * @return void
      */
@@ -115,6 +186,7 @@ final class FileIterator
 
     /**
      * Will Scan and find all unitary test files
+     *
      * @param string $path
      * @param string|false $rootDir
      * @return array
@@ -134,19 +206,10 @@ final class FileIterator
                 $path = dirname($path) . "/";
             }
             if(is_dir($path)) {
-                $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path));
-                /** @var string $pattern */
-                $pattern = FileIterator::PATTERN;
-                foreach ($iterator as $file) {
-                    if (($file instanceof SplFileInfo) && fnmatch($pattern, $file->getFilename()) &&
-                        (!empty($this->args['exclude']) || !str_contains($file->getPathname(), DIRECTORY_SEPARATOR . "vendor" . DIRECTORY_SEPARATOR))) {
-                        if (!$this->findExcluded($this->exclude(), $path, $file->getPathname())) {
-                            $files[] = $file->getPathname();
-                        }
-                    }
-                }
+                $files += $this->getFileIterateReclusive($path);
             }
         }
+        // If smart search flag then step back if no test files have been found and try again
         if($rootDir !== false && count($files) <= 0 && str_starts_with($path, $rootDir) && isset($this->args['smart-search'])) {
             $path = (string)realpath($path . "/..") . "/";
             return $this->findFiles($path, $rootDir);
@@ -156,9 +219,10 @@ final class FileIterator
 
     /**
      * Get exclude parameter
+     *
      * @return array
      */
-    public function exclude(): array
+    private function exclude(): array
     {
         $excl = [];
         if (isset($this->args['exclude']) && is_string($this->args['exclude'])) {
@@ -178,12 +242,13 @@ final class FileIterator
 
     /**
      * Validate an exclude path
+     *
      * @param array $exclArr
      * @param string $relativeDir
      * @param string $file
      * @return bool
      */
-    public function findExcluded(array $exclArr, string $relativeDir, string $file): bool
+    private function findExcluded(array $exclArr, string $relativeDir, string $file): bool
     {
         $file = $this->getNaturalPath($file);
         foreach ($exclArr as $excl) {
@@ -195,53 +260,65 @@ final class FileIterator
         return false;
     }
 
+
+    /**
+     * Iterate files that match the expected patterns
+     *
+     * @param string $path
+     * @return array
+     */
+    private function getFileIterateReclusive(string $path): array
+    {
+        $files = [];
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path));
+        /** @var string $pattern */
+        $pattern = FileIterator::PATTERN;
+        foreach ($iterator as $file) {
+            if (($file instanceof SplFileInfo) && fnmatch($pattern, $file->getFilename()) &&
+                (!empty($this->args['exclude']) || !str_contains($file->getPathname(), DIRECTORY_SEPARATOR . "vendor" . DIRECTORY_SEPARATOR))) {
+                if (!$this->findExcluded($this->exclude(), $path, $file->getPathname())) {
+                    $files[] = $file->getPathname();
+                }
+            }
+        }
+        return $files;
+    }
+
     /**
      * Get a path as a natural path
+     *
      * @param string $path
      * @return string
      */
-    public function getNaturalPath(string $path): string
+    private function getNaturalPath(string $path): string
     {
         return str_replace("\\", "/", $path);
     }
 
     /**
-     * Require a file without inheriting any class information
-     * @param string $file
-     * @return Closure|null
+     * Initialize Blunder error handler
+     *
+     * @return void
      */
-    private function requireUnitFile(string $file): ?Closure
+    protected function runBlunder(): void
     {
-        $clone = clone $this;
-        $call = function () use ($file, $clone): void {
-            $cli = new CliHandler();
-            if (Unit::getArgs('trace') !== false) {
-                $cli->enableTraceLines(true);
-            }
-            $run = new Run($cli);
-            $run->setExitCode(1);
-            $run->load();
-            if (!is_file($file)) {
-                throw new RuntimeException("File \"$file\" do not exists.");
-            }
-            require_once($file);
-            $clone->getUnit()->execute();
-        };
-        return $call->bindTo(null);
+        $run = new Run(new CliHandler());
+        $run->setExitCode(1);
+        $run->load();
     }
 
     /**
+     * Get instance of Unit class
+     *
      * @return Unit
-     * @throws RuntimeException|Exception
      */
-    protected function getUnit(): Unit
+    public static function getUnitaryInst(): Unit
     {
-        $unit = Unit::getUnit();
-        if ($unit === null) {
-            $unit = new Unit();
-            //throw new RuntimeException("The Unit instance has not been initiated.");
+        if(self::$unitary === null) {
+            throw new \BadMethodCallException('Unit has not been initiated.');
         }
-        return $unit;
-
+        return self::$unitary;
     }
+
+
 }
