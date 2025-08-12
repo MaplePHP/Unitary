@@ -38,7 +38,7 @@ class RunTestService extends AbstractTestService
     private function iterateTest(FileIterator $iterator): FileIterator
     {
         $defaultPath = $this->container->get("request")->getUri()->getDir();
-        $defaultPath = ($this->configs->getPath() !== null) ? $this->configs->getPath() : $defaultPath;
+        $defaultPath = ($this->configs->getProps()->path !== null) ? $this->configs->getProps()->path : $defaultPath;
         $path = ($this->args['path'] ?? $defaultPath);
 
         if(!isset($path)) {

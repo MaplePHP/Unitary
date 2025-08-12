@@ -15,6 +15,7 @@ namespace MaplePHP\Unitary\Kernel;
 
 use Exception;
 use MaplePHP\Emitron\Contracts\DispatchConfigInterface;
+use MaplePHP\Emitron\DispatchConfig;
 use MaplePHP\Http\Interfaces\ServerRequestInterface;
 use MaplePHP\Unitary\Kernel\Middlewares\AddCommandMiddleware;
 use MaplePHP\Unitary\Utils\Router;
@@ -88,6 +89,6 @@ class Kernel
                 require_once $routerFile;
                 return $router;
             })
-            ->setExitCode(0);
+            ->setProp('exitCode', 0);
     }
 }

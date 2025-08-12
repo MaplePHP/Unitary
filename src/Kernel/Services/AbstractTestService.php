@@ -3,18 +3,17 @@
 namespace MaplePHP\Unitary\Kernel\Services;
 
 use MaplePHP\Container\Interfaces\ContainerInterface;
+use MaplePHP\Emitron\Contracts\DispatchConfigInterface;
 use MaplePHP\Http\Interfaces\RequestInterface;
 use MaplePHP\Http\Interfaces\ResponseInterface;
 use MaplePHP\Http\Interfaces\ServerRequestInterface;
-use MaplePHP\Unitary\Kernel\DispatchConfig;
 
 abstract class AbstractTestService
 {
-
     protected ResponseInterface $response;
     protected ContainerInterface $container;
     protected array $args;
-    protected DispatchConfig $configs;
+    protected DispatchConfigInterface $configs;
     protected ServerRequestInterface|RequestInterface $request;
 
     public function __construct(ResponseInterface $response, ContainerInterface $container)

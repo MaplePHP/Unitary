@@ -16,6 +16,7 @@ namespace MaplePHP\Unitary\Kernel;
 use MaplePHP\Container\Reflection;
 use MaplePHP\Emitron\Contracts\DispatchConfigInterface;
 use MaplePHP\Emitron\Contracts\EmitterInterface;
+use MaplePHP\Emitron\DispatchConfig;
 use MaplePHP\Emitron\Emitters\CliEmitter;
 use MaplePHP\Emitron\Emitters\HttpEmitter;
 use MaplePHP\Http\Interfaces\ResponseInterface;

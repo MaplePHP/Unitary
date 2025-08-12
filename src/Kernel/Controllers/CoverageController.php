@@ -11,7 +11,6 @@ use MaplePHP\Prompts\Themes\Blocks;
 use MaplePHP\Unitary\Kernel\DispatchConfig;
 use MaplePHP\Unitary\TestUtils\CodeCoverage;
 use MaplePHP\Unitary\Utils\FileIterator;
-use MaplePHP\Container\Interfaces\NotFoundExceptionInterface;
 
 class CoverageController extends RunTestController
 {
@@ -20,11 +19,12 @@ class CoverageController extends RunTestController
      * Main test runner
      *
      */
-    public function run(ResponseInterface $response): ResponseInterface
+    public function ruwn(ResponseInterface $response): ResponseInterface
     {
 
         /** @var DispatchConfig $config */
-        $config = $this->container->get("dispatchConfig");
+        /*
+         $config = $this->container->get("dispatchConfig");
 
         // Create a silent handler
         $coverage = new CodeCoverage();
@@ -52,6 +52,7 @@ class CoverageController extends RunTestController
         }
 
         $this->command->message("");
+         */
         return $response;
     }
 }

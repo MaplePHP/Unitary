@@ -12,7 +12,6 @@ declare(strict_types=1);
 namespace MaplePHP\Unitary\Utils;
 
 use Closure;
-use Exception;
 use MaplePHP\Blunder\Exceptions\BlunderSoftException;
 use MaplePHP\Blunder\Handlers\CliHandler;
 use MaplePHP\Blunder\Run;
@@ -41,7 +40,6 @@ final class FileIterator
         $this->args = $args;
         $this->handler = $handler;
     }
-
 
     function enableSmartSearch(bool $isVerbose): void
     {
@@ -76,6 +74,10 @@ final class FileIterator
                 (FileIterator::PATTERN ?? "") . "\" in directory \"" . dirname($path) .
                 "\" and its subdirectories.");
         } else {
+
+            // Error Handler library
+            $this->runBlunder();
+
             foreach ($files as $file) {
                 extract($this->args, EXTR_PREFIX_SAME, "wddx");
 
@@ -88,9 +90,6 @@ final class FileIterator
                     "file" => $file,
                     "checksum" => md5((string)$file)
                 ]);
-
-                // Error Handler library
-                $this->runBlunder();
 
                 $call = $this->requireUnitFile((string)$file);
 
@@ -121,7 +120,6 @@ final class FileIterator
      */
     private function requireUnitFile(string $file): ?Closure
     {
-
         $handler = $this->handler;
         $verbose = $this->verbose;
 
@@ -146,7 +144,6 @@ final class FileIterator
                     "  • You did not use the `group()` function.\n" .
                     "  • You created a new Unit in the test file but did not return it at the end. \n"
                 );
-
             }
         };
 
@@ -310,6 +307,9 @@ final class FileIterator
     /**
      * Get instance of Unit class
      *
+     * This is primary used to access the main test Unit instance that is
+     * pre-initialized for each test file. Is used by shortcut function like `group()`
+     *
      * @return Unit
      */
     public static function getUnitaryInst(): Unit
@@ -319,6 +319,4 @@ final class FileIterator
         }
         return self::$unitary;
     }
-
-
 }
