@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace MaplePHP\Unitary;
 
 use ErrorException;
-use MaplePHP\Unitary\Utils\Helpers;
+use MaplePHP\Unitary\Support\Helpers;
 
 final class TestUnit
 {

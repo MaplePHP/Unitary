@@ -8,8 +8,8 @@ use MaplePHP\Container\Container;
 use MaplePHP\Http\Environment;
 use MaplePHP\Http\ServerRequest;
 use MaplePHP\Http\Uri;
-use MaplePHP\Unitary\Kernel\Kernel;
-use MaplePHP\Unitary\Kernel\Middlewares\AddCommandMiddleware;
+use MaplePHP\Unitary\Console\Kernel;
+use MaplePHP\Unitary\Console\Middlewares\AddCommandMiddleware;
 
 $autoload = __DIR__ . '/../../../../vendor/autoload.php';
 $autoload = is_file($autoload) ? $autoload : __DIR__ . '/../vendor/autoload.php';

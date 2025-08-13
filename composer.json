@@ -33,7 +33,7 @@
   "autoload": {
     "files": [
       "src/Setup/assert-polyfill.php",
-      "src/Setup/unitary-helpers.php"
+      "src/Support/functions.php"
     ],
     "psr-4": {
       "MaplePHP\\Unitary\\": "src"

@@ -14,15 +14,16 @@ namespace MaplePHP\Unitary;
 
 use Closure;
 use ErrorException;
-use MaplePHP\Unitary\Interfaces\BodyInterface;
-use RuntimeException;
-use Throwable;
 use MaplePHP\Blunder\Exceptions\BlunderErrorException;
 use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Prompts\Command;
-use MaplePHP\Unitary\Handlers\CliEmitter;
-use MaplePHP\Unitary\Handlers\HandlerInterface;
-use MaplePHP\Unitary\Utils\Performance;
+use MaplePHP\Unitary\Config\TestConfig;
+use MaplePHP\Unitary\Renders\CliRenderer;
+use MaplePHP\Unitary\Renders\HandlerInterface;
+use MaplePHP\Unitary\Interfaces\BodyInterface;
+use MaplePHP\Unitary\Support\Performance;
+use RuntimeException;
+use Throwable;
 
 final class Unit
 {
@@ -49,7 +50,7 @@ final class Unit
     public function __construct(BodyInterface|null $handler = null)
     {
 
-        $this->handler = ($handler === null) ? new CliEmitter(new Command()) : $handler;
+        $this->handler = ($handler === null) ? new CliRenderer(new Command()) : $handler;
         self::$current = $this;
     }
 
@@ -184,6 +185,18 @@ final class Unit
     {
         throw new RuntimeException("The validate() method must be called inside a group() method! " .
             "Move this validate() call inside your group() callback function.");
+    }
+
+    /**
+     * Validate method that must be called within a group method
+     *
+     * @return self
+     * @throws RuntimeException When called outside a group method
+     */
+    public function assert(): self
+    {
+        throw new RuntimeException("The assert() method must be called inside a group() method! " .
+            "Move this assert() call inside your group() callback function.");
     }
 
     /**

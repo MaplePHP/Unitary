@@ -1,6 +1,6 @@
 <?php
 
-use MaplePHP\Unitary\{TestCase, TestConfig, Expect};
+use MaplePHP\Unitary\{Config\TestConfig, Expect, TestCase};
 
 $config = TestConfig::make()->withName("unitary-test");
 

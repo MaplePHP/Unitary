@@ -12,9 +12,9 @@ declare(strict_types=1);
 namespace MaplePHP\Unitary\Mocker;
 
 use BadMethodCallException;
-use InvalidArgumentException;
 use Closure;
-use MaplePHP\Unitary\TestUtils\ExecutionWrapper;
+use InvalidArgumentException;
+use MaplePHP\Unitary\Support\TestUtils\ExecutionWrapper;
 use Throwable;
 
 /**

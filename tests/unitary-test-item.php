@@ -1,6 +1,6 @@
 <?php
 
-use MaplePHP\Unitary\{TestItem, Unit, TestCase, TestConfig, Expect};
+use MaplePHP\Unitary\{Config\TestConfig, Expect, TestCase, TestItem, Unit};
 
 $unit = new Unit();
 

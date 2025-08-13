@@ -81,7 +81,7 @@ Create a file like `tests/unitary-request.php`. Unitary automatically scans all 
 Paste this test boilerplate to get started:
 
 ```php
-use MaplePHP\Unitary\{Unit, TestCase, TestConfig, Expect};
+use MaplePHP\Unitary\{Expect,TestCase,Unit};
 
 $unit = new Unit();
 $unit->group("Your test subject", function (TestCase $case) {

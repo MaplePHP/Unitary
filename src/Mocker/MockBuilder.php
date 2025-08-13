@@ -13,8 +13,7 @@ namespace MaplePHP\Unitary\Mocker;
 
 use Closure;
 use Exception;
-use MaplePHP\Http\Stream;
-use MaplePHP\Unitary\TestUtils\DataTypeMock;
+use MaplePHP\Unitary\Support\TestUtils\DataTypeMock;
 use Reflection;
 use ReflectionClass;
 use ReflectionIntersectionType;

@@ -2,7 +2,7 @@
 require_once(__DIR__ . "/TestLib/Mailer.php");
 require_once(__DIR__ . "/TestLib/UserService.php");
 
-use MaplePHP\Unitary\{Mocker\MethodRegistry, TestCase, TestConfig, Expect, Unit};
+use MaplePHP\Unitary\{Config\TestConfig, Expect, Mocker\MethodRegistry, TestCase, Unit};
 use TestLib\Mailer;
 
 $unit = new Unit();
