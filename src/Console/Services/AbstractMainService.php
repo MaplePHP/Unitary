@@ -7,12 +7,14 @@ use MaplePHP\Emitron\Contracts\DispatchConfigInterface;
 use MaplePHP\Http\Interfaces\RequestInterface;
 use MaplePHP\Http\Interfaces\ResponseInterface;
 use MaplePHP\Http\Interfaces\ServerRequestInterface;
+use MaplePHP\Prompts\Command;
 
 abstract class AbstractMainService
 {
     protected ResponseInterface $response;
     protected ContainerInterface $container;
     protected array $args;
+    protected Command $command;
     protected DispatchConfigInterface $configs;
     protected ServerRequestInterface|RequestInterface $request;
 
@@ -23,11 +25,7 @@ abstract class AbstractMainService
         $this->args = $this->container->get("args");
         $this->request = $this->container->get("request");
         $this->configs = $this->container->get("dispatchConfig");
-    }
-
-    protected function getArg($key): mixed
-    {
-        return ($this->args[$key] ?? null);
+        $this->command = $this->container->get("command");
     }
 
 }

@@ -3,9 +3,12 @@
 namespace MaplePHP\Unitary\Console\Services;
 
 use MaplePHP\Blunder\Exceptions\BlunderSoftException;
+use MaplePHP\Container\Interfaces\ContainerExceptionInterface;
+use MaplePHP\Container\Interfaces\NotFoundExceptionInterface;
 use MaplePHP\Http\Interfaces\ResponseInterface;
 use MaplePHP\Unitary\Discovery\TestDiscovery;
 use MaplePHP\Unitary\Interfaces\BodyInterface;
+use MaplePHP\Unitary\Unit;
 use RuntimeException;
 
 class RunTestService extends AbstractMainService
@@ -17,8 +20,14 @@ class RunTestService extends AbstractMainService
         // $config = $this->container->get("dispatchConfig");
         //$this->configs->isSmartSearch();
 
-        $iterator = new TestDiscovery($handler, $this->args);
-        $iterator = $this->iterateTest($iterator);
+        // args should be able to be overwritten by configs...
+
+        $iterator = new TestDiscovery();
+        $iterator->enableVerbose(isset($this->args['verbose']));
+        $iterator->enableSmartSearch(isset($this->args['smart-search']));
+        $iterator->addExcludePaths($this->args['exclude'] ?? null);
+
+        $iterator = $this->iterateTest($iterator, $handler);
 
         // CLI Response
         if(PHP_SAPI === 'cli') {
@@ -30,12 +39,13 @@ class RunTestService extends AbstractMainService
 
     /**
      * @param TestDiscovery $iterator
+     * @param BodyInterface $handler
      * @return TestDiscovery
      * @throws BlunderSoftException
-     * @throws \MaplePHP\Container\Interfaces\ContainerExceptionInterface
-     * @throws \MaplePHP\Container\Interfaces\NotFoundExceptionInterface
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
-    private function iterateTest(TestDiscovery $iterator): TestDiscovery
+    private function iterateTest(TestDiscovery $iterator, BodyInterface $handler): TestDiscovery
     {
         $defaultPath = $this->container->get("request")->getUri()->getDir();
         $defaultPath = ($this->configs->getProps()->path !== null) ? $this->configs->getProps()->path : $defaultPath;
@@ -46,10 +56,16 @@ class RunTestService extends AbstractMainService
         }
         $testDir = realpath($path);
         if(!file_exists($testDir)) {
-            throw new RuntimeException("Test directory '$testDir' does not exist");
+            throw new RuntimeException("Test directory '$path' does not exist");
         }
-        $iterator->enableExitScript(false);
-        $iterator->executeAll($testDir, $defaultPath);
+        $iterator->executeAll($testDir, $defaultPath, function($file) use ($handler) {
+            $unit = new Unit($handler);
+            $unit->setShowErrorsOnly(isset($this->args['errors-only']));
+            $unit->setShow($this->args['show'] ?? null);
+            $unit->setFile($file);
+            return $unit;
+        });
         return $iterator;
     }
+
 }

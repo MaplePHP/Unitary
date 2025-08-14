@@ -30,25 +30,39 @@ final class TestDiscovery
     private array $args;
     private bool $verbose = false;
     private bool $smartSearch = false;
-    private bool $exitScript = true;
+    private ?string $exclude = null;
+
     private ?Command $command = null;
-    private BodyInterface $handler;
     private static ?Unit $unitary = null;
 
-    public function __construct(BodyInterface $handler, array $args = [])
-    {
-        $this->args = $args;
-        $this->handler = $handler;
-    }
 
-    function enableSmartSearch(bool $isVerbose): void
+    public function __construct()
     {
-        $this->verbose = $isVerbose;
     }
 
     function enableVerbose(bool $isVerbose): void
     {
         $this->verbose = $isVerbose;
+    }
+
+    function enableSmartSearch(bool $smartSearch): void
+    {
+        $this->smartSearch = $smartSearch;
+    }
+
+    function addExcludePaths(?string $exclude): void
+    {
+        $this->exclude = $exclude;
+    }
+
+    /**
+     * Get expected exit code
+     *
+     * @return int
+     */
+    public function getExitCode(): int
+    {
+        return (int)!Unit::isSuccessful();
     }
 
     /**
@@ -77,35 +91,12 @@ final class TestDiscovery
 
             // Error Handler library
             $this->runBlunder();
-
             foreach ($files as $file) {
-                extract($this->args, EXTR_PREFIX_SAME, "wddx");
-
-                // DELETE
-                Unit::resetUnit();
-
-                // DELETE (BUT PASSS)
-                Unit::setHeaders([
-                    "args" => $this->args,
-                    "file" => $file,
-                    "checksum" => md5((string)$file)
-                ]);
-
-                $call = $this->requireUnitFile((string)$file);
-
+                $call = $this->requireUnitFile((string)$file, $callback);
                 if ($call !== null) {
                     $call();
                 }
-
-                if($callback !== null) {
-                    $callback();
-                }
             }
-            Unit::completed();
-            if ($this->exitScript) {
-                $this->exitScript();
-            }
-
         }
     }
 
@@ -118,16 +109,21 @@ final class TestDiscovery
      * @param string $file The full path to the test file to require.
      * @return Closure|null A callable that, when invoked, runs the test file.
      */
-    private function requireUnitFile(string $file): ?Closure
+    private function requireUnitFile(string $file, ?callable $callback = null): ?Closure
     {
-        $handler = $this->handler;
         $verbose = $this->verbose;
 
-        $call = function () use ($file, $handler, $verbose): void {
+        $call = function () use ($file, $verbose, $callback): void {
             if (!is_file($file)) {
                 throw new RuntimeException("File \"$file\" do not exists.");
             }
-            self::$unitary = new Unit($handler);
+
+            self::$unitary = $callback($file);
+
+            if(!(self::$unitary instanceof Unit)) {
+                throw new \Exception("An instance of Unit must be return from callable in executeAll.");
+            }
+
             $unitInst = require_once($file);
             if ($unitInst instanceof Unit) {
                 self::$unitary = $unitInst;
@@ -148,37 +144,6 @@ final class TestDiscovery
         };
 
         return $call->bindTo(null);
-    }
-
-    /**
-     * You can change the default exist script from enabled to disable
-     *
-     * @param $exitScript
-     * @return void
-     */
-    public function enableExitScript($exitScript): void
-    {
-        $this->exitScript = $exitScript;
-    }
-
-    /**
-     * Exist the script with the right expected number
-     *
-     * @return void
-     */
-    public function exitScript(): void
-    {
-        exit($this->getExitCode());
-    }
-
-    /**
-     * Get expected exit code
-     *
-     * @return int
-     */
-    public function getExitCode(): int
-    {
-        return (int)!Unit::isSuccessful();
     }
 
     /**
@@ -207,7 +172,7 @@ final class TestDiscovery
             }
         }
         // If smart search flag then step back if no test files have been found and try again
-        if($rootDir !== false && count($files) <= 0 && str_starts_with($path, $rootDir) && isset($this->args['smart-search'])) {
+        if($rootDir !== false && count($files) <= 0 && str_starts_with($path, $rootDir) && $this->smartSearch) {
             $path = (string)realpath($path . "/..") . "/";
             return $this->findFiles($path, $rootDir);
         }
@@ -222,8 +187,8 @@ final class TestDiscovery
     private function exclude(): array
     {
         $excl = [];
-        if (isset($this->args['exclude']) && is_string($this->args['exclude'])) {
-            $exclude = explode(',', $this->args['exclude']);
+        if ($this->exclude !== null) {
+            $exclude = explode(',', $this->exclude);
             foreach ($exclude as $file) {
                 $file = str_replace(['"', "'"], "", $file);
                 $new = trim($file);
@@ -272,7 +237,7 @@ final class TestDiscovery
         $pattern = TestDiscovery::PATTERN;
         foreach ($iterator as $file) {
             if (($file instanceof SplFileInfo) && fnmatch($pattern, $file->getFilename()) &&
-                (!empty($this->args['exclude']) || !str_contains($file->getPathname(), DIRECTORY_SEPARATOR . "vendor" . DIRECTORY_SEPARATOR))) {
+                ($this->exclude !== null || !str_contains($file->getPathname(), DIRECTORY_SEPARATOR . "vendor" . DIRECTORY_SEPARATOR))) {
                 if (!$this->findExcluded($this->exclude(), $path, $file->getPathname())) {
                     $files[] = $file->getPathname();
                 }

@@ -34,7 +34,11 @@ final class Unit
     private array $cases = [];
     private bool $disableAllTests = false;
     private bool $executed = false;
-    private static array $headers = [];
+
+    private string $file = "";
+    private bool $showErrorsOnly = false;
+    private ?string $show = null;
+
     private static ?Unit $current;
     public static int $totalPassedTests = 0;
     public static int $totalTests = 0;
@@ -42,16 +46,83 @@ final class Unit
     /**
      * Initialize Unit test instance with optional handler
      *
-     * @param HandlerInterface|StreamInterface|null $handler Optional handler for test execution
+     * @param BodyInterface|null $handler Optional handler for test execution
      *        If HandlerInterface is provided, uses its command
      *        If StreamInterface is provided, creates a new Command with it
      *        If null, creates a new Command without a stream
      */
     public function __construct(BodyInterface|null $handler = null)
     {
-
         $this->handler = ($handler === null) ? new CliRenderer(new Command()) : $handler;
-        self::$current = $this;
+    }
+
+    /**
+     * Will pass a test file name to script used to:
+     * - Allocate tests
+     * - Show where tests is executed
+     *
+     * @param string $file
+     * @return $this
+     */
+    public function setFile(string $file): Unit
+    {
+        $this->file = $file;
+        return $this;
+    }
+
+    /**
+     * Will only display error and hide passed tests
+     *
+     * @param bool $showErrorsOnly
+     * @return $this
+     */
+    public function setShowErrorsOnly(bool $showErrorsOnly): Unit
+    {
+        $this->showErrorsOnly = $showErrorsOnly;
+        return $this;
+    }
+
+    /**
+     * Display only one test -
+     * Will accept either file checksum or name form named tests
+     *
+     * @param string|null $show
+     * @return $this
+     */
+    public function setShow(?string $show = null): Unit
+    {
+        $this->show = $show;
+        return $this;
+    }
+
+    /**
+     * Check if all executed tests is successful
+     *
+     * @return bool
+     */
+    public static function isSuccessful(): bool
+    {
+        return (self::$totalPassedTests === self::$totalTests);
+    }
+
+    /**
+     * Get number of executed passed tests
+     *
+     * @return int
+     */
+    public static function getPassedTests(): int
+    {
+        return self::$totalPassedTests;
+    }
+
+    /**
+     * Get number of executed tests
+     *
+     * @return int
+     */
+    public static function getTotalTests(): int
+    {
+        return self::$totalTests;
     }
 
     /**
@@ -135,28 +206,27 @@ final class Unit
             return false;
         }
 
+        $fileChecksum = md5($this->file);
+
         foreach ($this->cases as $index => $row) {
             if (!($row instanceof TestCase)) {
                 throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestCase.");
             }
 
-            $errArg = self::getArgs("errors-only");
             $row->dispatchTest($row);
             $tests = $row->runDeferredValidations();
-            $checksum = (string)(self::$headers['checksum'] ?? "") . $index;
+            $checksum = $fileChecksum . $index;
 
-            $show = ($row->getConfig()->select === self::getArgs('show') || self::getArgs('show') === $checksum);
-            if((self::getArgs('show') !== false) && !$show) {
+            $show = ($row->getConfig()->select === $this->show || $this->show === $checksum);
+            if(($this->show !== null) && !$show) {
                 continue;
             }
-
             // Success, no need to try to show errors, continue with the next test
-            if ($errArg !== false && !$row->hasFailed()) {
+            if ($this->showErrorsOnly !== false && !$row->hasFailed()) {
                 continue;
             }
-
             $handler->setCase($row);
-            $handler->setSuitName(self::$headers['file'] ?? "");
+            $handler->setSuitName($this->file);
             $handler->setChecksum($checksum);
             $handler->setTests($tests);
             $handler->setShow($show);
@@ -197,104 +267,6 @@ final class Unit
     {
         throw new RuntimeException("The assert() method must be called inside a group() method! " .
             "Move this assert() call inside your group() callback function.");
-    }
-
-    /**
-     * This is custom header information that is passed, that work with both CLI and Browsers
-     *
-     * @param array $headers
-     * @return void
-     */
-    public static function setHeaders(array $headers): void
-    {
-        self::$headers = $headers;
-    }
-
-    /**
-     * Get passed CLI arguments
-     *
-     * @param string $key
-     * @return mixed
-     */
-    public static function getArgs(string $key): mixed
-    {
-        return (self::$headers['args'][$key] ?? false);
-    }
-
-    /**
-     * The test is liner it also has a current test instance that needs
-     * to be rested when working with loop
-     *
-     * @return void
-     */
-    public static function resetUnit(): void
-    {
-        self::$current = null;
-    }
-
-    /**
-     * Check if a current instance exists
-     *
-     * @return bool
-     */
-    public static function hasUnit(): bool
-    {
-        return self::$current !== null;
-    }
-
-    /**
-     * Get the current instance
-     *
-     * @return ?Unit
-     */
-    public static function getUnit(): ?Unit
-    {
-        $verbose = self::getArgs('verbose');
-        if ($verbose !== false && self::hasUnit() === false) {
-            $file = self::$headers['file'] ?? "";
-
-            $command = new Command();
-            $command->message(
-                $command->getAnsi()->style(['redBg', 'brightWhite'], " ERROR ") . ' ' .
-                $command->getAnsi()->style(['red', 'bold'], "The Unit instance is missing in the file")
-            );
-            $command->message('');
-            $command->message($command->getAnsi()->bold("In File:"));
-            $command->message($file);
-            $command->message('');
-        }
-        return self::$current;
-    }
-
-    /**
-     * This will be called when every test has been run by the FileIterator
-     * @return void
-     */
-    public static function completed(): void
-    {
-        if (self::$current !== null && self::$current->handler === null) {
-            $dot = self::$current->command->getAnsi()->middot();
-
-            //self::$current->command->message("");
-            self::$current->command->message(
-                self::$current->command->getAnsi()->style(
-                    ["italic", "grey"],
-                    "Total: " . self::$totalPassedTests . "/" . self::$totalTests . " $dot " .
-                    "Peak memory usage: " . (string)round(memory_get_peak_usage() / 1024, 2) . " KB"
-                )
-            );
-            self::$current->command->message("");
-        }
-    }
-
-    /**
-     * Check if all tests is successful
-     *
-     * @return bool
-     */
-    public static function isSuccessful(): bool
-    {
-        return (self::$totalPassedTests === self::$totalTests);
     }
 
     /**
@@ -360,18 +332,6 @@ final class Unit
     {
         throw new RuntimeException("Manual method has been deprecated, use TestConfig::setSelect instead. " .
             "See documentation for more information.");
-    }
-
-    /**
-     * DEPRECATED: Append to global header
-     *
-     * @param string $key
-     * @param mixed $value
-     * @return void
-     */
-    public static function appendHeader(string $key, mixed $value): void
-    {
-        self::$headers[$key] = $value;
     }
 
     /**

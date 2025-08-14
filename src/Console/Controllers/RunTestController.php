@@ -2,6 +2,7 @@
 
 namespace MaplePHP\Unitary\Console\Controllers;
 
+use MaplePHP\Unitary\Discovery\TestDiscovery;
 use MaplePHP\Unitary\Renders\CliRenderer;
 use MaplePHP\Unitary\Console\Services\RunTestService;
 use MaplePHP\Http\Interfaces\ResponseInterface;
@@ -16,7 +17,9 @@ class RunTestController extends DefaultController
     public function run(RunTestService $service): ResponseInterface
     {
         $handler = new CliRenderer($this->command);
-        return $service->run($handler);
+        $response = $service->run($handler);
+        $this->buildFooter();
+        return $response;
     }
 
     /**
@@ -64,6 +67,30 @@ class RunTestController extends DefaultController
         });
         // Make sure nothing else is executed when help is triggered
         exit(0);
+    }
+
+    /**
+     * Create a footer showing and end of script command
+     *
+     * This is not really part of the Unit test library, as other stuff might be present here
+     *
+     * @return void
+     */
+    protected function buildFooter()
+    {
+        $inst = TestDiscovery::getUnitaryInst();
+        $dot = $this->command->getAnsi()->middot();
+        $peakMemory = (string)round(memory_get_peak_usage() / 1024, 2);
+
+        $this->command->message(
+            $this->command->getAnsi()->style(
+                ["italic", "grey"],
+                "Total: " . $inst->getPassedTests() . "/" . $inst->getTotalTests() . " $dot " .
+                "Peak memory usage: " . $peakMemory . " KB"
+            )
+        );
+        $this->command->message("");
+
     }
 
 }

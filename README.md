@@ -14,7 +14,7 @@ _Do you like the CLI theme? [Download it here](https://github.com/MaplePHP/DarkB
 Unitary is designed to feel natural for developers. With clear syntax, built-in validation, and zero setup required, writing tests becomes a smooth part of your daily flow—not a separate chore.
 
 ```php
-$unit->group("Has a about page", function(TestCase $case) {
+group("Has a about page", function(TestCase $case) {
 
     $response = $this->get("/about");
     $statusCode = $response->getStatusCode();
@@ -84,7 +84,7 @@ Paste this test boilerplate to get started:
 use MaplePHP\Unitary\{Expect,TestCase,Unit};
 
 $unit = new Unit();
-$unit->group("Your test subject", function (TestCase $case) {
+group("Your test subject", function (TestCase $case) {
     $case->validate("Your test value", function(Expect $valid) {
         $valid->isString();
     });
