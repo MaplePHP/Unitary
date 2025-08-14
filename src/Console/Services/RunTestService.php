@@ -23,9 +23,9 @@ class RunTestService extends AbstractMainService
         // args should be able to be overwritten by configs...
 
         $iterator = new TestDiscovery();
-        $iterator->enableVerbose(isset($this->args['verbose']));
-        $iterator->enableSmartSearch(isset($this->args['smart-search']));
-        $iterator->addExcludePaths($this->args['exclude'] ?? null);
+        $iterator->enableVerbose($this->props->verbose);
+        $iterator->enableSmartSearch($this->props->smartSearch);
+        $iterator->addExcludePaths($this->props->exclude);
 
         $iterator = $this->iterateTest($iterator, $handler);
 
@@ -60,7 +60,7 @@ class RunTestService extends AbstractMainService
         }
         $iterator->executeAll($testDir, $defaultPath, function($file) use ($handler) {
             $unit = new Unit($handler);
-            $unit->setShowErrorsOnly(isset($this->args['errors-only']));
+            $unit->setShowErrorsOnly(isset($this->args['errorsOnly']));
             $unit->setShow($this->args['show'] ?? null);
             $unit->setFile($file);
             return $unit;

@@ -37,7 +37,7 @@ class RunTestController extends DefaultController
             return $inst
                 ->addOption("help", "Show this help message")
                 ->addOption("show=<hash|name>", "Run a specific test by hash or manual test name")
-                ->addOption("errors-only", "Show only failing tests and skip passed test output")
+                ->addOption("errorsOnly", "Show only failing tests and skip passed test output")
                 ->addOption("template", "Will give you a boilerplate test code")
                 ->addOption("path=<path>", "Specify test path (absolute or relative)")
                 ->addOption("exclude=<patterns>", "Exclude files or directories (comma-separated, relative to --path)");
@@ -52,7 +52,7 @@ class RunTestController extends DefaultController
                     "php vendor/bin/unitary --show=b0620ca8ef6ea7598eaed56a530b1983",
                     "Run the test with a specific hash ID"
                 )->addExamples(
-                    "php vendor/bin/unitary --errors-only",
+                    "php vendor/bin/unitary --errorsOnly",
                     "Run all tests in the default path (./tests)"
                 )->addExamples(
                     "php vendor/bin/unitary --show=YourNameHere",

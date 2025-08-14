@@ -8,6 +8,7 @@ use MaplePHP\Http\Interfaces\RequestInterface;
 use MaplePHP\Http\Interfaces\ResponseInterface;
 use MaplePHP\Http\Interfaces\ServerRequestInterface;
 use MaplePHP\Prompts\Command;
+use MaplePHP\Unitary\Config\ConfigProps;
 
 abstract class AbstractMainService
 {
@@ -17,6 +18,7 @@ abstract class AbstractMainService
     protected Command $command;
     protected DispatchConfigInterface $configs;
     protected ServerRequestInterface|RequestInterface $request;
+    protected ?ConfigProps $props = null;
 
     public function __construct(ResponseInterface $response, ContainerInterface $container)
     {
@@ -26,6 +28,7 @@ abstract class AbstractMainService
         $this->request = $this->container->get("request");
         $this->configs = $this->container->get("dispatchConfig");
         $this->command = $this->container->get("command");
+        $this->props = $this->container->get("props");
     }
 
 }

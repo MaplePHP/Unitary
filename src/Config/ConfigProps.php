@@ -18,7 +18,41 @@ use MaplePHP\Emitron\AbstractConfigProps;
 class ConfigProps extends AbstractConfigProps
 {
     public ?string $path = null;
+    public ?string $exclude = null;
     public ?int $exitCode = null;
     public ?bool $verbose = null;
+    public ?bool $errorsOnly = null;
     public ?bool $smartSearch = null;
+
+    /**
+     * Hydrate the properties/object with expected data, and handle unexpected data
+     *
+     * @param string $key
+     * @param mixed $value
+     * @return void
+     */
+    protected function propsHydration(string $key, mixed $value): void
+    {
+        switch ($key) {
+            case 'path':
+                $this->path = (!is_string($value) || $value === '') ? null : $value;
+                break;
+            case 'exclude':
+                $this->exclude = (!is_string($value) || $value === '') ? null : $value;
+                break;
+            case 'exitCode':
+                $this->exitCode = ($value === null) ? null : (int)$value;
+                break;
+            case 'verbose':
+                $this->verbose = isset($value) && $value !== false;
+                break;
+            case 'smartSearch':
+                $this->smartSearch = isset($value) && $value !== false;
+                break;
+            case 'errorsOnly':
+                $this->errorsOnly = isset($value) && $value !== false;
+                break;
+        }
+    }
+
 }

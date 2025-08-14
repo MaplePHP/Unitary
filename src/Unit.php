@@ -40,8 +40,8 @@ final class Unit
     private ?string $show = null;
 
     private static ?Unit $current;
-    public static int $totalPassedTests = 0;
-    public static int $totalTests = 0;
+    private static int $totalPassedTests = 0;
+    private static int $totalTests = 0;
 
     /**
      * Initialize Unit test instance with optional handler
@@ -285,36 +285,6 @@ final class Unit
         $this->index++;
     }
 
-    // NOTE: Just a test will be added in a new library and controller.
-    public function performance(Closure $func, ?string $title = null): void
-    {
-        $start = new Performance();
-        $func = $func->bindTo($this);
-        if ($func !== null) {
-            $func($this);
-        }
-        $line = $this->command->getAnsi()->line(80);
-        $this->command->message("");
-        $this->command->message($this->command->getAnsi()->style(["bold", "yellow"], "Performance" . ($title !== null ? " - $title:" : ":")));
-
-        $this->command->message($line);
-        $this->command->message(
-            $this->command->getAnsi()->style(["bold"], "Execution time: ") .
-            ((string)round($start->getExecutionTime(), 3) . " seconds")
-        );
-        $this->command->message(
-            $this->command->getAnsi()->style(["bold"], "Memory Usage: ") .
-            ((string)round($start->getMemoryUsage(), 2) . " KB")
-        );
-        /*
-         $this->command->message(
-            $this->command->getAnsi()->style(["bold", "grey"], "Peak Memory Usage: ") .
-            $this->command->getAnsi()->blue(round($start->getMemoryPeakUsage(), 2) . " KB")
-        );
-         */
-        $this->command->message($line);
-    }
-
     // Deprecated: Almost same as `disableAllTest`, for older versions
     public function skip(bool $disable): self
     {
@@ -342,6 +312,36 @@ final class Unit
     public function addTitle(): self
     {
         return $this;
+    }
+
+    // NOTE: Just a test is is not used, and will NOT exist in this class
+    public function performance(Closure $func, ?string $title = null): void
+    {
+        $start = new Performance();
+        $func = $func->bindTo($this);
+        if ($func !== null) {
+            $func($this);
+        }
+        $line = $this->command->getAnsi()->line(80);
+        $this->command->message("");
+        $this->command->message($this->command->getAnsi()->style(["bold", "yellow"], "Performance" . ($title !== null ? " - $title:" : ":")));
+
+        $this->command->message($line);
+        $this->command->message(
+            $this->command->getAnsi()->style(["bold"], "Execution time: ") .
+            ((string)round($start->getExecutionTime(), 3) . " seconds")
+        );
+        $this->command->message(
+            $this->command->getAnsi()->style(["bold"], "Memory Usage: ") .
+            ((string)round($start->getMemoryUsage(), 2) . " KB")
+        );
+        /*
+         $this->command->message(
+            $this->command->getAnsi()->style(["bold", "grey"], "Peak Memory Usage: ") .
+            $this->command->getAnsi()->blue(round($start->getMemoryPeakUsage(), 2) . " KB")
+        );
+         */
+        $this->command->message($line);
     }
 }
 
