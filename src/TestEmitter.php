@@ -39,20 +39,20 @@ class TestEmitter implements TestEmitterInterface {
             throw new \RuntimeException("The test file \"$file\" do not exists.");
         }
 
-
         require_once($file);
 
         $hasExecutedTest = $this->unit->execute();
 
         if(!$hasExecutedTest && $verbose) {
-            throw new BlunderSoftException(
+            trigger_error(
                 "Could not find any tests inside the test file:\n" .
                 $file . "\n\n" .
                 "Possible causes:\n" .
-                "  • There are not test in test group/case.\n" .
+                "  • There are no test in test group/case.\n" .
                 "  • Unitary could not locate the Unit instance.\n" .
                 "  • You did not use the `group()` function.\n" .
-                "  • You created a new Unit in the test file but did not return it at the end. \n"
+                "  • You created a new Unit in the test file but did not return it at the end.",
+                E_USER_WARNING
             );
         }
 

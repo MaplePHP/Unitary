@@ -22,6 +22,7 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
 use SplFileInfo;
+use function Amp\ByteStream\getStdin;
 
 final class TestDiscovery
 {
@@ -131,14 +132,15 @@ final class TestDiscovery
             $bool = self::$unitary->execute();
 
             if(!$bool && $verbose) {
-                throw new BlunderSoftException(
+                trigger_error(
                     "Could not find any tests inside the test file:\n" .
                     $file . "\n\n" .
                     "Possible causes:\n" .
-                    "  • There are not test in test group/case.\n" .
+                    "  • There are no test in test group/case.\n" .
                     "  • Unitary could not locate the Unit instance.\n" .
                     "  • You did not use the `group()` function.\n" .
-                    "  • You created a new Unit in the test file but did not return it at the end. \n"
+                    "  • You created a new Unit in the test file but did not return it at the end.",
+                    E_USER_WARNING
                 );
             }
         };
@@ -265,6 +267,12 @@ final class TestDiscovery
     protected function runBlunder(): void
     {
         $run = new Run(new CliHandler());
+        $run->severity()
+            ->excludeSeverityLevels([E_USER_WARNING])
+            ->redirectTo(function () {
+                // Let PHP’s default error handler process excluded severities
+                return false;
+            });
         $run->setExitCode(1);
         $run->load();
     }
