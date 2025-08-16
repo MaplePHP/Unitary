@@ -18,6 +18,7 @@ use MaplePHP\Emitron\AbstractConfigProps;
 class ConfigProps extends AbstractConfigProps
 {
     public ?string $path = null;
+    public ?string $discoverPattern = null;
     public ?string $exclude = null;
     public ?int $exitCode = null;
     public ?bool $verbose = null;
@@ -36,6 +37,9 @@ class ConfigProps extends AbstractConfigProps
         switch ($key) {
             case 'path':
                 $this->path = (!is_string($value) || $value === '') ? null : $value;
+                break;
+            case 'discoverPattern':
+                $this->discoverPattern = (!is_string($value) || $value === '') ? null : $value;
                 break;
             case 'exclude':
                 $this->exclude = (!is_string($value) || $value === '') ? null : $value;

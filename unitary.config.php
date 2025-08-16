@@ -1,10 +1,14 @@
 <?php
+/**
+ * Default configs, that exists in MaplePHP Unitary
+ */
 return [
     //'path' => 'app/Libraries/Unitary/tests/unitary-test.php',
-    //'path' => false, // false|string|array[string]
-    'smartSearch' => false,
-    'errorsOnly' => false,
-    'verbose' => false,
-    'exclude' => false, // false|string|array[string]
-    //'exit_error_code' => 1,
+    'path' => false, // false|string|array<int, string>
+    'smartSearch' => false, // bool
+    'errorsOnly' => false, // bool
+    'verbose' => false, // bool
+    'exclude' => false, // false|string|array<int, string>
+    'discoverPattern' => false // string|false (paths (`tests/`) and files (`unitary-*.php`).)
+    //'exit_error_code' => 1, ??
 ];

@@ -26,6 +26,7 @@ class RunTestService extends AbstractMainService
         $iterator->enableVerbose($this->props->verbose);
         $iterator->enableSmartSearch($this->props->smartSearch);
         $iterator->addExcludePaths($this->props->exclude);
+        $iterator->setDiscoverPattern($this->props->discoverPattern);
 
         $iterator = $this->iterateTest($iterator, $handler);
 

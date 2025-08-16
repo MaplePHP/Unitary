@@ -17,7 +17,6 @@ use MaplePHP\DTO\Format\Str;
 
 final class Helpers
 {
-
     /**
      * Used to stringify arguments to show in a test
      *

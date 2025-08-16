@@ -15,45 +15,79 @@ use Closure;
 use MaplePHP\Blunder\Exceptions\BlunderSoftException;
 use MaplePHP\Blunder\Handlers\CliHandler;
 use MaplePHP\Blunder\Run;
-use MaplePHP\Prompts\Command;
-use MaplePHP\Unitary\Interfaces\BodyInterface;
 use MaplePHP\Unitary\Unit;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
 use SplFileInfo;
-use function Amp\ByteStream\getStdin;
 
 final class TestDiscovery
 {
-    public const PATTERN = 'unitary-*.php';
-
-    private array $args;
+    private string $pattern = '*/unitary-*.php';
     private bool $verbose = false;
     private bool $smartSearch = false;
-    private ?string $exclude = null;
-
-    private ?Command $command = null;
+    private ?array $exclude = null;
     private static ?Unit $unitary = null;
 
-
-    public function __construct()
-    {
-    }
-
-    function enableVerbose(bool $isVerbose): void
+    /**
+     * Enable verbose flag which will show errors that should not always be visible
+     *
+     * @param bool $isVerbose
+     * @return $this
+     */
+    function enableVerbose(bool $isVerbose): self
     {
         $this->verbose = $isVerbose;
+        return $this;
     }
 
-    function enableSmartSearch(bool $smartSearch): void
+    /**
+     * Enabling smart search; If no tests i found Unitary will try to traverse
+     * backwards until a test is found
+     *
+     * @param bool $smartSearch
+     * @return $this
+     */
+    function enableSmartSearch(bool $smartSearch): self
     {
         $this->smartSearch = $smartSearch;
+        return $this;
     }
 
-    function addExcludePaths(?string $exclude): void
+    /**
+     * Exclude paths from file iteration
+     *
+     * @param string|array|null $exclude
+     * @return $this
+     */
+    function addExcludePaths(string|array|null $exclude): self
     {
-        $this->exclude = $exclude;
+        if($exclude !== null) {
+            $this->exclude = is_string($exclude) ? explode(', ', $exclude) : $exclude;
+        }
+        return $this;
+    }
+
+    /**
+     * Change the default test discovery pattern from `unitary-*.php` to a custom pattern.
+     *
+     * Notes:
+     * - Wildcards can be used for paths (`tests/`) and files (`unitary-*.php`).
+     * - If no file extension is specified, `.php` is assumed.
+     * - Only PHP files are supported as test files.
+     *
+     * @param ?string $pattern null value will fall back to the default value
+     * @return $this
+     */
+    function setDiscoverPattern(?string $pattern): self
+    {
+        if($pattern !== null) {
+            $pattern = rtrim($pattern, '*');
+            $pattern = ltrim($pattern, '*');
+            $pattern = ltrim($pattern, '/');
+            $this->pattern = "*/" . (!str_ends_with($pattern, '.php') ? rtrim($pattern, '/') . "/*.php" : $pattern);
+        }
+        return $this;
     }
 
     /**
@@ -83,10 +117,9 @@ final class TestDiscovery
             $path = $rootDir . "/" . $path;
         }
         $files = $this->findFiles($path, $rootDir);
-        if (empty($files)) {
-            /* @var string static::PATTERN */
+        if (empty($files) && $this->verbose) {
             throw new BlunderSoftException("Unitary could not find any test files matching the pattern \"" .
-                (TestDiscovery::PATTERN ?? "") . "\" in directory \"" . dirname($path) .
+                $this->pattern . "\" in directory \"" . dirname($path) .
                 "\" and its subdirectories.");
         } else {
 
@@ -110,7 +143,7 @@ final class TestDiscovery
      * @param string $file The full path to the test file to require.
      * @return Closure|null A callable that, when invoked, runs the test file.
      */
-    private function requireUnitFile(string $file, ?callable $callback = null): ?Closure
+    private function requireUnitFile(string $file, callable $callback): ?Closure
     {
         $verbose = $this->verbose;
 
@@ -189,9 +222,8 @@ final class TestDiscovery
     private function exclude(): array
     {
         $excl = [];
-        if ($this->exclude !== null) {
-            $exclude = explode(',', $this->exclude);
-            foreach ($exclude as $file) {
+        if ($this->exclude !== null && $this->exclude !== []) {
+            foreach ($this->exclude as $file) {
                 $file = str_replace(['"', "'"], "", $file);
                 $new = trim($file);
                 $lastChar = substr($new, -1);
@@ -236,9 +268,8 @@ final class TestDiscovery
         $files = [];
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path));
         /** @var string $pattern */
-        $pattern = TestDiscovery::PATTERN;
         foreach ($iterator as $file) {
-            if (($file instanceof SplFileInfo) && fnmatch($pattern, $file->getFilename()) &&
+            if (($file instanceof SplFileInfo) && fnmatch($this->pattern, $file->getPathname()) &&
                 ($this->exclude !== null || !str_contains($file->getPathname(), DIRECTORY_SEPARATOR . "vendor" . DIRECTORY_SEPARATOR))) {
                 if (!$this->findExcluded($this->exclude(), $path, $file->getPathname())) {
                     $files[] = $file->getPathname();
@@ -283,13 +314,10 @@ final class TestDiscovery
      * This is primary used to access the main test Unit instance that is
      * pre-initialized for each test file. Is used by shortcut function like `group()`
      *
-     * @return Unit
+     * @return Unit|null
      */
-    public static function getUnitaryInst(): Unit
+    public static function getUnitaryInst(): ?Unit
     {
-        if(self::$unitary === null) {
-            throw new \BadMethodCallException('Unit has not been initiated.');
-        }
         return self::$unitary;
     }
 }

@@ -79,17 +79,19 @@ class RunTestController extends DefaultController
     protected function buildFooter()
     {
         $inst = TestDiscovery::getUnitaryInst();
-        $dot = $this->command->getAnsi()->middot();
-        $peakMemory = (string)round(memory_get_peak_usage() / 1024, 2);
+        if($inst !== null) {
+            $dot = $this->command->getAnsi()->middot();
+            $peakMemory = (string)round(memory_get_peak_usage() / 1024, 2);
 
-        $this->command->message(
-            $this->command->getAnsi()->style(
-                ["italic", "grey"],
-                "Total: " . $inst->getPassedTests() . "/" . $inst->getTotalTests() . " $dot " .
-                "Peak memory usage: " . $peakMemory . " KB"
-            )
-        );
-        $this->command->message("");
+            $this->command->message(
+                $this->command->getAnsi()->style(
+                    ["italic", "grey"],
+                    "Total: " . $inst->getPassedTests() . "/" . $inst->getTotalTests() . " $dot " .
+                    "Peak memory usage: " . $peakMemory . " KB"
+                )
+            );
+            $this->command->message("");
+        }
 
     }
 
