@@ -1,11 +1,9 @@
 <?php
 
-use MaplePHP\Unitary\{Config\TestConfig, Expect, TestCase, TestItem, Unit};
-
-$unit = new Unit();
+use MaplePHP\Unitary\{Config\TestConfig, Expect, TestCase, TestItem};
 
 
-$unit->group(TestConfig::make("Test item class")
+group(TestConfig::make("Test item class")
     ->withName("unitary"), function (TestCase $case) {
 
     $item = new TestItem();

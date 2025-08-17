@@ -11,14 +11,9 @@ use TestLib\Mailer;
 use TestLib\UserService;
 
 
-$unit = new Unit();
-
-//$unit->disableAllTest(false);
-
 $config = TestConfig::make()->withName("unitary");
 
-
-$unit->group($config->withSubject("Test mocker"), function (TestCase $case) use($unit) {
+group($config->withSubject("Test mocker"), function (TestCase $case) {
 
     $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
         $method->method("addFromEmail")
@@ -31,11 +26,11 @@ $unit->group($config->withSubject("Test mocker"), function (TestCase $case) use(
 });
 
 
-$unit->group("Example of assert in group", function(TestCase $case) {
+group("Example of assert in group", function(TestCase $case) {
     assert(1 === 2, "This is a error message");
 });
 
-$unit->group($config->withSubject("Can not mock final or private"), function(TestCase $case) {
+group($config->withSubject("Can not mock final or private"), function(TestCase $case) {
     $user = $case->mock(UserService::class, function(MethodRegistry $method) {
         $method->method("getUserRole")->willReturn("admin");
         $method->method("getUserType")->willReturn("admin");
@@ -53,7 +48,7 @@ $unit->group($config->withSubject("Can not mock final or private"), function(Tes
 
 });
 
-$unit->group($config->withSubject("Test mocker"), function (TestCase $case) use($unit) {
+group($config->withSubject("Test mocker"), function (TestCase $case) {
 
      $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
         $method->method("addFromEmail")
@@ -103,7 +98,7 @@ $unit->group($config->withSubject("Test mocker"), function (TestCase $case) use(
     });
 });
 
-$unit->group($config->withSubject("Mocking response"), function (TestCase $case) use($unit) {
+group($config->withSubject("Mocking response"), function (TestCase $case) {
 
     $stream = $case->mock(Stream::class, function (MethodRegistry $method) {
         $method->method("getContents")
@@ -123,14 +118,14 @@ $unit->group($config->withSubject("Mocking response"), function (TestCase $case)
     });
 });
 
-$unit->group($config->withSubject("Assert validations"), function ($case) {
+group($config->withSubject("Assert validations"), function ($case) {
     $case->validate("HelloWorld", function(Expect $inst) {
         assert($inst->isEqualTo("HelloWorld")->isValid(), "Assert has failed");
     });
     assert(1 === 1, "Assert has failed");
 });
 
-$unit->case($config->withSubject("Old validation syntax"), function ($case) {
+group($config->withSubject("Old validation syntax"), function ($case) {
     $case->add("HelloWorld", [
         "isString" => [],
         "User validation" => function($value) {
@@ -138,12 +133,12 @@ $unit->case($config->withSubject("Old validation syntax"), function ($case) {
         }
     ], "Is not a valid port number");
 
-    $this->add("HelloWorld", [
+    $case->add("HelloWorld", [
         "isEqualTo" => ["HelloWorld"],
     ], "Failed to validate");
 });
 
-$unit->group($config->withSubject("Validate partial mock"), function (TestCase $case) use($unit) {
+group($config->withSubject("Validate partial mock"), function (TestCase $case) {
     $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
         $method->method("send")->keepOriginal();
         $method->method("isValidEmail")->keepOriginal();
@@ -155,7 +150,7 @@ $unit->group($config->withSubject("Validate partial mock"), function (TestCase $
     });
 });
 
-$unit->group($config->withSubject("Advanced App Response Test"), function (TestCase $case) use($unit) {
+group($config->withSubject("Advanced App Response Test"), function (TestCase $case) {
 
 
     // Quickly mock the Stream class
@@ -214,7 +209,7 @@ $unit->group($config->withSubject("Advanced App Response Test"), function (TestC
 });
 
 
-$unit->group($config->withSubject("Testing User service"), function (TestCase $case) {
+group($config->withSubject("Testing User service"), function (TestCase $case) {
 
     $mailer = $case->mock(Mailer::class, function (MethodRegistry $method) {
         $method->method("addFromEmail")
@@ -231,7 +226,7 @@ $unit->group($config->withSubject("Testing User service"), function (TestCase $c
     });
 });
 
-$unit->group($config->withSubject("Mocking response"), function (TestCase $case) use($unit) {
+group($config->withSubject("Mocking response"), function (TestCase $case) {
 
 
     $stream = $case->mock(Stream::class, function (MethodRegistry $method) {
@@ -252,7 +247,7 @@ $unit->group($config->withSubject("Mocking response"), function (TestCase $case)
     });
 });
 
-$unit->group("Example API Response", function(TestCase $case) {
+group("Example API Response", function(TestCase $case) {
 
     $case->validate('{"response":{"status":200,"message":"ok"}}', function(Expect $expect) {
 

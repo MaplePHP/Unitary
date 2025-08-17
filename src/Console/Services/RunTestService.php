@@ -61,9 +61,11 @@ class RunTestService extends AbstractMainService
         }
         $iterator->executeAll($testDir, $defaultPath, function($file) use ($handler) {
             $unit = new Unit($handler);
-            $unit->setShowErrorsOnly(isset($this->args['errorsOnly']));
-            $unit->setShow($this->args['show'] ?? null);
+            $unit->setShowErrorsOnly($this->props->errorsOnly);
+            $unit->setShow($this->props->show);
             $unit->setFile($file);
+            $unit->setVerbose($this->props->verbose);
+            $unit->setAlwaysShowFiles($this->props->alwaysShowFiles);
             return $unit;
         });
         return $iterator;

@@ -5,9 +5,8 @@ require_once(__DIR__ . "/TestLib/UserService.php");
 use MaplePHP\Unitary\{Config\TestConfig, Expect, Mocker\MethodRegistry, TestCase, Unit};
 use TestLib\Mailer;
 
-$unit = new Unit();
 $config = TestConfig::make("All A should fail")->withName("unitary-fail")->withSkip();
-$unit->group($config, function (TestCase $case) use($unit) {
+group($config, function (TestCase $case) {
 
     $case->error("Default validations")->validate(1, function(Expect $inst) {
         $inst->isEmail();

@@ -38,6 +38,8 @@ final class Unit
     private string $file = "";
     private bool $showErrorsOnly = false;
     private ?string $show = null;
+    private bool $verbose = false;
+    private bool $alwaysShowFiles = false;
 
     private static ?Unit $current;
     private static int $totalPassedTests = 0;
@@ -47,9 +49,6 @@ final class Unit
      * Initialize Unit test instance with optional handler
      *
      * @param BodyInterface|null $handler Optional handler for test execution
-     *        If HandlerInterface is provided, uses its command
-     *        If StreamInterface is provided, creates a new Command with it
-     *        If null, creates a new Command without a stream
      */
     public function __construct(BodyInterface|null $handler = null)
     {
@@ -92,6 +91,44 @@ final class Unit
     public function setShow(?string $show = null): Unit
     {
         $this->show = $show;
+        return $this;
+    }
+
+    /**
+     * Show hidden messages
+     *
+     * @param bool $verbose
+     * @return void
+     */
+    public function setVerbose(bool $verbose): void
+    {
+        $this->verbose = $verbose;
+    }
+
+    /**
+     * Show file paths even on passed tests
+     *
+     * @param bool $alwaysShowFiles
+     * @return void
+     */
+    public function setAlwaysShowFiles(bool $alwaysShowFiles): void
+    {
+        $this->alwaysShowFiles = $alwaysShowFiles;
+    }
+
+    /**
+     * This will help pass over some default for custom Unit instances
+     *
+     * @param Unit $inst
+     * @return $this
+     */
+    public function inheritConfigs(Unit $inst): Unit
+    {
+        $this->setFile($inst->file);
+        $this->setShow($inst->show);
+        $this->setShowErrorsOnly($inst->showErrorsOnly);
+        $this->setVerbose($inst->verbose);
+        $this->setAlwaysShowFiles($inst->alwaysShowFiles);
         return $this;
     }
 
@@ -207,7 +244,6 @@ final class Unit
         }
 
         $fileChecksum = md5($this->file);
-
         foreach ($this->cases as $index => $row) {
             if (!($row instanceof TestCase)) {
                 throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestCase.");
@@ -230,6 +266,8 @@ final class Unit
             $handler->setChecksum($checksum);
             $handler->setTests($tests);
             $handler->setShow($show);
+            $handler->setVerbose($this->verbose);
+            $handler->setAlwaysShowFiles($this->alwaysShowFiles);
             $handler->buildBody();
 
             // Important to add test from skip as successfully count to make sure that

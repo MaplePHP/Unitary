@@ -9,6 +9,22 @@ interface BodyInterface
 {
 
     /**
+     * Show hidden messages
+     *
+     * @param bool $verbose
+     * @return void
+     */
+    public function setVerbose(bool $verbose): void;
+
+    /**
+     * Show file paths even on passed tests
+     *
+     * @param bool $alwaysShowFiles
+     * @return void
+     */
+    public function setAlwaysShowFiles(bool $alwaysShowFiles): void;
+
+    /**
      * Pass the test case
      *
      * @param TestCase $testCase

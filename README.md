@@ -83,7 +83,6 @@ Paste this test boilerplate to get started:
 ```php
 use MaplePHP\Unitary\{Expect,TestCase,Unit};
 
-$unit = new Unit();
 group("Your test subject", function (TestCase $case) {
     $case->validate("Your test value", function(Expect $valid) {
         $valid->isString();

@@ -13,8 +13,26 @@ class AbstractRenderHandler implements BodyInterface
     protected string $suitName = "";
     protected string $checksum = "";
     protected bool $show = false;
+    protected bool $verbose = false;
+    protected bool $alwaysShowFiles = false;
     protected array $tests;
     protected string $outputBuffer = "";
+
+    /**
+     * {@inheritDoc}
+     */
+    public function setVerbose(bool $verbose): void
+    {
+        $this->verbose = $verbose;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function setAlwaysShowFiles(bool $alwaysShowFiles): void
+    {
+        $this->alwaysShowFiles = $alwaysShowFiles;
+    }
 
     /**
      * {@inheritDoc}

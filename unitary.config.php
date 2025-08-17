@@ -9,6 +9,8 @@ return [
     'errorsOnly' => false, // bool
     'verbose' => false, // bool
     'exclude' => false, // false|string|array<int, string>
-    'discoverPattern' => false // string|false (paths (`tests/`) and files (`unitary-*.php`).)
+    'discoverPattern' => false, // string|false (paths (`tests/`) and files (`unitary-*.php`).)
+    'show' => false,
+    'alwaysShowFiles' => false,
     //'exit_error_code' => 1, ??
 ];

@@ -39,7 +39,7 @@ class CliRenderer extends AbstractRenderHandler
             $this->command->getAnsi()->style(["bold", $this->color], (string)$this->case->getMessage())
         );
 
-        if($this->show && !$this->case->hasFailed()) {
+        if(($this->show || $this->alwaysShowFiles || $this->verbose) && !$this->case->hasFailed()) {
             $this->command->message("");
             $this->command->message(
                 $this->command->getAnsi()->style(["italic", $this->color], "Test file: " . $this->suitName)
@@ -47,7 +47,6 @@ class CliRenderer extends AbstractRenderHandler
         }
 
         if (($this->show || !$this->case->getConfig()->skip)) {
-
             // Show possible warnings
             if($this->case->getWarning()) {
                 $this->command->message("");

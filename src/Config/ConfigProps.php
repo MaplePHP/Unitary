@@ -20,8 +20,10 @@ class ConfigProps extends AbstractConfigProps
     public ?string $path = null;
     public ?string $discoverPattern = null;
     public ?string $exclude = null;
+    public ?string $show = null;
     public ?int $exitCode = null;
     public ?bool $verbose = null;
+    public ?bool $alwaysShowFiles = null;
     public ?bool $errorsOnly = null;
     public ?bool $smartSearch = null;
 
@@ -44,17 +46,23 @@ class ConfigProps extends AbstractConfigProps
             case 'exclude':
                 $this->exclude = (!is_string($value) || $value === '') ? null : $value;
                 break;
+            case 'show':
+                $this->show = (!is_string($value) || $value === '') ? null : $value;
+                break;
             case 'exitCode':
                 $this->exitCode = ($value === null) ? null : (int)$value;
                 break;
             case 'verbose':
-                $this->verbose = isset($value) && $value !== false;
+                $this->verbose = $this->dataToBool($value);
+                break;
+            case 'alwaysShowFiles':
+                $this->alwaysShowFiles = $this->dataToBool($value);
                 break;
             case 'smartSearch':
-                $this->smartSearch = isset($value) && $value !== false;
+                $this->smartSearch = $this->dataToBool($value);
                 break;
             case 'errorsOnly':
-                $this->errorsOnly = isset($value) && $value !== false;
+                $this->errorsOnly = $this->dataToBool($value);
                 break;
         }
     }

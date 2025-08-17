@@ -160,6 +160,7 @@ final class TestDiscovery
 
             $unitInst = require_once($file);
             if ($unitInst instanceof Unit) {
+                $unitInst->inheritConfigs(self::$unitary);
                 self::$unitary = $unitInst;
             }
             $bool = self::$unitary->execute();
