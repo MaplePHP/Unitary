@@ -14,9 +14,6 @@ namespace MaplePHP\Unitary\Support\TestUtils;
 
 use BadMethodCallException;
 use MaplePHP\Unitary\Console\Enum\CoverageIssue;
-use function MaplePHP\Unitary\TestUtils\xdebug_get_code_coverage;
-use function MaplePHP\Unitary\TestUtils\xdebug_start_code_coverage;
-use function MaplePHP\Unitary\TestUtils\xdebug_stop_code_coverage;
 
 class CodeCoverage
 {
@@ -113,7 +110,7 @@ class CodeCoverage
     {
         $this->data = [];
         if($this->hasXdebugCoverage()) {
-            xdebug_start_code_coverage(XDEBUG_CC_UNUSED | XDEBUG_CC_DEAD_CODE);
+            \xdebug_start_code_coverage(XDEBUG_CC_UNUSED | XDEBUG_CC_DEAD_CODE);
         }
     }
 
@@ -132,8 +129,8 @@ class CodeCoverage
         }
         if($this->hasXdebugCoverage()) {
 
-            $this->data = xdebug_get_code_coverage();
-            xdebug_stop_code_coverage();
+            $this->data = \xdebug_get_code_coverage();
+            \xdebug_stop_code_coverage();
         }
     }
 
