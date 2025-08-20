@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Default configs, that exists in MaplePHP Unitary
  */

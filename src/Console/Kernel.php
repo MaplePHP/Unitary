@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Unit — Part of the MaplePHP Unitary Kernel/ Dispatcher,
  * A simple and fast dispatcher, will work great for this solution
@@ -49,7 +50,7 @@ class Kernel
 
         // This middleware is used in the DefaultController, which is why I always load it,
         // It will not change any response but will load a CLI helper Command library
-        if(!in_array(AddCommandMiddleware::class, $this->userMiddlewares)) {
+        if (!in_array(AddCommandMiddleware::class, $this->userMiddlewares)) {
             $this->userMiddlewares[] = AddCommandMiddleware::class;
         }
         EmitronKernel::setConfigFilePath(self::CONFIG_FILE_PATH);
@@ -64,7 +65,7 @@ class Kernel
      */
     public function run(ServerRequestInterface $request): void
     {
-        if($this->config === null) {
+        if ($this->config === null) {
             $this->config = $this->configuration($request);
         }
         $kernel = new EmitronKernel($this->container, $this->userMiddlewares, $this->config);
@@ -82,10 +83,10 @@ class Kernel
     {
         $config = new DispatchConfig(EmitronKernel::getConfigFilePath());
         return $config
-            ->setRouter(function($path) use ($request) {
+            ->setRouter(function ($path) use ($request) {
                 $routerFile = $path . self::DEFAULT_ROUTER_FILE;
                 $router = new Router($request->getCliKeyword(), $request->getCliArgs());
-                if(!is_file($routerFile)) {
+                if (!is_file($routerFile)) {
                     throw new Exception('The routes file (' . $routerFile . ') is missing.');
                 }
                 require_once $routerFile;

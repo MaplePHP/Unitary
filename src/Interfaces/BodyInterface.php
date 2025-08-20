@@ -7,7 +7,6 @@ use MaplePHP\Unitary\TestCase;
 
 interface BodyInterface
 {
-
     /**
      * Show hidden messages
      *

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * TestConfig — Part of the MaplePHP Unitary Testing Library
  *
@@ -13,7 +14,6 @@ namespace MaplePHP\Unitary\Config;
 
 final class TestConfig
 {
-
     public ?string $message;
     public bool $skip = false;
     public string $select = "";

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * MockedMethod — Part of the MaplePHP Unitary Testing Library
  *
@@ -75,7 +76,7 @@ final class MockedMethod
             throw new BadMethodCallException('Mocker is not set. Use the method "mock" to set the mocker.');
         }
 
-        if($this->mocker->getReflectionClass()->isInterface()) {
+        if ($this->mocker->getReflectionClass()->isInterface()) {
             throw new BadMethodCallException('You only use "wrap()" on regular classes and not "interfaces".');
         }
 
@@ -112,7 +113,7 @@ final class MockedMethod
 
     /**
      * Check if a method has been called x times
-     * 
+     *
      * @param int $times
      * @return $this
      */
@@ -125,7 +126,7 @@ final class MockedMethod
 
     /**
      * Check if a method has been called x times
-     * 
+     *
      * @return $this
      */
     public function hasBeenCalled(): self
@@ -195,7 +196,7 @@ final class MockedMethod
     {
         $inst = $this;
         foreach ($args as $called => $data) {
-            if(!is_array($data)) {
+            if (!is_array($data)) {
                 throw new InvalidArgumentException(
                     'The argument must be a array that contains the expected method arguments.'
                 );

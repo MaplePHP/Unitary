@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Unit — Part of the MaplePHP Unitary CodeCoverage
  *
@@ -52,7 +53,7 @@ class CodeCoverage
      */
     public function hasXdebug(): bool
     {
-        if($this->hasIssue()) {
+        if ($this->hasIssue()) {
             return false;
         }
         if (!function_exists('xdebug_info')) {
@@ -69,7 +70,7 @@ class CodeCoverage
      */
     public function hasXdebugCoverage(): bool
     {
-        if(!$this->hasXdebug()) {
+        if (!$this->hasXdebug()) {
             return false;
         }
         $mode = ini_get('xdebug.mode');
@@ -109,7 +110,7 @@ class CodeCoverage
     public function start(): void
     {
         $this->data = [];
-        if($this->hasXdebugCoverage()) {
+        if ($this->hasXdebugCoverage()) {
             \xdebug_start_code_coverage(XDEBUG_CC_UNUSED | XDEBUG_CC_DEAD_CODE);
         }
     }
@@ -124,10 +125,10 @@ class CodeCoverage
      */
     public function end(): void
     {
-        if($this->data === null) {
+        if ($this->data === null) {
             throw new BadMethodCallException("You must start code coverage before you can end it");
         }
-        if($this->hasXdebugCoverage()) {
+        if ($this->hasXdebugCoverage()) {
 
             $this->data = \xdebug_get_code_coverage();
             \xdebug_stop_code_coverage();
@@ -166,7 +167,7 @@ class CodeCoverage
      */
     public function getResponse(): array|false
     {
-        if($this->hasIssue()) {
+        if ($this->hasIssue()) {
             return false;
         }
 
@@ -178,7 +179,9 @@ class CodeCoverage
             }
 
             foreach ($lines as $line => $status) {
-                if ($status === -2) continue;
+                if ($status === -2) {
+                    continue;
+                }
                 $totalLines++;
                 if ($status === 1) {
                     $executedLines++;

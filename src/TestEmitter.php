@@ -1,4 +1,5 @@
 <?php
+
 /**
  * TestConfig — Part of the MaplePHP Unitary Testing Library
  *
@@ -20,8 +21,8 @@ use MaplePHP\Unitary\Interfaces\TestEmitterInterface;
 use RuntimeException;
 use Throwable;
 
-class TestEmitter implements TestEmitterInterface {
-
+class TestEmitter implements TestEmitterInterface
+{
     protected array $args = [];
     protected Unit $unit;
 
@@ -42,7 +43,7 @@ class TestEmitter implements TestEmitterInterface {
 
         $verbose = (bool)($this->args['verbose'] ?? false);
 
-        if(!is_file($file)) {
+        if (!is_file($file)) {
             throw new RuntimeException("The test file \"$file\" do not exists.");
         }
 
@@ -50,7 +51,7 @@ class TestEmitter implements TestEmitterInterface {
 
         $hasExecutedTest = $this->unit->execute();
 
-        if(!$hasExecutedTest && $verbose) {
+        if (!$hasExecutedTest && $verbose) {
             trigger_error(
                 "Could not find any tests inside the test file:\n" .
                 $file . "\n\n" .

@@ -10,7 +10,6 @@ use MaplePHP\Prompts\Themes\Blocks;
 
 class RunTestController extends DefaultController
 {
-
     /**
      * Main test runner
      */
@@ -33,7 +32,7 @@ class RunTestController extends DefaultController
         $blocks->addHeadline("\n--- Unitary Help ---");
         $blocks->addSection("Usage", "php vendor/bin/unitary [options]");
 
-        $blocks->addSection("Options", function(Blocks $inst) {
+        $blocks->addSection("Options", function (Blocks $inst) {
             return $inst
                 ->addOption("help", "Show this help message")
                 ->addOption("show=<hash|name>", "Run a specific test by hash or manual test name")
@@ -43,7 +42,7 @@ class RunTestController extends DefaultController
                 ->addOption("exclude=<patterns>", "Exclude files or directories (comma-separated, relative to --path)");
         });
 
-        $blocks->addSection("Examples", function(Blocks $inst) {
+        $blocks->addSection("Examples", function (Blocks $inst) {
             return $inst
                 ->addExamples(
                     "php vendor/bin/unitary",
@@ -79,7 +78,7 @@ class RunTestController extends DefaultController
     protected function buildFooter(): void
     {
         $inst = TestDiscovery::getUnitaryInst();
-        if($inst !== null) {
+        if ($inst !== null) {
             $dot = $this->command->getAnsi()->middot();
             $peakMemory = (string)round(memory_get_peak_usage() / 1024, 2);
 

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Unit — Part of the MaplePHP Unitary CodeCoverage
  *

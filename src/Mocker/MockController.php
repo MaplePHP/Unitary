@@ -1,4 +1,5 @@
 <?php
+
 /**
  * MockController — Part of the MaplePHP Unitary Testing Library
  *
@@ -61,7 +62,7 @@ final class MockController extends MethodRegistry
     {
         return self::$data[$mockIdentifier][$method] ?? false;
     }
-    
+
     /**
      * Add or update data for a specific mock method
      *

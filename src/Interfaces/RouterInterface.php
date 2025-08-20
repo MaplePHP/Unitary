@@ -4,7 +4,6 @@ namespace MaplePHP\Unitary\Interfaces;
 
 interface RouterInterface extends RouterDispatchInterface
 {
-
     /**
      * Map one or more needles to controller
      *

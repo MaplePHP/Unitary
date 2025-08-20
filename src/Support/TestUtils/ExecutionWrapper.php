@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ExecutionWrapper — Part of the MaplePHP Unitary Testing Library
  *
@@ -50,7 +51,7 @@ abstract class ExecutionWrapper
     public function bind(Closure $call): Closure
     {
         $closure = $call->bindTo($this->instance);
-        if(!is_callable($closure)) {
+        if (!is_callable($closure)) {
             throw new Exception("Closure is not callable.");
         }
         return $closure;

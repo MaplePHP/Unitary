@@ -1,4 +1,5 @@
 <?php
+
 /**
  * DataTypeMock — Part of the MaplePHP Unitary Testing Library
  *
@@ -22,7 +23,6 @@ use MaplePHP\Log\InvalidArgumentException;
 
 final class DataTypeMock
 {
-
     /**
      * @var array Stores custom default values for data types
      */
@@ -63,12 +63,12 @@ final class DataTypeMock
             'array' => ['item1', 'item2', 'item3'],
             'object' => (object)['item1' => 'value1', 'item2' => 'value2', 'item3' => 'value3'],
             'resource' => "fopen('php://memory', 'r+')",
-            'callable' => fn() => 'called',
+            'callable' => fn () => 'called',
             'iterable' => new ArrayIterator(['a', 'b']),
             'null' => null,
         ], $this->defaultArguments);
     }
-    
+
     /**
      * Exports a value to a parsable string representation
      *
@@ -78,9 +78,9 @@ final class DataTypeMock
     public static function exportValue(mixed $value): string
     {
         return var_export($value, true);
-        
+
     }
-    
+
     /**
      * Creates a new instance with merged default and custom arguments.
      * Handles resource type arguments separately by converting them to string content.
@@ -91,7 +91,7 @@ final class DataTypeMock
     public function withCustomDefaults(array $dataTypeArgs): self
     {
         $inst = clone $this;
-        foreach($dataTypeArgs as $key => $value) {
+        foreach ($dataTypeArgs as $key => $value) {
             $inst = $this->withCustomDefault($key, $value);
         }
         return $inst;
@@ -109,7 +109,7 @@ final class DataTypeMock
     public function withCustomDefault(string $dataType, mixed $value): self
     {
         $inst = clone $this;
-        if(isset($value) && is_resource($value)) {
+        if (isset($value) && is_resource($value)) {
             $value = $this->handleResourceContent($value);
         }
         $inst->defaultArguments[$dataType] = $value;
@@ -129,13 +129,13 @@ final class DataTypeMock
     {
         $inst = clone $this;
         $tempInst = $this->withCustomDefault($dataType, $value);
-        if($inst->bindArguments === null) {
+        if ($inst->bindArguments === null) {
             $inst->bindArguments = [];
         }
         $inst->bindArguments[$key][$dataType] = $tempInst->defaultArguments[$dataType];
         return $inst;
     }
-    
+
     /**
      * Converts default argument values to their string representations
      * using var_export for each value in the default arguments array
@@ -144,7 +144,7 @@ final class DataTypeMock
      */
     public function getDataTypeListToString(): array
     {
-        return array_map(fn($value) => self::exportValue($value), $this->getMockValues());
+        return array_map(fn ($value) => self::exportValue($value), $this->getMockValues());
     }
 
     /**
@@ -157,21 +157,21 @@ final class DataTypeMock
      */
     public function getDataTypeValue(string $dataType, ?string $bindKey = null): string
     {
-        if(is_string($bindKey) && isset($this->bindArguments[$bindKey][$dataType])) {
+        if (is_string($bindKey) && isset($this->bindArguments[$bindKey][$dataType])) {
             return self::exportValue($this->bindArguments[$bindKey][$dataType]);
         }
 
-        if($this->types === null) {
+        if ($this->types === null) {
             $this->types = $this->getDataTypeListToString();
         }
 
-        if(!isset($this->types[$dataType])) {
+        if (!isset($this->types[$dataType])) {
             throw new InvalidArgumentException("Invalid data type: $dataType");
         }
         return (string)$this->types[$dataType];
-        
+
     }
-    
+
     /**
      * Will return a streamable content
      *

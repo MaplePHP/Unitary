@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Unit — Part of the MaplePHP Unitary Testing Library
  *
@@ -191,7 +192,7 @@ final class Unit
      */
     public function group(string|TestConfig $message, Closure $expect, ?TestConfig $config = null): void
     {
-        if($config !== null && !$config->hasSubject()) {
+        if ($config !== null && !$config->hasSubject()) {
             $addMessage = ($message instanceof TestConfig && $message->hasSubject()) ? $message->message : $message;
             $message = $config->withSubject($addMessage);
         }
@@ -228,7 +229,7 @@ final class Unit
         ob_start();
         //$countCases = count($this->cases);
         $handler = $this->handler;
-        if(count($this->cases) === 0) {
+        if (count($this->cases) === 0) {
             return false;
         }
 
@@ -242,7 +243,7 @@ final class Unit
             $checksum = $fileChecksum . $index;
             $show = ($row->getConfig()->select === $this->show || $this->show === $checksum);
 
-            if(($this->show !== null) && !$show) {
+            if (($this->show !== null) && !$show) {
                 continue;
             }
             // Success, no need to try to show errors, continue with the next test
@@ -340,4 +341,3 @@ final class Unit
         return $this;
     }
 }
-

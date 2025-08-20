@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Unit — Part of the MaplePHP Unitary CLI Router
  *
@@ -37,11 +38,11 @@ class Router implements RouterInterface
      */
     public function map(string|array $needles, array $controller, array $args = []): self
     {
-        if(isset($args['handler'])) {
+        if (isset($args['handler'])) {
             throw new InvalidArgumentException('The handler argument is reserved, you can not use that key.');
         }
 
-        if(is_string($needles)) {
+        if (is_string($needles)) {
             $needles = [$needles];
         }
 
@@ -60,9 +61,9 @@ class Router implements RouterInterface
      * @param callable $call
      * @return bool
      */
-    function dispatch(callable $call): bool
+    public function dispatch(callable $call): bool
     {
-        if(isset($this->controllers[$this->needle])) {
+        if (isset($this->controllers[$this->needle])) {
             $call($this->controllers[$this->needle], $this->args, $this->needle);
             return true;
         }

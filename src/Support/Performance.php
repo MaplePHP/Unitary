@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Performance — Part of the MaplePHP Unitary Testing Library
  *

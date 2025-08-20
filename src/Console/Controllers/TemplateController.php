@@ -6,7 +6,6 @@ use MaplePHP\Prompts\Themes\Blocks;
 
 class TemplateController extends DefaultController
 {
-
     /**
      * Display a template for the Unitary testing tool
      * Shows a basic template for the Unitary testing tool

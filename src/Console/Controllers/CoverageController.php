@@ -10,7 +10,6 @@ use MaplePHP\Unitary\Support\TestUtils\CodeCoverage;
 
 class CoverageController extends DefaultController
 {
-
     /**
      * Code Coverage Controller
      */
@@ -23,7 +22,7 @@ class CoverageController extends DefaultController
         $coverage->end();
 
         $result = $coverage->getResponse();
-        if($result !== false) {
+        if ($result !== false) {
             $this->outputBody($result);
         } else {
             $this->command->error("Error: Code coverage is not reachable");
@@ -43,7 +42,7 @@ class CoverageController extends DefaultController
     private function outputBody(array $result): void
     {
         $block = new Blocks($this->command);
-        $block->addSection("Code coverage", function(Blocks $block) use ($result) {
+        $block->addSection("Code coverage", function (Blocks $block) use ($result) {
             return $block->addList("Total lines:", $result['totalLines'])
                 ->addList("Executed lines:", $result['executedLines'])
                 ->addList("Code coverage percent:", $result['percent'] . "%");

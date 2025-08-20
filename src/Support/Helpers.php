@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Helpers — Part of the MaplePHP Unitary Testing Library
  *
@@ -27,7 +28,7 @@ final class Helpers
     {
         $levels = 0;
         $str = self::stringify($args, $levels);
-        if($levels > 1) {
+        if ($levels > 1) {
             return "[$str]";
         }
         return $str;
@@ -43,7 +44,7 @@ final class Helpers
     public static function stringify(mixed $arg, int &$levels = 0): string
     {
         if (is_array($arg)) {
-            $items = array_map(function($item) use(&$levels) {
+            $items = array_map(function ($item) use (&$levels) {
                 $levels++;
                 return self::stringify($item, $levels);
             }, $arg);
@@ -75,7 +76,7 @@ final class Helpers
         $tempFile = rtrim($tempDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $filename;
         file_put_contents($tempFile, "<?php\n" . $input);
 
-        if(!is_file($tempFile)) {
+        if (!is_file($tempFile)) {
             throw new Exception("Unable to create file $tempFile");
         }
         include $tempFile;
@@ -101,7 +102,7 @@ final class Helpers
         $line = (int)($trace['line'] ?? 0);
         $lines = file($file);
         $code = "";
-        if($lines !== false) {
+        if ($lines !== false) {
             $code = trim($lines[$line - 1] ?? '');
             if (str_starts_with($code, '->')) {
                 $code = substr($code, 2);
@@ -155,7 +156,7 @@ final class Helpers
         }
         if (is_array($value)) {
             $json = json_encode($value);
-            if($json === false) {
+            if ($json === false) {
                 return "(unknown type)";
             }
             return '"' . self::excerpt($json) . '"' . ($minify ? "" : " (type: array)");

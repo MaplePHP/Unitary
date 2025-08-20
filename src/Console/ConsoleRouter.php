@@ -1,4 +1,5 @@
 <?php
+
 use MaplePHP\Unitary\Console\Controllers\CoverageController;
 use MaplePHP\Unitary\Console\Controllers\RunTestController;
 use MaplePHP\Unitary\Console\Controllers\TemplateController;

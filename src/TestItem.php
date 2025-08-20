@@ -1,4 +1,5 @@
 <?php
+
 /**
  * TestItem — Part of the MaplePHP Unitary Testing Library
  *
@@ -16,7 +17,6 @@ use MaplePHP\Unitary\Support\Helpers;
 
 final class TestItem
 {
-
     protected bool $valid = false;
     protected string $validation = "";
     protected array $args = [];
@@ -206,7 +206,7 @@ final class TestItem
      */
     public function getStringifyArgs(): string
     {
-        if($this->hasArgs) {
+        if ($this->hasArgs) {
             $args = array_map(fn ($value) => Helpers::stringifyArgs($value), $this->args);
             return "(" . implode(", ", $args) . ")";
         }

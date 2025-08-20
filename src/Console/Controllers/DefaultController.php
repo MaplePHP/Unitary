@@ -28,7 +28,8 @@ abstract class DefaultController
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    public function __construct(ContainerInterface $container) {
+    public function __construct(ContainerInterface $container)
+    {
         $this->container = $container;
         $this->args = $this->container->get("args");
         $this->command = $this->container->get("command");
@@ -50,12 +51,12 @@ abstract class DefaultController
      */
     private function getInitProps(): ConfigProps
     {
-        if($this->props === null) {
+        if ($this->props === null) {
             try {
                 $props = array_merge($this->configs->getProps()->toArray(), $this->args);
                 $this->props = new ConfigProps($props);
 
-                if($this->props->hasMissingProps() !== [] && isset($this->args['verbose'])) {
+                if ($this->props->hasMissingProps() !== [] && isset($this->args['verbose'])) {
                     $this->command->error('The properties (' .
                         implode(", ", $this->props->hasMissingProps()) . ') is not exist in config props');
                     $this->command->message(
@@ -65,7 +66,7 @@ abstract class DefaultController
                 }
 
             } catch (Throwable $e) {
-                if(isset($this->args['verbose'])) {
+                if (isset($this->args['verbose'])) {
                     $this->command->error($e->getMessage());
                     exit(1);
                 }

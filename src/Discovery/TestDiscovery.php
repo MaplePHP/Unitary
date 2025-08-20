@@ -1,4 +1,5 @@
 <?php
+
 /**
  * FileIterator — Part of the MaplePHP Unitary Testing Library
  *
@@ -39,7 +40,7 @@ final class TestDiscovery
      * @param bool $isVerbose
      * @return $this
      */
-    function enableVerbose(bool $isVerbose): self
+    public function enableVerbose(bool $isVerbose): self
     {
         $this->verbose = $isVerbose;
         return $this;
@@ -52,7 +53,7 @@ final class TestDiscovery
      * @param bool $smartSearch
      * @return $this
      */
-    function enableSmartSearch(bool $smartSearch): self
+    public function enableSmartSearch(bool $smartSearch): self
     {
         $this->smartSearch = $smartSearch;
         return $this;
@@ -64,9 +65,9 @@ final class TestDiscovery
      * @param string|array|null $exclude
      * @return $this
      */
-    function addExcludePaths(string|array|null $exclude): self
+    public function addExcludePaths(string|array|null $exclude): self
     {
-        if($exclude !== null) {
+        if ($exclude !== null) {
             $this->exclude = is_string($exclude) ? explode(', ', $exclude) : $exclude;
         }
         return $this;
@@ -83,9 +84,9 @@ final class TestDiscovery
      * @param ?string $pattern null value will fall back to the default value
      * @return $this
      */
-    function setDiscoverPattern(?string $pattern): self
+    public function setDiscoverPattern(?string $pattern): self
     {
-        if($pattern !== null) {
+        if ($pattern !== null) {
             $pattern = rtrim($pattern, '*');
             $pattern = ltrim($pattern, '*');
             $pattern = ltrim($pattern, '/');
@@ -120,7 +121,7 @@ final class TestDiscovery
     {
         $rootDir = is_string($rootDir) ? realpath($rootDir) : false;
         $path = (!$path && $rootDir !== false) ? $rootDir : $path;
-        if($rootDir !== false && !str_starts_with($path, "/") && !str_starts_with($path, $rootDir)) {
+        if ($rootDir !== false && !str_starts_with($path, "/") && !str_starts_with($path, $rootDir)) {
             $path = $rootDir . "/" . $path;
         }
         $files = $this->findFiles($path, $rootDir);
@@ -217,15 +218,15 @@ final class TestDiscovery
         if (is_file($path) && str_starts_with(basename($path), "unitary-")) {
             $files[] = $path;
         } else {
-            if(is_file($path)) {
+            if (is_file($path)) {
                 $path = dirname($path) . "/";
             }
-            if(is_dir($path)) {
+            if (is_dir($path)) {
                 $files += $this->getFileIterateReclusive($path);
             }
         }
         // If smart search flag then step back if no test files have been found and try again
-        if($rootDir !== false && count($files) <= 0 && str_starts_with($path, $rootDir) && $this->smartSearch) {
+        if ($rootDir !== false && count($files) <= 0 && str_starts_with($path, $rootDir) && $this->smartSearch) {
             $path = (string)realpath($path . "/..") . "/";
             return $this->findFiles($path, $rootDir);
         }

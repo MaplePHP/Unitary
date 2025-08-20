@@ -24,7 +24,7 @@ class RunTestService extends AbstractMainService
         $iterator = $this->iterateTest($iterator, $handler);
 
         // CLI Response
-        if(PHP_SAPI === 'cli') {
+        if (PHP_SAPI === 'cli') {
             return $this->response->withStatus($iterator->getExitCode());
         }
         // Text/Browser Response
@@ -45,14 +45,14 @@ class RunTestService extends AbstractMainService
         $defaultPath = ($this->configs->getProps()->path !== null) ? $this->configs->getProps()->path : $defaultPath;
         $path = ($this->args['path'] ?? $defaultPath);
 
-        if(!isset($path)) {
+        if (!isset($path)) {
             throw new RuntimeException("Path not specified: --path=path/to/dir");
         }
         $testDir = realpath($path);
-        if(!file_exists($testDir)) {
+        if (!file_exists($testDir)) {
             throw new RuntimeException("Test directory '$path' does not exist");
         }
-        $iterator->executeAll($testDir, $defaultPath, function($file) use ($handler) {
+        $iterator->executeAll($testDir, $defaultPath, function ($file) use ($handler) {
             $unit = new Unit($handler);
             $unit->setShowErrorsOnly($this->props->errorsOnly);
             $unit->setShow($this->props->show);

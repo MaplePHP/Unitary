@@ -10,5 +10,5 @@ interface RouterDispatchInterface
      * @param callable $call
      * @return bool
      */
-    function dispatch(callable $call): bool;
+    public function dispatch(callable $call): bool;
 }

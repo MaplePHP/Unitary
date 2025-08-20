@@ -1,4 +1,5 @@
 <?php
+
 /**
  * TestCase — Part of the MaplePHP Unitary Testing Library
  *
@@ -87,7 +88,7 @@ final class TestCase
      *
      * @return void
      */
-    function setHasAssertError(): void
+    public function setHasAssertError(): void
     {
         $this->hasAssertError = true;
     }
@@ -97,7 +98,7 @@ final class TestCase
      *
      * @return bool
      */
-    function getHasAssertError(): bool
+    public function getHasAssertError(): bool
     {
         return $this->hasAssertError;
     }
@@ -132,7 +133,7 @@ final class TestCase
      */
     public function error(?string $message): self
     {
-        if($message !== null) {
+        if ($message !== null) {
             $this->error = $message;
         }
         return $this;
@@ -164,10 +165,14 @@ final class TestCase
                 $newInst->setHasAssertError();
                 $msg = "Assertion failed";
                 $newInst->expectAndValidate(
-                    true, fn() => false, $msg, $e->getMessage(), $e->getTrace()[0]
+                    true,
+                    fn () => false,
+                    $msg,
+                    $e->getMessage(),
+                    $e->getTrace()[0]
                 );
             } catch (Throwable $e) {
-                if(str_contains($e->getFile(), "eval()")) {
+                if (str_contains($e->getFile(), "eval()")) {
                     throw new BlunderErrorException($e->getMessage(), (int)$e->getCode());
                 }
                 throw $e;
@@ -242,7 +247,7 @@ final class TestCase
 
             foreach ($listArr as $list) {
 
-                if(is_bool($list)) {
+                if (is_bool($list)) {
                     $item = new TestItem();
                     $item = $item->setIsValid($list)->setValidation("Validation");
                     $test->setTestItem($item);
@@ -251,7 +256,7 @@ final class TestCase
                         $item = new TestItem();
                         /** @var array|bool $valid */
                         $item = $item->setIsValid(false)->setValidation((string)$method);
-                        if(is_array($valid)) {
+                        if (is_array($valid)) {
                             $item = $item->setValidationArgs($valid);
                         } else {
                             $item = $item->setHasArgs(false);
@@ -278,7 +283,7 @@ final class TestCase
             }
         }
         if (!$test->isValid()) {
-            if($trace === null || $trace === []) {
+            if ($trace === null || $trace === []) {
                 $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1];
             }
 
@@ -365,7 +370,7 @@ final class TestCase
      */
     public function buildMock(?Closure $validate = null): mixed
     {
-        if(!($this->mocker instanceof MockBuilder)) {
+        if (!($this->mocker instanceof MockBuilder)) {
             throw new BadMethodCallException("The mocker is not set yet!");
         }
         if ($validate instanceof Closure) {
@@ -373,9 +378,9 @@ final class TestCase
         }
         /** @psalm-suppress MixedReturnStatement */
         $class =  $this->mocker->execute();
-        if($this->mocker->hasFinal() && isset($pool)) {
+        if ($this->mocker->hasFinal() && isset($pool)) {
             $finalMethods = $pool->getSelected($this->mocker->getFinalMethods());
-            if($finalMethods !== []) {
+            if ($finalMethods !== []) {
                 $this->warning = "Warning: Final methods cannot be mocked or have their behavior modified: " .  implode(", ", $finalMethods);
             }
         }
@@ -403,7 +408,7 @@ final class TestCase
 
     public function getMocker(): MockBuilder
     {
-        if(!($this->mocker instanceof MockBuilder)) {
+        if (!($this->mocker instanceof MockBuilder)) {
             throw new BadMethodCallException("The mocker is not set yet!");
         }
         return $this->mocker;
@@ -486,7 +491,7 @@ final class TestCase
                 continue;
             }
 
-            if(!property_exists($row, $property)) {
+            if (!property_exists($row, $property)) {
                 throw new ErrorException(
                     "The mock method meta data property name '$property' is undefined in mock object. " .
                     "To resolve this either use MockController::buildMethodData() to add the property dynamically " .
@@ -495,7 +500,7 @@ final class TestCase
             }
             $currentValue = $row->{$property};
 
-            if(!in_array($property, self::EXCLUDE_VALIDATE)) {
+            if (!in_array($property, self::EXCLUDE_VALIDATE)) {
                 if (is_array($value)) {
                     $validPool = $this->validateArrayValue($value, $currentValue);
                     $valid = $validPool->isValid();
@@ -618,7 +623,7 @@ final class TestCase
                 foreach ($arr as $data) {
                     // We do not want to validate the return here automatically
                     /** @var TestItem $data */
-                    if(!in_array($data->getValidation(), self::EXCLUDE_VALIDATE)) {
+                    if (!in_array($data->getValidation(), self::EXCLUDE_VALIDATE)) {
                         $test->setTestItem($data);
                         if (!isset($hasValidated[$method]) && !$data->isValid()) {
                             $hasValidated[$method] = true;
@@ -737,11 +742,11 @@ final class TestCase
             }
 
             $error = $validPool->getError();
-            if($bool === false && $message !== null) {
+            if ($bool === false && $message !== null) {
                 $error[] = [
                     $message => true
                 ];
-            } else if (is_bool($bool) && !$bool) {
+            } elseif (is_bool($bool) && !$bool) {
                 $error['customError'] = false;
             }
         }

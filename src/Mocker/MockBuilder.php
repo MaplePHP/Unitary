@@ -1,4 +1,5 @@
 <?php
+
 /**
  * MockBuilder — Part of the MaplePHP Unitary Testing Library
  *
@@ -102,7 +103,7 @@ final class MockBuilder
         return $this->className;
     }
 
-    
+
     /**
      * Returns the constructor arguments provided during instantiation.
      *
@@ -155,8 +156,8 @@ final class MockBuilder
      */
     public function mockDataType(string $dataType, mixed $value, ?string $bindToMethod = null): self
     {
-        if($bindToMethod) {
-            $this->dataTypeMock = $this->dataTypeMock->withCustomBoundDefault($bindToMethod,  $dataType, $value);
+        if ($bindToMethod) {
+            $this->dataTypeMock = $this->dataTypeMock->withCustomBoundDefault($bindToMethod, $dataType, $value);
         } else {
             $this->dataTypeMock = $this->dataTypeMock->withCustomDefault($dataType, $value);
         }
@@ -245,7 +246,7 @@ final class MockBuilder
         }
         return "return 'MockedValue';";
     }
-    
+
     /**
      * Builds and returns PHP code that overrides all public methods in the class being mocked.
      * Each overridden method returns a predefined mock value or delegates to the original logic.
@@ -276,10 +277,10 @@ final class MockBuilder
             $returnValue = $this->getReturnValue($types, $method, $methodItem);
             $paramList = $this->generateMethodSignature($method);
 
-            if($method->isConstructor()) {
+            if ($method->isConstructor()) {
                 $types = [];
                 $returnValue = "";
-                if(count($this->constructorArgs) === 0) {
+                if (count($this->constructorArgs) === 0) {
                     $paramList = "";
                 }
             }
@@ -300,7 +301,7 @@ final class MockBuilder
                 $returnValue = $this->generateWrapperReturn($methodItem->getWrap(), $methodName, $returnValue);
             }
 
-            if($methodItem && $methodItem->keepOriginal) {
+            if ($methodItem && $methodItem->keepOriginal) {
                 $returnValue = "parent::$methodName(...func_get_args());";
                 if (!in_array('void', $types)) {
                     $returnValue = "return $returnValue";
@@ -333,7 +334,7 @@ final class MockBuilder
      */
     protected function handleModifiers(array $modifiersArr): string
     {
-        $modifiersArr = array_filter($modifiersArr, fn($val) => $val !==  "abstract");
+        $modifiersArr = array_filter($modifiersArr, fn ($val) => $val !==  "abstract");
         return implode(" ", $modifiersArr);
     }
 
