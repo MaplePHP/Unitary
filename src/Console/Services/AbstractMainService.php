@@ -2,7 +2,9 @@
 
 namespace MaplePHP\Unitary\Console\Services;
 
+use MaplePHP\Container\Interfaces\ContainerExceptionInterface;
 use MaplePHP\Container\Interfaces\ContainerInterface;
+use MaplePHP\Container\Interfaces\NotFoundExceptionInterface;
 use MaplePHP\Emitron\Contracts\DispatchConfigInterface;
 use MaplePHP\Http\Interfaces\RequestInterface;
 use MaplePHP\Http\Interfaces\ResponseInterface;
@@ -20,6 +22,10 @@ abstract class AbstractMainService
     protected ServerRequestInterface|RequestInterface $request;
     protected ?ConfigProps $props = null;
 
+    /**
+     * @throws NotFoundExceptionInterface
+     * @throws ContainerExceptionInterface
+     */
     public function __construct(ResponseInterface $response, ContainerInterface $container)
     {
         $this->response = $response;

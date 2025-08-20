@@ -328,7 +328,7 @@ final class TestCase
      * Initialize a test wrapper
      *
      * NOTICE: When mocking a class with required constructor arguments, those arguments must be
-     * specified in the mock initialization method or it will fail. This is because the mock
+     * specified in the mock initialization method, or it will fail. This is because the mock
      * creates and simulates an actual instance of the original class with its real constructor.
      *
      * @param string $class
@@ -368,12 +368,12 @@ final class TestCase
         if(!($this->mocker instanceof MockBuilder)) {
             throw new BadMethodCallException("The mocker is not set yet!");
         }
-        if (is_callable($validate)) {
+        if ($validate instanceof Closure) {
             $pool = $this->prepareValidation($this->mocker, $validate);
         }
         /** @psalm-suppress MixedReturnStatement */
         $class =  $this->mocker->execute();
-        if($this->mocker->hasFinal()) {
+        if($this->mocker->hasFinal() && isset($pool)) {
             $finalMethods = $pool->getSelected($this->mocker->getFinalMethods());
             if($finalMethods !== []) {
                 $this->warning = "Warning: Final methods cannot be mocked or have their behavior modified: " .  implode(", ", $finalMethods);

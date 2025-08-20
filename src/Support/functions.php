@@ -12,9 +12,7 @@ use MaplePHP\Unitary\Discovery\TestDiscovery;
 function unitary_group(string|TestConfig $message, Closure $expect, ?TestConfig $config = null): void
 {
     $inst = TestDiscovery::getUnitaryInst();
-    if($inst !== null) {
-        $inst->group($message, $expect, $config);
-    }
+    $inst?->group($message, $expect, $config);
 }
 
 if (!function_exists('group')) {

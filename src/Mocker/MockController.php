@@ -43,7 +43,7 @@ final class MockController extends MethodRegistry
      */
     public static function getData(string $mockIdentifier): array|bool
     {
-        $data = isset(self::$data[$mockIdentifier]) ? self::$data[$mockIdentifier] : false;
+        $data = self::$data[$mockIdentifier] ?? false;
         if (!is_array($data)) {
             return false;
         }

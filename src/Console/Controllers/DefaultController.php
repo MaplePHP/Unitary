@@ -2,12 +2,15 @@
 
 namespace MaplePHP\Unitary\Console\Controllers;
 
+use MaplePHP\Container\Interfaces\ContainerExceptionInterface;
 use MaplePHP\Container\Interfaces\ContainerInterface;
+use MaplePHP\Container\Interfaces\NotFoundExceptionInterface;
 use MaplePHP\Emitron\Contracts\DispatchConfigInterface;
 use MaplePHP\Http\Interfaces\RequestInterface;
 use MaplePHP\Http\Interfaces\ServerRequestInterface;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Unitary\Config\ConfigProps;
+use Throwable;
 
 abstract class DefaultController
 {
@@ -22,8 +25,8 @@ abstract class DefaultController
      * Set some data type safe object that comes from container and the dispatcher
      *
      * @param ContainerInterface $container
-     * @throws \MaplePHP\Container\Interfaces\ContainerExceptionInterface
-     * @throws \MaplePHP\Container\Interfaces\NotFoundExceptionInterface
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function __construct(ContainerInterface $container) {
         $this->container = $container;
@@ -61,7 +64,7 @@ abstract class DefaultController
                     );
                 }
 
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 if(isset($this->args['verbose'])) {
                     $this->command->error($e->getMessage());
                     exit(1);

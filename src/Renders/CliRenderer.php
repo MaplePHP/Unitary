@@ -2,6 +2,7 @@
 
 namespace MaplePHP\Unitary\Renders;
 
+use ErrorException;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Unitary\TestItem;
 use MaplePHP\Unitary\TestUnit;
@@ -26,6 +27,7 @@ class CliRenderer extends AbstractRenderHandler
 
     /**
      * {@inheritDoc}
+     * @throws ErrorException
      */
     public function buildBody(): void
     {
@@ -114,7 +116,7 @@ class CliRenderer extends AbstractRenderHandler
      * Failed tests template part
      *
      * @return void
-     * @throws \ErrorException
+     * @throws ErrorException
      */
     protected function showFailedTests(): void
     {

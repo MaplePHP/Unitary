@@ -15,13 +15,6 @@ class RunTestService extends AbstractMainService
 {
     public function run(BodyInterface $handler): ResponseInterface
     {
-
-        // /** @var DispatchConfig $config */
-        // $config = $this->container->get("dispatchConfig");
-        //$this->configs->isSmartSearch();
-
-        // args should be able to be overwritten by configs...
-
         $iterator = new TestDiscovery();
         $iterator->enableVerbose($this->props->verbose);
         $iterator->enableSmartSearch($this->props->smartSearch);

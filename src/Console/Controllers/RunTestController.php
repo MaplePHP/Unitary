@@ -49,7 +49,7 @@ class RunTestController extends DefaultController
                     "php vendor/bin/unitary",
                     "Run all tests in the default path (./tests)"
                 )->addExamples(
-                    "php vendor/bin/unitary --show=b0620ca8ef6ea7598eaed56a530b1983",
+                    "php vendor/bin/unitary --show=b0620ca8ef6ea7598e5ed56a530b1983",
                     "Run the test with a specific hash ID"
                 )->addExamples(
                     "php vendor/bin/unitary --errorsOnly",
@@ -76,7 +76,7 @@ class RunTestController extends DefaultController
      *
      * @return void
      */
-    protected function buildFooter()
+    protected function buildFooter(): void
     {
         $inst = TestDiscovery::getUnitaryInst();
         if($inst !== null) {

@@ -21,6 +21,7 @@ use ReflectionMethod;
 use ReflectionNamedType;
 use ReflectionUnionType;
 use RuntimeException;
+use Throwable;
 
 final class MockBuilder
 {
@@ -48,7 +49,6 @@ final class MockBuilder
         $this->dataTypeMock = new DataTypeMock();
         $this->methods = $this->reflection->getMethods();
         $this->constructorArgs = $args;
-
         $shortClassName = explode("\\", $className);
         $shortClassName = end($shortClassName);
         /**
@@ -57,12 +57,6 @@ final class MockBuilder
          */
         $this->mockClassName = "Unitary_" . uniqid() . "_Mock_" . $shortClassName;
         $this->copyClassName = "Unitary_Mock_" . $shortClassName;
-        /*
-        // Auto fill the Constructor args!
-        $test = $this->reflection->getConstructor();
-        $test = $this->generateMethodSignature($test);
-        $param = $test->getParameters();
-         */
     }
 
     protected function getMockClass(?MockedMethod $methodItem, callable $call, mixed $fallback = null): mixed
@@ -161,7 +155,7 @@ final class MockBuilder
      */
     public function mockDataType(string $dataType, mixed $value, ?string $bindToMethod = null): self
     {
-        if($bindToMethod !== null && $bindToMethod) {
+        if($bindToMethod) {
             $this->dataTypeMock = $this->dataTypeMock->withCustomBoundDefault($bindToMethod,  $dataType, $value);
         } else {
             $this->dataTypeMock = $this->dataTypeMock->withCustomDefault($dataType, $value);
@@ -195,10 +189,6 @@ final class MockBuilder
         ";
 
         eval($code);
-
-        if(!is_string($this->mockClassName)) {
-            throw new Exception("Mock class name is not a string");
-        }
 
         /**
          * @psalm-suppress MixedMethodCall
@@ -350,13 +340,13 @@ final class MockBuilder
     /**
      * Will mocked a handle the thrown exception
      *
-     * @param \Throwable $exception
+     * @param Throwable $exception
      * @return string
      */
-    protected function handleThrownExceptions(\Throwable $exception): string
+    protected function handleThrownExceptions(Throwable $exception): string
     {
         $class = get_class($exception);
-        $reflection = new \ReflectionClass($exception);
+        $reflection = new ReflectionClass($exception);
         $constructor = $reflection->getConstructor();
         $args = [];
         if ($constructor) {
@@ -378,7 +368,7 @@ final class MockBuilder
             }
         }
 
-        return "throw new \\{$class}(" . implode(', ', $args) . ");";
+        return "throw new \\$class(" . implode(', ', $args) . ");";
     }
 
     /**

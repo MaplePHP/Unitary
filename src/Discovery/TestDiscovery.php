@@ -12,14 +12,18 @@ declare(strict_types=1);
 namespace MaplePHP\Unitary\Discovery;
 
 use Closure;
-use MaplePHP\Blunder\Exceptions\BlunderSoftException;
-use MaplePHP\Blunder\Handlers\CliHandler;
-use MaplePHP\Blunder\Run;
-use MaplePHP\Unitary\Unit;
+use ErrorException;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
 use SplFileInfo;
+use Throwable;
+use UnexpectedValueException;
+use MaplePHP\Blunder\Exceptions\BlunderErrorException;
+use MaplePHP\Blunder\Exceptions\BlunderSoftException;
+use MaplePHP\Blunder\Handlers\CliHandler;
+use MaplePHP\Blunder\Run;
+use MaplePHP\Unitary\Unit;
 
 final class TestDiscovery
 {
@@ -42,7 +46,7 @@ final class TestDiscovery
     }
 
     /**
-     * Enabling smart search; If no tests i found Unitary will try to traverse
+     * Enabling smart search; If no tests I found Unitary will try to traverse
      * backwards until a test is found
      *
      * @param bool $smartSearch
@@ -107,7 +111,10 @@ final class TestDiscovery
      * @param string|bool $rootDir
      * @param callable|null $callback
      * @return void
+     * @throws BlunderErrorException
      * @throws BlunderSoftException
+     * @throws ErrorException
+     * @throws Throwable
      */
     public function executeAll(string $path, string|bool $rootDir = false, ?callable $callback = null): void
     {
@@ -117,19 +124,17 @@ final class TestDiscovery
             $path = $rootDir . "/" . $path;
         }
         $files = $this->findFiles($path, $rootDir);
+
+        // Init Blunder error handling framework
+        $this->runBlunder();
+
         if (empty($files) && $this->verbose) {
             throw new BlunderSoftException("Unitary could not find any test files matching the pattern \"" .
                 $this->pattern . "\" in directory \"" . dirname($path) .
                 "\" and its subdirectories.");
         } else {
-
-            // Error Handler library
-            $this->runBlunder();
             foreach ($files as $file) {
-                $call = $this->requireUnitFile((string)$file, $callback);
-                if ($call !== null) {
-                    $call();
-                }
+                $this->executeUnitFile((string)$file, $callback);
             }
         }
     }
@@ -141,45 +146,57 @@ final class TestDiscovery
      * Scope isolation, $this unbinding, State separation, Deferred execution
      *
      * @param string $file The full path to the test file to require.
-     * @return Closure|null A callable that, when invoked, runs the test file.
+     * @param Closure $callback
+     * @return void
+     * @throws ErrorException
+     * @throws BlunderErrorException
+     * @throws Throwable
      */
-    private function requireUnitFile(string $file, callable $callback): ?Closure
+    private function executeUnitFile(string $file, Closure $callback): void
     {
         $verbose = $this->verbose;
+        if (!is_file($file)) {
+            throw new RuntimeException("File \"$file\" do not exists.");
+        }
 
-        $call = function () use ($file, $verbose, $callback): void {
-            if (!is_file($file)) {
-                throw new RuntimeException("File \"$file\" do not exists.");
-            }
+        $instance = $callback($file);
+        if (!$instance instanceof Unit) {
+            throw new UnexpectedValueException('Callable must return ' . Unit::class);
+        }
+        self::$unitary = $instance;
 
-            self::$unitary = $callback($file);
+        $unitInst = $this->isolateRequire($file);
 
-            if(!(self::$unitary instanceof Unit)) {
-                throw new \Exception("An instance of Unit must be return from callable in executeAll.");
-            }
+        if ($unitInst instanceof Unit) {
+            $unitInst->inheritConfigs(self::$unitary);
+            self::$unitary = $unitInst;
+        }
+        $ok = self::$unitary->execute();
 
-            $unitInst = require_once($file);
-            if ($unitInst instanceof Unit) {
-                $unitInst->inheritConfigs(self::$unitary);
-                self::$unitary = $unitInst;
-            }
-            $bool = self::$unitary->execute();
+        if (!$ok && $verbose) {
+            trigger_error(
+                "Could not find any tests inside the test file:\n$file\n\nPossible causes:\n" .
+                "  • There are no test in test group/case.\n" .
+                "  • Unitary could not locate the Unit instance.\n" .
+                "  • You did not use the `group()` function.\n" .
+                "  • You created a new Unit in the test file but did not return it at the end.",
+                E_USER_WARNING
+            );
+        }
 
-            if(!$bool && $verbose) {
-                trigger_error(
-                    "Could not find any tests inside the test file:\n" .
-                    $file . "\n\n" .
-                    "Possible causes:\n" .
-                    "  • There are no test in test group/case.\n" .
-                    "  • Unitary could not locate the Unit instance.\n" .
-                    "  • You did not use the `group()` function.\n" .
-                    "  • You created a new Unit in the test file but did not return it at the end.",
-                    E_USER_WARNING
-                );
-            }
-        };
+    }
 
-        return $call->bindTo(null);
+    /**
+     * Isolate the required file and keep $this out of scope
+     *
+     * @param $file
+     * @return mixed
+     */
+    private function isolateRequire($file): mixed
+    {
+        return (static function (string $f) {
+            return require $f;
+        })($file);
     }
 
     /**

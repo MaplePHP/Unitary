@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace MaplePHP\Unitary\Mocker;
 
+use BadMethodCallException;
+
 class MethodRegistry
 {
     private ?MockBuilder $mocker;
@@ -56,7 +58,7 @@ class MethodRegistry
     public function method(string $name): MockedMethod
     {
         if(is_null($this->mocker)) {
-            throw new \BadMethodCallException("MockBuilder is not set yet.");
+            throw new BadMethodCallException("MockBuilder is not set yet.");
         }
         self::$methods[$this->mocker->getMockedClassName()][$name] = new MockedMethod($this->mocker);
         return self::$methods[$this->mocker->getMockedClassName()][$name];
@@ -71,7 +73,7 @@ class MethodRegistry
     public function get(string $key): MockedMethod|null
     {
         if(is_null($this->mocker)) {
-            throw new \BadMethodCallException("MockBuilder is not set yet.");
+            throw new BadMethodCallException("MockBuilder is not set yet.");
         }
         return self::$methods[$this->mocker->getMockedClassName()][$key] ?? null;
     }
@@ -95,7 +97,7 @@ class MethodRegistry
     public function has(string $name): bool
     {
         if(is_null($this->mocker)) {
-            throw new \BadMethodCallException("MockBuilder is not set yet.");
+            throw new BadMethodCallException("MockBuilder is not set yet.");
         }
         return isset(self::$methods[$this->mocker->getMockedClassName()][$name]);
     }
@@ -103,7 +105,7 @@ class MethodRegistry
     public function getSelected(array $names): array
     {
         if(is_null($this->mocker)) {
-            throw new \BadMethodCallException("MockBuilder is not set yet.");
+            throw new BadMethodCallException("MockBuilder is not set yet.");
         }
 
         return array_filter($names, fn($name) => $this->has($name));

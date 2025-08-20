@@ -13,6 +13,7 @@ namespace MaplePHP\Unitary\Mocker;
 
 use BadMethodCallException;
 use Closure;
+use Exception;
 use InvalidArgumentException;
 use MaplePHP\Unitary\Support\TestUtils\ExecutionWrapper;
 use Throwable;
@@ -66,6 +67,7 @@ final class MockedMethod
      * @param Closure $call The closure to be executed as the wrapper function
      * @return $this Method chain
      * @throws BadMethodCallException When mocker is not set
+     * @throws Exception
      */
     public function wrap(Closure $call): self
     {

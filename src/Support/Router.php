@@ -18,8 +18,8 @@ use MaplePHP\Unitary\Interfaces\RouterInterface;
 class Router implements RouterInterface
 {
     private array $controllers = [];
-    private string $needle = "";
-    private array $args = [];
+    private string $needle;
+    private array $args;
 
     public function __construct(string $needle, array $args)
     {

@@ -6,6 +6,7 @@ use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Http\Stream;
 use MaplePHP\Unitary\Interfaces\BodyInterface;
 use MaplePHP\Unitary\TestCase;
+use RuntimeException;
 
 class AbstractRenderHandler implements BodyInterface
 {
@@ -89,7 +90,7 @@ class AbstractRenderHandler implements BodyInterface
      */
     public function buildBody(): void
     {
-        throw new \RuntimeException('Your handler is missing the execution method.');
+        throw new RuntimeException('Your handler is missing the execution method.');
     }
 
     /**
@@ -98,7 +99,7 @@ class AbstractRenderHandler implements BodyInterface
     public function buildNotes(): void
     {
 
-        throw new \RuntimeException('Your handler is missing the execution method.');
+        throw new RuntimeException('Your handler is missing the execution method.');
     }
 
     /**
@@ -108,15 +109,6 @@ class AbstractRenderHandler implements BodyInterface
     {
         return new Stream();
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function getCommand(): StreamInterface
-    {
-        return new Stream();
-    }
-
 
     /**
      * Make a file path into a title

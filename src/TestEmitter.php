@@ -11,12 +11,14 @@ declare(strict_types=1);
 
 namespace MaplePHP\Unitary;
 
-use MaplePHP\Blunder\Exceptions\BlunderSoftException;
-use MaplePHP\Blunder\Handlers\CliHandler;
+use ErrorException;
+use MaplePHP\Blunder\Exceptions\BlunderErrorException;
 use MaplePHP\Blunder\Interfaces\AbstractHandlerInterface;
 use MaplePHP\Blunder\Run;
 use MaplePHP\Unitary\Interfaces\BodyInterface;
 use MaplePHP\Unitary\Interfaces\TestEmitterInterface;
+use RuntimeException;
+use Throwable;
 
 class TestEmitter implements TestEmitterInterface {
 
@@ -30,13 +32,18 @@ class TestEmitter implements TestEmitterInterface {
         $this->runBlunder($errorHandler);
     }
 
+    /**
+     * @throws Throwable
+     * @throws BlunderErrorException
+     * @throws ErrorException
+     */
     public function emit(string $file): void
     {
 
         $verbose = (bool)($this->args['verbose'] ?? false);
 
         if(!is_file($file)) {
-            throw new \RuntimeException("The test file \"$file\" do not exists.");
+            throw new RuntimeException("The test file \"$file\" do not exists.");
         }
 
         require_once($file);

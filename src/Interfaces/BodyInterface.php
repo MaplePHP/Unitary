@@ -51,7 +51,7 @@ interface BodyInterface
 
 
     /**
-     * Should contain a array with tests
+     * Should contain an array with tests
      *
      * @param array $tests
      * @return void

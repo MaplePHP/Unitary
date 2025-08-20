@@ -15,33 +15,25 @@ namespace MaplePHP\Unitary;
 use Closure;
 use ErrorException;
 use MaplePHP\Blunder\Exceptions\BlunderErrorException;
-use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Unitary\Config\TestConfig;
 use MaplePHP\Unitary\Renders\CliRenderer;
-use MaplePHP\Unitary\Renders\HandlerInterface;
 use MaplePHP\Unitary\Interfaces\BodyInterface;
-use MaplePHP\Unitary\Support\Performance;
 use RuntimeException;
 use Throwable;
 
 final class Unit
 {
-    private ?BodyInterface $handler = null;
-    private Command $command;
-    private string $output = "";
+    private ?BodyInterface $handler;
     private int $index = 0;
     private array $cases = [];
     private bool $disableAllTests = false;
     private bool $executed = false;
-
     private string $file = "";
     private bool $showErrorsOnly = false;
     private ?string $show = null;
     private bool $verbose = false;
     private bool $alwaysShowFiles = false;
-
-    private static ?Unit $current;
     private static int $totalPassedTests = 0;
     private static int $totalTests = 0;
 
@@ -233,11 +225,8 @@ final class Unit
         if ($this->executed || $this->disableAllTests) {
             return false;
         }
-
-        // LOOP through each case
         ob_start();
         //$countCases = count($this->cases);
-
         $handler = $this->handler;
         if(count($this->cases) === 0) {
             return false;
@@ -248,12 +237,11 @@ final class Unit
             if (!($row instanceof TestCase)) {
                 throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestCase.");
             }
-
             $row->dispatchTest($row);
             $tests = $row->runDeferredValidations();
             $checksum = $fileChecksum . $index;
-
             $show = ($row->getConfig()->select === $this->show || $this->show === $checksum);
+
             if(($this->show !== null) && !$show) {
                 continue;
             }
@@ -350,36 +338,6 @@ final class Unit
     public function addTitle(): self
     {
         return $this;
-    }
-
-    // NOTE: Just a test is is not used, and will NOT exist in this class
-    public function performance(Closure $func, ?string $title = null): void
-    {
-        $start = new Performance();
-        $func = $func->bindTo($this);
-        if ($func !== null) {
-            $func($this);
-        }
-        $line = $this->command->getAnsi()->line(80);
-        $this->command->message("");
-        $this->command->message($this->command->getAnsi()->style(["bold", "yellow"], "Performance" . ($title !== null ? " - $title:" : ":")));
-
-        $this->command->message($line);
-        $this->command->message(
-            $this->command->getAnsi()->style(["bold"], "Execution time: ") .
-            ((string)round($start->getExecutionTime(), 3) . " seconds")
-        );
-        $this->command->message(
-            $this->command->getAnsi()->style(["bold"], "Memory Usage: ") .
-            ((string)round($start->getMemoryUsage(), 2) . " KB")
-        );
-        /*
-         $this->command->message(
-            $this->command->getAnsi()->style(["bold", "grey"], "Peak Memory Usage: ") .
-            $this->command->getAnsi()->blue(round($start->getMemoryPeakUsage(), 2) . " KB")
-        );
-         */
-        $this->command->message($line);
     }
 }
 
