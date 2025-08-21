@@ -18,6 +18,7 @@ class AbstractRenderHandler implements BodyInterface
     protected bool $alwaysShowFiles = false;
     protected array $tests;
     protected string $outputBuffer = "";
+    protected StreamInterface $body;
 
     /**
      * {@inheritDoc}
@@ -107,7 +108,7 @@ class AbstractRenderHandler implements BodyInterface
      */
     public function getBody(): StreamInterface
     {
-        return new Stream();
+        return $this->body;
     }
 
     /**

@@ -17,7 +17,9 @@ use BadMethodCallException;
 use Closure;
 use ErrorException;
 use Exception;
+use MaplePHP\Blunder\ExceptionItem;
 use MaplePHP\Blunder\Exceptions\BlunderErrorException;
+use MaplePHP\Blunder\Handlers\CliHandler;
 use MaplePHP\DTO\Format\Str;
 use MaplePHP\DTO\Traverse;
 use MaplePHP\Unitary\Config\TestConfig;
@@ -54,7 +56,9 @@ final class TestCase
     private array $deferredValidation = [];
 
     private ?MockBuilder $mocker = null;
+    private bool $hasError = false;
     private bool $hasAssertError = false;
+    private bool $failFast = false;
 
     /**
      * Initialize a new TestCase instance with an optional message.
@@ -71,6 +75,18 @@ final class TestCase
     }
 
     /**
+     * Will exit script if errors is thrown
+     *
+     * @param bool $failFast
+     * @return $this
+     */
+    public function setFailFast(bool $failFast): self
+    {
+        $this->failFast = $failFast;
+        return $this;
+    }
+
+    /**
      * Bind the test case to the Closure
      *
      * @param Closure $bind
@@ -81,6 +97,26 @@ final class TestCase
     public function bind(Closure $bind, bool $bindToClosure = false): void
     {
         $this->bind = ($bindToClosure) ? $bind->bindTo($this) : $bind;
+    }
+
+    /**
+     * Sets the error flag to true
+     *
+     * @return void
+     */
+    public function setHasError(): void
+    {
+        $this->hasError = true;
+    }
+
+    /**
+     * Gets the current state of the error flag
+     *
+     * @return bool
+     */
+    public function getHasError(): bool
+    {
+        return $this->hasError;
     }
 
     /**
@@ -157,6 +193,7 @@ final class TestCase
     {
         $row = $this;
         $test = $this->bind;
+        $newInst = null;
         if ($test !== null) {
             try {
                 $newInst = $test($this);
@@ -175,7 +212,24 @@ final class TestCase
                 if (str_contains($e->getFile(), "eval()")) {
                     throw new BlunderErrorException($e->getMessage(), (int)$e->getCode());
                 }
-                throw $e;
+                if($this->failFast) {
+                    throw $e;
+                }
+
+                $exceptionItem = new ExceptionItem($e);
+                $cliErrorHandler = new CliHandler();
+
+                $newInst = clone $this;
+                $newInst->setHasError();
+                $msg = "PHP " . $exceptionItem->getSeverityTitle();
+                $newInst->expectAndValidate(
+                    true,
+                    fn () => false,
+                    $msg,
+                    $cliErrorHandler->getSmallErrorMessage($exceptionItem),
+                    $e->getTrace()[0]
+                );
+
             }
             if ($newInst instanceof self) {
                 $row = $newInst;

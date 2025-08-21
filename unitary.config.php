@@ -13,5 +13,6 @@ return [
     'discoverPattern' => false, // string|false (paths (`tests/`) and files (`unitary-*.php`).)
     'show' => false,
     'alwaysShowFiles' => false,
+    'failFast' => false,
     //'exit_error_code' => 1, ??
 ];

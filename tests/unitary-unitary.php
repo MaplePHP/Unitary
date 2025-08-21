@@ -13,14 +13,16 @@ use TestLib\UserService;
 
 $config = TestConfig::make()->withName("unitary");
 
+echo $qwdqewdwq;
+
 group($config->withSubject("Test mocker"), function (TestCase $case) {
+
 
     $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
         $method->method("addFromEmail")
             ->withArguments("john.doe@gmail.com", "John Doe")
             ->called(2);
     });
-
 
     $mail->addFromEmail("john.doe@gmail.com", "John Doe");
 });
@@ -31,6 +33,8 @@ group("Example of assert in group", function(TestCase $case) {
 });
 
 group($config->withSubject("Can not mock final or private"), function(TestCase $case) {
+
+
     $user = $case->mock(UserService::class, function(MethodRegistry $method) {
         $method->method("getUserRole")->willReturn("admin");
         $method->method("getUserType")->willReturn("admin");

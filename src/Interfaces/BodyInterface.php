@@ -92,6 +92,9 @@ interface BodyInterface
     /**
      * Must return a valid PSR Stream
      *
+     * IMPORTANT: For everything to work correctly it should return a active
+     * instance of a PSR stream, instead of returning a new instance.
+     *
      * @return StreamInterface
      */
     public function getBody(): StreamInterface;

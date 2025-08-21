@@ -7,6 +7,7 @@ use MaplePHP\Unitary\Renders\CliRenderer;
 use MaplePHP\Unitary\Console\Services\RunTestService;
 use MaplePHP\Http\Interfaces\ResponseInterface;
 use MaplePHP\Prompts\Themes\Blocks;
+use MaplePHP\Unitary\Renders\JUnitRenderer;
 
 class RunTestController extends DefaultController
 {
@@ -16,6 +17,23 @@ class RunTestController extends DefaultController
     public function run(RunTestService $service): ResponseInterface
     {
         $handler = new CliRenderer($this->command);
+        $response = $service->run($handler);
+        $this->buildFooter();
+        return $response;
+    }
+
+    /**
+     * Main test runner
+     */
+    public function runJUnit(RunTestService $service): ResponseInterface
+    {
+        $xml = new \XMLWriter();
+        $xml->openMemory();
+        $xml->startDocument('1.0', 'UTF-8');
+
+        $xml->startElement('testsuites');
+
+        $handler = new JUnitRenderer($xml);
         $response = $service->run($handler);
         $this->buildFooter();
         return $response;
@@ -85,7 +103,8 @@ class RunTestController extends DefaultController
             $this->command->message(
                 $this->command->getAnsi()->style(
                     ["italic", "grey"],
-                    "Total: " . $inst->getPassedTests() . "/" . $inst->getTotalTests() . " $dot " .
+                    "Tests: " . $inst::getPassedTests() . "/" . $inst::getTotalTests() . " $dot " .
+                    "Errors: " . $inst::getTotalErrors() . " $dot " .
                     "Peak memory usage: " . $peakMemory . " KB"
                 )
             );

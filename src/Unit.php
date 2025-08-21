@@ -16,6 +16,7 @@ namespace MaplePHP\Unitary;
 use Closure;
 use ErrorException;
 use MaplePHP\Blunder\Exceptions\BlunderErrorException;
+use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Unitary\Config\TestConfig;
 use MaplePHP\Unitary\Renders\CliRenderer;
@@ -32,11 +33,13 @@ final class Unit
     private bool $executed = false;
     private string $file = "";
     private bool $showErrorsOnly = false;
+    private bool $failFast = false;
     private ?string $show = null;
     private bool $verbose = false;
     private bool $alwaysShowFiles = false;
     private static int $totalPassedTests = 0;
     private static int $totalTests = 0;
+    private static int $totalErrors = 0;
 
     /**
      * Initialize Unit test instance with optional handler
@@ -46,6 +49,11 @@ final class Unit
     public function __construct(BodyInterface|null $handler = null)
     {
         $this->handler = ($handler === null) ? new CliRenderer(new Command()) : $handler;
+    }
+
+    public function getBody(): StreamInterface
+    {
+        return $this->handler->getBody();
     }
 
     /**
@@ -59,6 +67,18 @@ final class Unit
     public function setFile(string $file): Unit
     {
         $this->file = $file;
+        return $this;
+    }
+
+    /**
+     * Will exit script if errors is thrown
+     *
+     * @param bool $failFast
+     * @return $this
+     */
+    public function setFailFast(bool $failFast): Unit
+    {
+        $this->failFast = $failFast;
         return $this;
     }
 
@@ -120,6 +140,7 @@ final class Unit
         $this->setFile($inst->file);
         $this->setShow($inst->show);
         $this->setShowErrorsOnly($inst->showErrorsOnly);
+        $this->setFailFast($inst->failFast);
         $this->setVerbose($inst->verbose);
         $this->setAlwaysShowFiles($inst->alwaysShowFiles);
         return $this;
@@ -153,6 +174,28 @@ final class Unit
     public static function getTotalTests(): int
     {
         return self::$totalTests;
+    }
+
+    /**
+     * Get the total number of error
+     *
+     * NOTE: That an error is a PHP failure or a exception that has been thrown.
+     *
+     * @return int
+     */
+    public static function getTotalErrors(): int
+    {
+        return self::$totalErrors;
+    }
+
+    /**
+     * Increment error count
+     *
+     * @return void
+     */
+    public static function incrementErrors(): void
+    {
+        self::$totalErrors++;
     }
 
     /**
@@ -259,6 +302,10 @@ final class Unit
             $handler->setAlwaysShowFiles($this->alwaysShowFiles);
             $handler->buildBody();
 
+            if($row->getHasError()) {
+                self::incrementErrors();
+            }
+
             // Important to add test from skip as successfully count to make sure that
             // the total passed tests are correct, and it will not exit with code 1
             self::$totalPassedTests += ($row->getConfig()->skip) ? $row->getTotal() : $row->getCount();
@@ -307,6 +354,7 @@ final class Unit
     protected function addCase(string|TestConfig $message, Closure $expect, bool $bindToClosure = false): void
     {
         $testCase = new TestCase($message);
+        $testCase->setFailFast($this->failFast);
         $testCase->bind($expect, $bindToClosure);
         $this->cases[$this->index] = $testCase;
         $this->index++;

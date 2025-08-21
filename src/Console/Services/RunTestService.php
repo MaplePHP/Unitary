@@ -17,6 +17,7 @@ class RunTestService extends AbstractMainService
     {
         $iterator = new TestDiscovery();
         $iterator->enableVerbose($this->props->verbose);
+        $iterator->enableFailFast($this->props->failFast);
         $iterator->enableSmartSearch($this->props->smartSearch);
         $iterator->addExcludePaths($this->props->exclude);
         $iterator->setDiscoverPattern($this->props->discoverPattern);
@@ -55,6 +56,7 @@ class RunTestService extends AbstractMainService
         $iterator->executeAll($testDir, $defaultPath, function ($file) use ($handler) {
             $unit = new Unit($handler);
             $unit->setShowErrorsOnly($this->props->errorsOnly);
+            $unit->setFailFast($this->props->failFast);
             $unit->setShow($this->props->show);
             $unit->setFile($file);
             $unit->setVerbose($this->props->verbose);

@@ -14,6 +14,7 @@ namespace MaplePHP\Unitary\Discovery;
 
 use Closure;
 use ErrorException;
+use MaplePHP\Blunder\ExceptionItem;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
@@ -30,6 +31,7 @@ final class TestDiscovery
 {
     private string $pattern = '*/unitary-*.php';
     private bool $verbose = false;
+    private bool $failFast = false;
     private bool $smartSearch = false;
     private ?array $exclude = null;
     private static ?Unit $unitary = null;
@@ -43,6 +45,18 @@ final class TestDiscovery
     public function enableVerbose(bool $isVerbose): self
     {
         $this->verbose = $isVerbose;
+        return $this;
+    }
+
+    /**
+     * Enable verbose flag which will show errors that should not always be visible
+     *
+     * @param bool $failFast
+     * @return $this
+     */
+    public function enableFailFast(bool $failFast): self
+    {
+        $this->failFast = $failFast;
         return $this;
     }
 
@@ -135,7 +149,31 @@ final class TestDiscovery
                 "\" and its subdirectories.");
         } else {
             foreach ($files as $file) {
-                $this->executeUnitFile((string)$file, $callback);
+                try {
+                    if (!is_file($file)) {
+                        throw new RuntimeException("File \"$file\" do not exists.");
+                    }
+
+                    $instance = $callback($file);
+                    if (!$instance instanceof Unit) {
+                        throw new UnexpectedValueException('Callable must return ' . Unit::class);
+                    }
+                    self::$unitary = $instance;
+
+                    $this->executeUnitFile((string)$file);
+
+                } catch (\Throwable $exception) {
+
+                    if ($this->failFast) {
+                        throw $exception;
+                    }
+
+                    $exceptionItem = new ExceptionItem($exception);
+                    $cliErrorHandler = new CliHandler();
+                    self::getUnitaryInst()->getBody()->write($cliErrorHandler->getErrorMessage($exceptionItem));
+                    self::getUnitaryInst()::incrementErrors();
+                }
+
             }
         }
     }
@@ -153,18 +191,9 @@ final class TestDiscovery
      * @throws BlunderErrorException
      * @throws Throwable
      */
-    private function executeUnitFile(string $file, Closure $callback): void
+    private function executeUnitFile(string $file): void
     {
         $verbose = $this->verbose;
-        if (!is_file($file)) {
-            throw new RuntimeException("File \"$file\" do not exists.");
-        }
-
-        $instance = $callback($file);
-        if (!$instance instanceof Unit) {
-            throw new UnexpectedValueException('Callable must return ' . Unit::class);
-        }
-        self::$unitary = $instance;
 
         $unitInst = $this->isolateRequire($file);
 
@@ -318,7 +347,7 @@ final class TestDiscovery
     {
         $run = new Run(new CliHandler());
         $run->severity()
-            ->excludeSeverityLevels([E_USER_WARNING])
+            ->excludeSeverityLevels([E_USER_WARNING, E_NOTICE, E_USER_NOTICE, E_DEPRECATED, E_USER_DEPRECATED])
             ->redirectTo(function () {
                 // Let PHP’s default error handler process excluded severities
                 return false;

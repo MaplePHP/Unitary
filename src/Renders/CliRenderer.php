@@ -3,10 +3,12 @@
 namespace MaplePHP\Unitary\Renders;
 
 use ErrorException;
+use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Unitary\TestItem;
 use MaplePHP\Unitary\TestUnit;
 use MaplePHP\Unitary\Support\Helpers;
+use MaplePHP\Unitary\Unit;
 use RuntimeException;
 
 class CliRenderer extends AbstractRenderHandler
@@ -23,6 +25,8 @@ class CliRenderer extends AbstractRenderHandler
     public function __construct(Command $command)
     {
         $this->command = $command;
+        // Pass the active stream to `AbstractRenderHandler::getBody()`
+        $this->body = $this->command->getStream();
     }
 
     /**
@@ -96,7 +100,7 @@ class CliRenderer extends AbstractRenderHandler
         $this->command->message("");
 
         $passed = $this->command->getAnsi()->bold("Passed: ");
-        if ($this->case->getHasAssertError()) {
+        if ($this->case->getHasAssertError() || $this->case->getHasError()) {
             $passed .= $this->command->getAnsi()->style(["grey"], "N/A");
         } else {
             $passed .= $this->command->getAnsi()->style([$this->color], $this->case->getCount() . "/" . $this->case->getTotal());

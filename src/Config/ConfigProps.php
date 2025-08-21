@@ -27,6 +27,7 @@ class ConfigProps extends AbstractConfigProps
     public ?bool $alwaysShowFiles = null;
     public ?bool $errorsOnly = null;
     public ?bool $smartSearch = null;
+    public ?bool $failFast = null;
 
     /**
      * Hydrate the properties/object with expected data, and handle unexpected data
@@ -64,6 +65,9 @@ class ConfigProps extends AbstractConfigProps
                 break;
             case 'errorsOnly':
                 $this->errorsOnly = $this->dataToBool($value);
+                break;
+            case 'failFast':
+                $this->failFast = $this->dataToBool($value);
                 break;
         }
     }
