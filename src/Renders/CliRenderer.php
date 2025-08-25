@@ -193,7 +193,11 @@ class CliRenderer extends AbstractRenderHandler
         }
         if ($this->case->getConfig()->skip) {
             $this->color = "yellow";
-            $this->flag = $this->command->getAnsi()->style(['yellowBg', 'black'], " SKIP ");
+            $this->flag = $this->command->getAnsi()->style(['brightYellowBg', 'black'], " SKIP ");
+        }
+
+        if ($this->case->getHasError()) {
+            $this->flag = $this->command->getAnsi()->style(['redBg', 'brightWhite'], " ERROR ");
         }
     }
 }

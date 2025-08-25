@@ -15,6 +15,8 @@ namespace MaplePHP\Unitary\Discovery;
 use Closure;
 use ErrorException;
 use MaplePHP\Blunder\ExceptionItem;
+use MaplePHP\Unitary\Support\Helpers;
+use MaplePHP\Unitary\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
@@ -153,25 +155,23 @@ final class TestDiscovery
                     if (!is_file($file)) {
                         throw new RuntimeException("File \"$file\" do not exists.");
                     }
-
                     $instance = $callback($file);
                     if (!$instance instanceof Unit) {
                         throw new UnexpectedValueException('Callable must return ' . Unit::class);
                     }
                     self::$unitary = $instance;
-
                     $this->executeUnitFile((string)$file);
 
                 } catch (\Throwable $exception) {
-
                     if ($this->failFast) {
                         throw $exception;
                     }
-
-                    $exceptionItem = new ExceptionItem($exception);
-                    $cliErrorHandler = new CliHandler();
-                    self::getUnitaryInst()->getBody()->write($cliErrorHandler->getErrorMessage($exceptionItem));
-                    self::getUnitaryInst()::incrementErrors();
+                    self::$unitary->group("PHP error", function (TestCase $case) use ($exception) {
+                        $newInst = $case->createTraceError($exception);
+                        $newInst->setHasError();
+                        return $newInst;
+                    });
+                    self::$unitary->execute();
                 }
 
             }

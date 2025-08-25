@@ -10,14 +10,9 @@ use MaplePHP\Unitary\{Config\TestConfig, Expect, Mocker\MethodRegistry, TestCase
 use TestLib\Mailer;
 use TestLib\UserService;
 
-
 $config = TestConfig::make()->withName("unitary");
 
-echo $qwdqewdwq;
-
 group($config->withSubject("Test mocker"), function (TestCase $case) {
-
-
     $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
         $method->method("addFromEmail")
             ->withArguments("john.doe@gmail.com", "John Doe")
@@ -27,13 +22,11 @@ group($config->withSubject("Test mocker"), function (TestCase $case) {
     $mail->addFromEmail("john.doe@gmail.com", "John Doe");
 });
 
-
 group("Example of assert in group", function(TestCase $case) {
     assert(1 === 2, "This is a error message");
 });
 
 group($config->withSubject("Can not mock final or private"), function(TestCase $case) {
-
 
     $user = $case->mock(UserService::class, function(MethodRegistry $method) {
         $method->method("getUserRole")->willReturn("admin");

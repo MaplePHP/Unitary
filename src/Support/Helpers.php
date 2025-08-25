@@ -14,10 +14,26 @@ namespace MaplePHP\Unitary\Support;
 
 use ErrorException;
 use Exception;
+use MaplePHP\Blunder\ExceptionItem;
+use MaplePHP\Blunder\Handlers\CliHandler;
 use MaplePHP\DTO\Format\Str;
 
 final class Helpers
 {
+    /**
+     * Get a pretty exception message from a Throwable instance
+     *
+     * @param \Throwable $exception
+     * @param ExceptionItem|null $exceptionItem Use ExceptionItem to get more options
+     * @return string
+     */
+    public static function getExceptionMessage(\Throwable $exception, ?ExceptionItem &$exceptionItem = null): string
+    {
+        $exceptionItem = new ExceptionItem($exception);
+        $cliErrorHandler = new CliHandler();
+        return $cliErrorHandler->getSmallErrorMessage($exceptionItem);
+    }
+
     /**
      * Used to stringify arguments to show in a test
      *

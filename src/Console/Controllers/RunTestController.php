@@ -103,7 +103,7 @@ class RunTestController extends DefaultController
             $this->command->message(
                 $this->command->getAnsi()->style(
                     ["italic", "grey"],
-                    "Tests: " . $inst::getPassedTests() . "/" . $inst::getTotalTests() . " $dot " .
+                    "Total tests: " . $inst::getPassedTests() . "/" . $inst::getTotalTests() . " $dot " .
                     "Errors: " . $inst::getTotalErrors() . " $dot " .
                     "Peak memory usage: " . $peakMemory . " KB"
                 )

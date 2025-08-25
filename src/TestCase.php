@@ -17,15 +17,14 @@ use BadMethodCallException;
 use Closure;
 use ErrorException;
 use Exception;
-use MaplePHP\Blunder\ExceptionItem;
 use MaplePHP\Blunder\Exceptions\BlunderErrorException;
-use MaplePHP\Blunder\Handlers\CliHandler;
 use MaplePHP\DTO\Format\Str;
 use MaplePHP\DTO\Traverse;
 use MaplePHP\Unitary\Config\TestConfig;
 use MaplePHP\Unitary\Mocker\MethodRegistry;
 use MaplePHP\Unitary\Mocker\MockBuilder;
 use MaplePHP\Unitary\Mocker\MockController;
+use MaplePHP\Unitary\Support\Helpers;
 use MaplePHP\Unitary\Support\TestUtils\ExecutionWrapper;
 use MaplePHP\Validate\Validator;
 use ReflectionClass;
@@ -54,7 +53,6 @@ final class TestCase
     private ?string $error = null;
     private ?string $warning = null;
     private array $deferredValidation = [];
-
     private ?MockBuilder $mocker = null;
     private bool $hasError = false;
     private bool $hasAssertError = false;
@@ -198,16 +196,9 @@ final class TestCase
             try {
                 $newInst = $test($this);
             } catch (AssertionError $e) {
-                $newInst = clone $this;
+                $newInst = $this->createTraceError($e, "Assertion failed");
                 $newInst->setHasAssertError();
-                $msg = "Assertion failed";
-                $newInst->expectAndValidate(
-                    true,
-                    fn () => false,
-                    $msg,
-                    $e->getMessage(),
-                    $e->getTrace()[0]
-                );
+
             } catch (Throwable $e) {
                 if (str_contains($e->getFile(), "eval()")) {
                     throw new BlunderErrorException($e->getMessage(), (int)$e->getCode());
@@ -215,21 +206,8 @@ final class TestCase
                 if($this->failFast) {
                     throw $e;
                 }
-
-                $exceptionItem = new ExceptionItem($e);
-                $cliErrorHandler = new CliHandler();
-
-                $newInst = clone $this;
+                $newInst = $this->createTraceError($e);
                 $newInst->setHasError();
-                $msg = "PHP " . $exceptionItem->getSeverityTitle();
-                $newInst->expectAndValidate(
-                    true,
-                    fn () => false,
-                    $msg,
-                    $cliErrorHandler->getSmallErrorMessage($exceptionItem),
-                    $e->getTrace()[0]
-                );
-
             }
             if ($newInst instanceof self) {
                 $row = $newInst;
@@ -347,6 +325,29 @@ final class TestCase
         $this->test[] = $test;
         $this->error = null;
         return $this;
+    }
+
+    /**
+     * Will assert a php error
+     *
+     * @param Throwable $exception
+     * @param string|null $title
+     * @return $this
+     * @throws ErrorException
+     */
+    public function createTraceError(Throwable $exception, ?string $title = null): self
+    {
+        $newInst = clone $this;
+        $message = Helpers::getExceptionMessage($exception, $exceptionItem);
+        $title = ($title !== null) ? $title : "PHP " . $exceptionItem->getSeverityTitle();
+        $newInst->expectAndValidate(
+            true,
+            fn () => false,
+            $title,
+            $message,
+            $exception->getTrace()[0]
+        );
+        return $newInst;
     }
 
     /**
