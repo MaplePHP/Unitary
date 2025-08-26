@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MaplePHP\Unitary\Config;
 
+use InvalidArgumentException;
 use MaplePHP\Emitron\AbstractConfigProps;
 
 /**
@@ -23,6 +24,7 @@ class ConfigProps extends AbstractConfigProps
     public ?string $exclude = null;
     public ?string $show = null;
     public ?string $timezone = null;
+    public ?string $local = null;
     public ?int $exitCode = null;
     public ?bool $verbose = null;
     public ?bool $alwaysShowFiles = null;
@@ -56,6 +58,15 @@ class ConfigProps extends AbstractConfigProps
             case 'timezone':
                 // The default timezone is 'CET'
                 $this->timezone = (!is_string($value) || $value === '') ? 'Europe/Stockholm' : $value;
+                break;
+            case 'local':
+                // The default timezone is 'CET'
+                $this->local = (!is_string($value) || $value === '') ? 'en_US' : $value;
+                if(!$this->isValidLocale($this->local)) {
+                    throw new InvalidArgumentException(
+                        "Invalid locale '{$this->local}'. Expected format like 'en_US' (language_COUNTRY)."
+                    );
+                }
                 break;
             case 'exitCode':
                 $this->exitCode = ($value === null) ? null : (int)$value;

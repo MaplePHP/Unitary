@@ -37,8 +37,8 @@ $request = new ServerRequest(new Uri($env->getUriParts([
 
 $kernel = new Kernel(new Container(), [
     AddCommandMiddleware::class,
-    LocalMiddleware::class,
     ConfigPropsMiddleware::class,
+    LocalMiddleware::class,
     CliInitMiddleware::class
 ]);
 $kernel->run($request);

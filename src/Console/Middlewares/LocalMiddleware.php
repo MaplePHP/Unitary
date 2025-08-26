@@ -2,13 +2,14 @@
 
 namespace MaplePHP\Unitary\Console\Middlewares;
 
+use MaplePHP\Container\Interfaces\ContainerExceptionInterface;
 use MaplePHP\Container\Interfaces\ContainerInterface;
+use MaplePHP\Container\Interfaces\NotFoundExceptionInterface;
 use MaplePHP\DTO\Format\Clock;
 use MaplePHP\Emitron\Contracts\MiddlewareInterface;
 use MaplePHP\Emitron\Contracts\RequestHandlerInterface;
 use MaplePHP\Http\Interfaces\ResponseInterface;
 use MaplePHP\Http\Interfaces\ServerRequestInterface;
-use MaplePHP\Prompts\Command;
 
 class LocalMiddleware implements MiddlewareInterface
 {
@@ -32,14 +33,14 @@ class LocalMiddleware implements MiddlewareInterface
      * @param RequestHandlerInterface $handler
      * @return ResponseInterface
      * @throws \DateInvalidTimeZoneException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-
-
-        Clock::setDefaultLocale("sv_SE");
-        Clock::setDefaultTimezone("Europe/Stockholm");
-
+        $props = $this->container->get("props");
+        Clock::setDefaultLocale($props->local);
+        Clock::setDefaultTimezone($props->timezone);
         return $handler->handle($request);
     }
 }

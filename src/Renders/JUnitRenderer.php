@@ -3,6 +3,7 @@
 namespace MaplePHP\Unitary\Renders;
 
 use ErrorException;
+use MaplePHP\DTO\Format\Clock;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Unitary\TestItem;
 use MaplePHP\Unitary\TestUnit;
@@ -39,11 +40,11 @@ class JUnitRenderer extends AbstractRenderHandler
         $this->xml->writeAttribute('failures', (string)$this->case->getFailedCount());
         $this->xml->writeAttribute('errors', (string)$this->case->getErrors());
         $this->xml->writeAttribute('skipped', (string)$this->case->getSkipped());
-        $this->xml->writeAttribute('skipped', (string)$this->case->getSkipped());
 
         var_dump($this->case->getCount());
         var_dump($this->case->getFailedCount());
         var_dump($this->case->getErrors());
+        var_dump(Clock::value("now")->dateTime());
         die;
         if (($this->show || !$this->case->getConfig()->skip)) {
             // Show possible warnings

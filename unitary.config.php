@@ -13,6 +13,7 @@ return [
     'discoverPattern' => false, // string|false (paths (`tests/`) and files (`unitary-*.php`).)
     'show' => false,
     'timezone' => 'Europe/Stockholm',
+    'local' => 'en_US',
     'alwaysShowFiles' => false,
     'failFast' => false, // bool
     //'exit_error_code' => 1, ??

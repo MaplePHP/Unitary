@@ -2,13 +2,13 @@
 
 namespace MaplePHP\Unitary\Console\Middlewares;
 
+use MaplePHP\Container\Interfaces\ContainerExceptionInterface;
 use MaplePHP\Container\Interfaces\ContainerInterface;
-use MaplePHP\DTO\Format\Clock;
+use MaplePHP\Container\Interfaces\NotFoundExceptionInterface;
 use MaplePHP\Emitron\Contracts\MiddlewareInterface;
 use MaplePHP\Emitron\Contracts\RequestHandlerInterface;
 use MaplePHP\Http\Interfaces\ResponseInterface;
 use MaplePHP\Http\Interfaces\ServerRequestInterface;
-use MaplePHP\Prompts\Command;
 use MaplePHP\Unitary\Config\ConfigProps;
 use Throwable;
 
@@ -35,7 +35,8 @@ class ConfigPropsMiddleware implements MiddlewareInterface
      * @param ServerRequestInterface $request
      * @param RequestHandlerInterface $handler
      * @return ResponseInterface
-     * @throws \DateInvalidTimeZoneException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
@@ -52,6 +53,8 @@ class ConfigPropsMiddleware implements MiddlewareInterface
      * along with a warning about the unknown properties.
      *
      * @return ConfigProps
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     private function getInitProps(): ConfigProps
     {
