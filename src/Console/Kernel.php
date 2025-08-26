@@ -18,7 +18,7 @@ use Exception;
 use MaplePHP\Emitron\Contracts\DispatchConfigInterface;
 use MaplePHP\Emitron\DispatchConfig;
 use MaplePHP\Http\Interfaces\ServerRequestInterface;
-use MaplePHP\Unitary\Console\Middlewares\AddCommandMiddleware;
+use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Unitary\Support\Router;
 use MaplePHP\Container\Interfaces\ContainerInterface;
 use MaplePHP\Emitron\EmitronKernel;
@@ -47,12 +47,6 @@ class Kernel
         $this->container = $container;
         $this->userMiddlewares = $userMiddlewares;
         $this->config = $dispatchConfig;
-
-        // This middleware is used in the DefaultController, which is why I always load it,
-        // It will not change any response but will load a CLI helper Command library
-        if (!in_array(AddCommandMiddleware::class, $this->userMiddlewares)) {
-            $this->userMiddlewares[] = AddCommandMiddleware::class;
-        }
         EmitronKernel::setConfigFilePath(self::CONFIG_FILE_PATH);
     }
 
@@ -60,16 +54,17 @@ class Kernel
      * This will run Emitron kernel with Unitary configuration
      *
      * @param ServerRequestInterface $request
+     * @param StreamInterface|null $stream
      * @return void
      * @throws Exception
      */
-    public function run(ServerRequestInterface $request): void
+    public function run(ServerRequestInterface $request, ?StreamInterface $stream = null): void
     {
         if ($this->config === null) {
             $this->config = $this->configuration($request);
         }
         $kernel = new EmitronKernel($this->container, $this->userMiddlewares, $this->config);
-        $kernel->run($request);
+        $kernel->run($request, $stream);
     }
 
     /**

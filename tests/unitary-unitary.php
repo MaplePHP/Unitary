@@ -12,6 +12,7 @@ use TestLib\UserService;
 
 $config = TestConfig::make()->withName("unitary");
 
+
 group($config->withSubject("Test mocker"), function (TestCase $case) {
     $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
         $method->method("addFromEmail")

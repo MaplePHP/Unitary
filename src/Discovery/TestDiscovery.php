@@ -168,7 +168,7 @@ final class TestDiscovery
                     }
                     self::$unitary->group("PHP error", function (TestCase $case) use ($exception) {
                         $newInst = $case->createTraceError($exception);
-                        $newInst->setHasError();
+                        $newInst->incrementError();
                         return $newInst;
                     });
                     self::$unitary->execute();

@@ -3,41 +3,43 @@
 namespace MaplePHP\Unitary\Console\Middlewares;
 
 use MaplePHP\Container\Interfaces\ContainerInterface;
+use MaplePHP\DTO\Format\Clock;
 use MaplePHP\Emitron\Contracts\MiddlewareInterface;
 use MaplePHP\Emitron\Contracts\RequestHandlerInterface;
 use MaplePHP\Http\Interfaces\ResponseInterface;
 use MaplePHP\Http\Interfaces\ServerRequestInterface;
-use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Prompts\Command;
 
-class AddCommandMiddleware implements MiddlewareInterface
+class LocalMiddleware implements MiddlewareInterface
 {
     private ContainerInterface $container;
-    private StreamInterface $stream;
 
     /**
-     * Get the active Container and Stream instance with the Dependency injector
+     * Get the active Container instance with the Dependency injector
      *
      * @param ContainerInterface $container
-     * @param StreamInterface $stream
      */
-    public function __construct(ContainerInterface $container, StreamInterface $stream)
+    public function __construct(ContainerInterface $container)
     {
         $this->container = $container;
-        $this->stream = $stream;
     }
 
     /**
-     * Will bind current Stream to the Command CLI library class
+     * Will bind current Response and Stream to the Command CLI library class
      * this is initialized and passed to the Container
      *
      * @param ServerRequestInterface $request
      * @param RequestHandlerInterface $handler
      * @return ResponseInterface
+     * @throws \DateInvalidTimeZoneException
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $this->container->set("command", new Command($this->stream));
+
+
+        Clock::setDefaultLocale("sv_SE");
+        Clock::setDefaultTimezone("Europe/Stockholm");
+
         return $handler->handle($request);
     }
 }

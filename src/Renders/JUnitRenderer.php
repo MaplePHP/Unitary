@@ -37,9 +37,13 @@ class JUnitRenderer extends AbstractRenderHandler
         $this->xml->writeAttribute('name', $this->formatFileTitle($this->suitName) . " - " . (string)$this->case->getMessage());
         $this->xml->writeAttribute('tests', (string)$this->case->getCount());
         $this->xml->writeAttribute('failures', (string)$this->case->getFailedCount());
+        $this->xml->writeAttribute('errors', (string)$this->case->getErrors());
+        $this->xml->writeAttribute('skipped', (string)$this->case->getSkipped());
+        $this->xml->writeAttribute('skipped', (string)$this->case->getSkipped());
 
         var_dump($this->case->getCount());
         var_dump($this->case->getFailedCount());
+        var_dump($this->case->getErrors());
         die;
         if (($this->show || !$this->case->getConfig()->skip)) {
             // Show possible warnings

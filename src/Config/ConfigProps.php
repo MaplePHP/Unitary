@@ -22,12 +22,14 @@ class ConfigProps extends AbstractConfigProps
     public ?string $discoverPattern = null;
     public ?string $exclude = null;
     public ?string $show = null;
+    public ?string $timezone = null;
     public ?int $exitCode = null;
     public ?bool $verbose = null;
     public ?bool $alwaysShowFiles = null;
     public ?bool $errorsOnly = null;
     public ?bool $smartSearch = null;
     public ?bool $failFast = null;
+
 
     /**
      * Hydrate the properties/object with expected data, and handle unexpected data
@@ -50,6 +52,10 @@ class ConfigProps extends AbstractConfigProps
                 break;
             case 'show':
                 $this->show = (!is_string($value) || $value === '') ? null : $value;
+                break;
+            case 'timezone':
+                // The default timezone is 'CET'
+                $this->timezone = (!is_string($value) || $value === '') ? 'Europe/Stockholm' : $value;
                 break;
             case 'exitCode':
                 $this->exitCode = ($value === null) ? null : (int)$value;

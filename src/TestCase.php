@@ -54,7 +54,8 @@ final class TestCase
     private ?string $warning = null;
     private array $deferredValidation = [];
     private ?MockBuilder $mocker = null;
-    private bool $hasError = false;
+    private int $hasError = 0;
+    private int $skipped = 0;
     private bool $hasAssertError = false;
     private bool $failFast = false;
 
@@ -97,14 +98,55 @@ final class TestCase
         $this->bind = ($bindToClosure) ? $bind->bindTo($this) : $bind;
     }
 
+
+    /**
+     * Get the total number of skipped group test
+     *
+     * @return int
+     */
+    public function getSkipped(): int
+    {
+        return $this->skipped;
+    }
+
+    /**
+     * Check if group has any skipped tests
+     *
+     * @return bool
+     */
+    public function hasSkipped(): bool
+    {
+        return $this->skipped > 0;
+    }
+
+    /**
+     * Increment skipped test
+     *
+     * @return void
+     */
+    public function incrementSkipped(): void
+    {
+        $this->skipped++;
+    }
+
     /**
      * Sets the error flag to true
      *
      * @return void
      */
-    public function setHasError(): void
+    public function incrementError(): void
     {
-        $this->hasError = true;
+        $this->hasError++;
+    }
+
+    /**
+     * Gets the errors count
+     *
+     * @return int
+     */
+    public function getErrors(): int
+    {
+        return $this->hasError;
     }
 
     /**
@@ -114,7 +156,7 @@ final class TestCase
      */
     public function getHasError(): bool
     {
-        return $this->hasError;
+        return ($this->hasError > 0);
     }
 
     /**
@@ -195,6 +237,11 @@ final class TestCase
         if ($test !== null) {
             try {
                 $newInst = $test($this);
+                $inst = ($newInst instanceof self) ? $newInst : $this;
+                if($inst->getConfig()->skip) {
+                    $inst->incrementSkipped();
+                }
+
             } catch (AssertionError $e) {
                 $newInst = $this->createTraceError($e, "Assertion failed");
                 $newInst->setHasAssertError();
@@ -207,7 +254,7 @@ final class TestCase
                     throw $e;
                 }
                 $newInst = $this->createTraceError($e);
-                $newInst->setHasError();
+                $newInst->incrementError();
             }
             if ($newInst instanceof self) {
                 $row = $newInst;

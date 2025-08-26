@@ -12,6 +12,7 @@ return [
     'exclude' => false, // false|string|array<int, string>
     'discoverPattern' => false, // string|false (paths (`tests/`) and files (`unitary-*.php`).)
     'show' => false,
+    'timezone' => 'Europe/Stockholm',
     'alwaysShowFiles' => false,
     'failFast' => false, // bool
     //'exit_error_code' => 1, ??
