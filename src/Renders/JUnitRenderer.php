@@ -27,41 +27,51 @@ class JUnitRenderer extends AbstractRenderHandler
 
     /**
      * {@inheritDoc}
-     * @throws ErrorException
+     * @throws \Exception
      */
     public function buildBody(): void
     {
 
 
-        $this->xml->startElement('testsuite');
+        $title = $this->formatFileTitle($this->suitName);
+        $msg = (string)$this->case->getMessage();
 
-        $this->xml->writeAttribute('name', $this->formatFileTitle($this->suitName) . " - " . (string)$this->case->getMessage());
+        $this->xml->startElement('testsuite');
+        $this->xml->writeAttribute('name', $title . " - " . $msg);
         $this->xml->writeAttribute('tests', (string)$this->case->getCount());
         $this->xml->writeAttribute('failures', (string)$this->case->getFailedCount());
         $this->xml->writeAttribute('errors', (string)$this->case->getErrors());
         $this->xml->writeAttribute('skipped', (string)$this->case->getSkipped());
+        $this->xml->writeAttribute('time', (string)$this->case->getDuration(6));
+        $this->xml->writeAttribute('timestamp', Clock::value("now")->iso());
 
-        var_dump($this->case->getCount());
+
+        $this->xml->endElement();
+
+        /*
+         var_dump($this->case->getCount());
         var_dump($this->case->getFailedCount());
         var_dump($this->case->getErrors());
+        var_dump($this->case->getDuration(6));
         var_dump(Clock::value("now")->dateTime());
         die;
         if (($this->show || !$this->case->getConfig()->skip)) {
             // Show possible warnings
-            /*
-             if ($this->case->getWarning()) {
-                $this->xml->message("");
-                $this->xml->message(
-                    $this->xml->getAnsi()->style(["italic", "yellow"], $this->case->getWarning())
-                );
-            }
-             */
+
+//             if ($this->case->getWarning()) {
+//                $this->xml->message("");
+//                $this->xml->message(
+//                    $this->xml->getAnsi()->style(["italic", "yellow"], $this->case->getWarning())
+//                );
+//            }
+
 
             // Show Failed tests
             $this->showFailedTests();
         }
 
         $this->showFooter();
+         */
     }
 
     /**

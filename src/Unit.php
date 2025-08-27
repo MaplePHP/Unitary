@@ -37,6 +37,7 @@ final class Unit
     private ?string $show = null;
     private bool $verbose = false;
     private bool $alwaysShowFiles = false;
+    private static float $duration = 0;
     private static int $totalPassedTests = 0;
     private static int $totalTests = 0;
     private static int $totalErrors = 0;
@@ -177,6 +178,16 @@ final class Unit
     }
 
     /**
+     * Get the total number of failed tests
+     *
+     * @return int
+     */
+    public static function getTotalFailed(): int
+    {
+        return self::$totalTests-self::$totalPassedTests;
+    }
+
+    /**
      * Get the total number of error
      *
      * NOTE: That an error is a PHP failure or a exception that has been thrown.
@@ -196,6 +207,20 @@ final class Unit
     public static function incrementErrors(): void
     {
         self::$totalErrors++;
+    }
+
+    /**
+     * Get total duration of all tests
+     *
+     * @param int $precision
+     * @return float
+     */
+    public static function getDuration(int $precision = 0): float
+    {
+        if($precision > 0) {
+            return round(self::$duration, $precision);
+        }
+        return self::$duration;
     }
 
     /**
@@ -275,7 +300,6 @@ final class Unit
         if (count($this->cases) === 0) {
             return false;
         }
-
         $fileChecksum = md5($this->file);
         foreach ($this->cases as $index => $row) {
             if (!($row instanceof TestCase)) {
@@ -310,6 +334,7 @@ final class Unit
             // the total passed tests are correct, and it will not exit with code 1
             self::$totalPassedTests += ($row->getConfig()->skip) ? $row->getTotal() : $row->getCount();
             self::$totalTests += $row->getTotal();
+            self::$duration += $row->getDuration();
         }
         $out = $handler->outputBuffer();
         if ($out) {

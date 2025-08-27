@@ -27,17 +27,35 @@ class RunTestController extends DefaultController
      */
     public function runJUnit(RunTestService $service): ResponseInterface
     {
+        $suites = new \XMLWriter();
+        $suites->openMemory();
+        $handler  = new JUnitRenderer($suites);
+        $response = $service->run($handler);
+
+        // 2) Get the suites XML fragment
+        $suitesXml = $suites->outputMemory();
+
+        // Duration: pick your source (internal timer is fine)
+        $inst = TestDiscovery::getUnitaryInst();
         $xml = new \XMLWriter();
         $xml->openMemory();
         $xml->startDocument('1.0', 'UTF-8');
-
         $xml->startElement('testsuites');
+        $xml->writeAttribute('tests',    (string)$inst::getTotalTests());
+        $xml->writeAttribute('failures', (string)$inst::getTotalFailed());
+        $xml->writeAttribute('errors',   (string)$inst::getTotalErrors());
+        $xml->writeAttribute('time',     (string)$inst::getDuration(6));
+        // Optional: $xml->writeAttribute('skipped', (string)$totalSkipped);
 
-        $handler = new JUnitRenderer($xml);
-        $response = $service->run($handler);
-        $this->buildFooter();
+        $xml->writeRaw($suitesXml);
+
+        $xml->endElement();
+        $xml->endDocument();
+
+        $response->getBody()->write($xml->outputMemory());
         return $response;
     }
+
 
     /**
      * Main help page

@@ -56,6 +56,7 @@ final class TestCase
     private ?MockBuilder $mocker = null;
     private int $hasError = 0;
     private int $skipped = 0;
+    private float $duration = 0;
     private bool $hasAssertError = false;
     private bool $failFast = false;
 
@@ -107,6 +108,20 @@ final class TestCase
     public function getSkipped(): int
     {
         return $this->skipped;
+    }
+
+    /**
+     * Get current test group duration
+     *
+     * @param int $precision
+     * @return float
+     */
+    public function getDuration(int $precision = 0): float
+    {
+        if($precision > 0) {
+            return round($this->duration, $precision);
+        }
+        return $this->duration;
     }
 
     /**
@@ -233,6 +248,7 @@ final class TestCase
     {
         $row = $this;
         $test = $this->bind;
+        $start = microtime(true);
         $newInst = null;
         if ($test !== null) {
             try {
@@ -260,6 +276,8 @@ final class TestCase
                 $row = $newInst;
             }
         }
+
+        $this->duration = (float)(microtime(true) - $start);
         return $this->test;
     }
 

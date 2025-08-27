@@ -3,7 +3,6 @@
 namespace MaplePHP\Unitary\Renders;
 
 use MaplePHP\Http\Interfaces\StreamInterface;
-use MaplePHP\Http\Stream;
 use MaplePHP\Unitary\Interfaces\BodyInterface;
 use MaplePHP\Unitary\TestCase;
 use RuntimeException;
