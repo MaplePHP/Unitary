@@ -33,17 +33,77 @@ class JUnitRenderer extends AbstractRenderHandler
     {
 
 
-        $title = $this->formatFileTitle($this->suitName);
+        $testFile = $this->formatFileTitle($this->suitName, 3, false);
         $msg = (string)$this->case->getMessage();
+        $duration = (string)$this->case->getDuration(6);
 
         $this->xml->startElement('testsuite');
-        $this->xml->writeAttribute('name', $title . " - " . $msg);
+        $this->xml->writeAttribute('name', $testFile);
         $this->xml->writeAttribute('tests', (string)$this->case->getCount());
         $this->xml->writeAttribute('failures', (string)$this->case->getFailedCount());
         $this->xml->writeAttribute('errors', (string)$this->case->getErrors());
         $this->xml->writeAttribute('skipped', (string)$this->case->getSkipped());
-        $this->xml->writeAttribute('time', (string)$this->case->getDuration(6));
+        $this->xml->writeAttribute('time', $duration);
         $this->xml->writeAttribute('timestamp', Clock::value("now")->iso());
+
+
+        foreach ($this->tests as $test) {
+
+            if (!($test instanceof TestUnit)) {
+                throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestUnit.");
+            }
+
+            $value = Helpers::stringifyDataTypes($test->getValue());
+            $value = str_replace('"', "'", $value);
+
+            $this->xml->startElement('testcase');
+
+            $this->xml->writeAttribute('classname', $this->checksum);
+            if($this->case->getConfig()->select) {
+                $this->xml->writeAttribute('testname', $this->case->getConfig()->select);
+            }
+            $this->xml->writeAttribute('name', $msg);
+            $this->xml->writeAttribute('time', $duration);
+            if (!$test->isValid()) {
+
+                $trace = $test->getCodeLine();
+                $this->xml->writeAttribute('file', $trace['file']);
+                $this->xml->writeAttribute('line', $trace['line']);
+                $this->xml->writeAttribute('value', $value);
+
+
+
+
+                foreach ($test->getUnits() as $unit) {
+
+                    /** @var TestItem $unit */
+                    if (!$unit->isValid()) {
+
+                        $validation = $unit->getValidationTitle();
+                        $compare = $unit->hasComparison() ? ": " . $unit->getComparison() : "";
+                        $compare = str_replace('"', "'", $compare);
+                        $type = str_replace('"', "'", $test->getMessage());
+
+                        $tag = $this->case->getHasError() ? "error" : "failure";
+
+                        $this->xml->startElement($tag);
+                        $this->xml->writeAttribute('message', $validation . $compare);
+                        $this->xml->writeAttribute('type',  $type);
+
+                        $this->xml->endElement();
+                    }
+
+                }
+
+
+                //$this->xml->writeCData($t['details']);
+
+            }
+
+            $this->xml->endElement();
+
+
+        }
 
 
         $this->xml->endElement();
@@ -80,15 +140,13 @@ class JUnitRenderer extends AbstractRenderHandler
     public function buildNotes(): void
     {
         if ($this->outputBuffer) {
-            $lineLength = 80;
+            /*
+             $lineLength = 80;
             $output = wordwrap($this->outputBuffer, $lineLength);
-            $line = $this->xml->getAnsi()->line($lineLength);
-
-            $this->xml->message("");
-            $this->xml->message($this->xml->getAnsi()->style(["bold"], "Note:"));
-            $this->xml->message($line);
-            $this->xml->message($output);
-            $this->xml->message($line);
+            $this->xml->startElement('output');
+            $this->xml->writeAttribute('message', $output);
+            $this->xml->endElement();
+             */
         }
     }
 

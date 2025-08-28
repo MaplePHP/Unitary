@@ -21,6 +21,7 @@ final class TestUnit
     private mixed $value = null;
     private bool $hasValue = false;
     private ?string $message;
+    private ?string $validation = null;
     private array $unit = [];
     private int $count = 0;
     private int $valLength = 0;
@@ -73,6 +74,8 @@ final class TestUnit
             $this->count++;
         }
 
+        $this->validation = $item->getValidation();
+
         $valLength = $item->getValidationLengthWithArgs();
         if ($this->valLength < $valLength) {
             $this->valLength = $valLength;
@@ -80,6 +83,16 @@ final class TestUnit
 
         $this->unit[] = $item;
         return $this;
+    }
+
+    /**
+     * Get the validation type
+     *
+     * @return ?string
+     */
+    public function getValidationMsg(): ?string
+    {
+        return $this->validation;
     }
 
     /**

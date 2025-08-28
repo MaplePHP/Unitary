@@ -14,6 +14,8 @@ $config = TestConfig::make()->withName("unitary");
 
 
 group($config->withSubject("Test mocker"), function (TestCase $case) {
+    throw new Exception("dwddwqdwdwdqdq");
+    echo $wdwdw;
     $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
         $method->method("addFromEmail")
             ->withArguments("john.doe@gmail.com", "John Doe")

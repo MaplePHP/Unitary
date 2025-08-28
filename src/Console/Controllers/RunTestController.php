@@ -29,6 +29,8 @@ class RunTestController extends DefaultController
     {
         $suites = new \XMLWriter();
         $suites->openMemory();
+        $suites->setIndent(true);
+        $suites->setIndentString("    ");
         $handler  = new JUnitRenderer($suites);
         $response = $service->run($handler);
 
@@ -39,6 +41,8 @@ class RunTestController extends DefaultController
         $inst = TestDiscovery::getUnitaryInst();
         $xml = new \XMLWriter();
         $xml->openMemory();
+        $xml->setIndent(true);
+        $xml->setIndentString("    ");
         $xml->startDocument('1.0', 'UTF-8');
         $xml->startElement('testsuites');
         $xml->writeAttribute('tests',    (string)$inst::getTotalTests());
