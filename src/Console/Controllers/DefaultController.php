@@ -2,16 +2,17 @@
 
 namespace MaplePHP\Unitary\Console\Controllers;
 
+use MaplePHP\Blunder\Handlers\CliHandler;
+use MaplePHP\Blunder\Interfaces\HandlerInterface;
 use MaplePHP\Container\Interfaces\ContainerExceptionInterface;
 use MaplePHP\Container\Interfaces\ContainerInterface;
 use MaplePHP\Container\Interfaces\NotFoundExceptionInterface;
-use MaplePHP\DTO\Format\Clock;
 use MaplePHP\Emitron\Contracts\DispatchConfigInterface;
 use MaplePHP\Http\Interfaces\RequestInterface;
 use MaplePHP\Http\Interfaces\ServerRequestInterface;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Unitary\Config\ConfigProps;
-use Throwable;
+use MaplePHP\Unitary\Console\Services\ErrorHandlerService;
 
 abstract class DefaultController
 {
@@ -29,7 +30,7 @@ abstract class DefaultController
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    public function __construct(ContainerInterface $container)
+    public function __construct(ContainerInterface $container, ?HandlerInterface $handler = null)
     {
         $this->container = $container;
         $this->args = $this->container->get("args");

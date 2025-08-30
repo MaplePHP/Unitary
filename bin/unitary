@@ -4,15 +4,9 @@
  * MaplePHP Unitary bin file
  */
 
-use MaplePHP\Container\Container;
-use MaplePHP\Http\Environment;
-use MaplePHP\Http\ServerRequest;
-use MaplePHP\Http\Uri;
-use MaplePHP\Unitary\Console\Kernel;
-use MaplePHP\Unitary\Console\Middlewares\AddCommandMiddleware;
-use MaplePHP\Unitary\Console\Middlewares\CliInitMiddleware;
-use MaplePHP\Unitary\Console\Middlewares\ConfigPropsMiddleware;
-use MaplePHP\Unitary\Console\Middlewares\LocalMiddleware;
+use MaplePHP\Blunder\Handlers\CliHandler;
+use MaplePHP\Unitary\Console\Application;
+
 
 $autoload = __DIR__ . '/../../../../vendor/autoload.php';
 $autoload = is_file($autoload) ? $autoload : __DIR__ . '/../vendor/autoload.php';
@@ -29,16 +23,9 @@ if (!$autoload || !is_file($autoload)) {
 
 require $autoload;
 
-$env = new Environment();
-$request = new ServerRequest(new Uri($env->getUriParts([
-    "argv" => $argv,
-    "dir" => getcwd()
-])), $env);
-
-$kernel = new Kernel(new Container(), [
-    AddCommandMiddleware::class,
-    ConfigPropsMiddleware::class,
-    LocalMiddleware::class,
-    CliInitMiddleware::class
-]);
-$kernel->run($request);
+$app = (new Application())
+        ->withErrorHandler(new CliHandler())
+        ->boot([
+            "argv" => $argv,
+            "dir" => getcwd()
+        ]);

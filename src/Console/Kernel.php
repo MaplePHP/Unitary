@@ -84,8 +84,12 @@ class Kernel
                 if (!is_file($routerFile)) {
                     throw new Exception('The routes file (' . $routerFile . ') is missing.');
                 }
-                require_once $routerFile;
-                return $router;
+                $newRouterInst = require_once $routerFile;
+                if (!($newRouterInst instanceof Router)) {
+                    throw new \RuntimeException('You need to return the router instance ' .
+                        'at the end of the router file (' . $routerFile . ').');
+                }
+                return $newRouterInst;
             })
             ->setProp('exitCode', 0);
     }
