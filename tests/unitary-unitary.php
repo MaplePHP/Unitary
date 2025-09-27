@@ -12,10 +12,8 @@ use TestLib\UserService;
 
 $config = TestConfig::make()->withName("unitary");
 
-
 group($config->withSubject("Test mocker"), function (TestCase $case) {
-    throw new Exception("dwddwqdwdwdqdq");
-    echo $wdwdw;
+
     $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
         $method->method("addFromEmail")
             ->withArguments("john.doe@gmail.com", "John Doe")
@@ -26,7 +24,7 @@ group($config->withSubject("Test mocker"), function (TestCase $case) {
 });
 
 group("Example of assert in group", function(TestCase $case) {
-    assert(1 === 2, "This is a error message");
+    assert(1 === 2, "Should return true");
 });
 
 group($config->withSubject("Can not mock final or private"), function(TestCase $case) {
@@ -48,7 +46,11 @@ group($config->withSubject("Can not mock final or private"), function(TestCase $
 
 });
 
-group($config->withSubject("Test mocker"), function (TestCase $case) {
+group($config->withSubject("Test mocker")->withName("wdqdwdwq"), function (TestCase $case) {
+
+
+    //echo $wdqdw;
+    //throw new InvalidArgumentException("dwqdwqdw");
 
      $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
         $method->method("addFromEmail")
@@ -249,7 +251,13 @@ group($config->withSubject("Mocking response"), function (TestCase $case) {
 
 group("Example API Response", function(TestCase $case) {
 
-    $case->validate('{"response":{"status":200,"message":"ok"}}', function(Expect $expect) {
+    $case->error("qwdwqqdwdwq 1")->validate('{"response":{"status":200,"message":"ok"}}', function(Expect $expect) {
+
+        $expect->isJson()->hasJsonValueAt("response.status", 404);
+        assert($expect->isValid(), "Expected JSON structure did not match.");
+    });
+
+    $case->error("qwdwqqdwdwq 2")->validate('{"response":{"status":501,"message":"Server"}}', function(Expect $expect) {
 
         $expect->isJson()->hasJsonValueAt("response.status", 404);
         assert($expect->isValid(), "Expected JSON structure did not match.");

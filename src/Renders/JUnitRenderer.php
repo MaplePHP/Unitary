@@ -3,6 +3,8 @@
 namespace MaplePHP\Unitary\Renders;
 
 use ErrorException;
+use MaplePHP\Blunder\Exceptions\BlunderErrorException;
+use MaplePHP\Blunder\Handlers\CliHandler;
 use MaplePHP\DTO\Format\Clock;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Unitary\TestItem;
@@ -31,14 +33,12 @@ class JUnitRenderer extends AbstractRenderHandler
      */
     public function buildBody(): void
     {
-
-
-        $testFile = $this->formatFileTitle($this->suitName, 3, false);
+        //$testFile = $this->formatFileTitle($this->suitName, 3, false);
         $msg = (string)$this->case->getMessage();
         $duration = (string)$this->case->getDuration(6);
 
         $this->xml->startElement('testsuite');
-        $this->xml->writeAttribute('name', $testFile);
+        $this->xml->writeAttribute('name', $msg);
         $this->xml->writeAttribute('tests', (string)$this->case->getCount());
         $this->xml->writeAttribute('failures', (string)$this->case->getFailedCount());
         $this->xml->writeAttribute('errors', (string)$this->case->getErrors());
@@ -46,66 +46,71 @@ class JUnitRenderer extends AbstractRenderHandler
         $this->xml->writeAttribute('time', $duration);
         $this->xml->writeAttribute('timestamp', Clock::value("now")->iso());
 
-
         foreach ($this->tests as $test) {
-
             if (!($test instanceof TestUnit)) {
                 throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestUnit.");
             }
-
-            $value = Helpers::stringifyDataTypes($test->getValue());
-            $value = str_replace('"', "'", $value);
-
+            $caseMsg = str_replace('"', "'", (string)$this->getCaseName($test));
             $this->xml->startElement('testcase');
-
-            $this->xml->writeAttribute('classname', $this->checksum);
+            $this->xml->writeAttribute('name', $caseMsg);
             if($this->case->getConfig()->select) {
-                $this->xml->writeAttribute('testname', $this->case->getConfig()->select);
+                $this->xml->writeAttribute('name', $this->case->getConfig()->select);
             }
-            $this->xml->writeAttribute('name', $msg);
+            $this->xml->writeAttribute('id', $this->checksum);
             $this->xml->writeAttribute('time', $duration);
             if (!$test->isValid()) {
 
                 $trace = $test->getCodeLine();
                 $this->xml->writeAttribute('file', $trace['file']);
                 $this->xml->writeAttribute('line', $trace['line']);
-                $this->xml->writeAttribute('value', $value);
-
-
-
+                $errorType = $this->getErrorType($test);
+                $type = str_replace('"', "'", $this->getType($test));
 
                 foreach ($test->getUnits() as $unit) {
 
                     /** @var TestItem $unit */
                     if (!$unit->isValid()) {
-
-                        $validation = $unit->getValidationTitle();
-                        $compare = $unit->hasComparison() ? ": " . $unit->getComparison() : "";
-                        $compare = str_replace('"', "'", $compare);
-                        $type = str_replace('"', "'", $test->getMessage());
-
-                        $tag = $this->case->getHasError() ? "error" : "failure";
-
-                        $this->xml->startElement($tag);
-                        $this->xml->writeAttribute('message', $validation . $compare);
+                        $this->xml->startElement($errorType);
                         $this->xml->writeAttribute('type',  $type);
+
+                        if($this->case->getHasError()) {
+                            $errorMsg = ($this->isPHPError()) ? "PHP Error" : "Unhandled exception";
+                            $this->xml->writeAttribute('message', $errorMsg);
+                            $this->xml->writeCdata("\n" .$this->getErrorMessage());
+
+                        } else {
+                            $testMsg = (string)$test->getMessage();
+                            $failedMsg = $this->getMessage($test, $unit);
+                            $compare = $this->getComparison($unit, $failedMsg);
+
+                            $output = "\n\n";
+                            $output .= ucfirst($errorType) . ": " . ($testMsg !== "" ? $testMsg : $caseMsg) ."\n\n";
+                            $output .= "Failed on {$trace['file']}:{$trace['line']}\n";
+                            $output .= " → {$trace['code']}\n";
+                            $output .= $this->getMessage($test, $unit) . "\n";
+
+                            if($compare !== "") {
+                                $output .= $compare . "\n";
+                            }
+                            if ($test->hasValue()) {
+                                $output .= "\nInput value: " . $this->getValue($test) . "\n";
+                            }
+
+                            $output .= "\n";
+
+                            $validation = $unit->getValidationTitle();
+                            $compare = $unit->hasComparison() ? ": " . $unit->getComparison() : "";
+                            $compare = str_replace('"', "'", $compare);
+                            $this->xml->writeAttribute('message', $this->hasAssertError() ? $this->getAssertMessage() : $validation . $compare);
+                            $this->xml->writeCdata($output);
+                        }
 
                         $this->xml->endElement();
                     }
-
                 }
-
-
-                //$this->xml->writeCData($t['details']);
-
             }
-
             $this->xml->endElement();
-
-
         }
-
-
         $this->xml->endElement();
 
         /*

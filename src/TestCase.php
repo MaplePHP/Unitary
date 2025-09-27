@@ -17,6 +17,7 @@ use BadMethodCallException;
 use Closure;
 use ErrorException;
 use Exception;
+use MaplePHP\Blunder\ExceptionItem;
 use MaplePHP\Blunder\Exceptions\BlunderErrorException;
 use MaplePHP\DTO\Format\Str;
 use MaplePHP\DTO\Traverse;
@@ -59,6 +60,7 @@ final class TestCase
     private float $duration = 0;
     private bool $hasAssertError = false;
     private bool $failFast = false;
+    private ?ExceptionItem $throwable = null;
 
     /**
      * Initialize a new TestCase instance with an optional message.
@@ -175,6 +177,16 @@ final class TestCase
     }
 
     /**
+     * If an error as occurred then you can access the error object through this method
+     *
+     * @return ExceptionItem|null
+     */
+    public function getThrowable(): ?ExceptionItem
+    {
+        return $this->throwable;
+    }
+
+    /**
      * Sets the assertion error flag to true
      *
      * @return void
@@ -222,7 +234,7 @@ final class TestCase
      * @param ?string $message
      * @return $this
      */
-    public function error(?string $message): self
+    public function describe(?string $message): self
     {
         if ($message !== null) {
             $this->error = $message;
@@ -230,10 +242,16 @@ final class TestCase
         return $this;
     }
 
-    // Alias to error
+    // Alias to describe
+    public function error(?string $message): self
+    {
+        return $this->describe($message);
+    }
+
+    // Alias to describe
     public function message(?string $message): self
     {
-        return $this->error($message);
+        return $this->describe($message);
     }
 
     /**
@@ -269,7 +287,12 @@ final class TestCase
                 if($this->failFast) {
                     throw $e;
                 }
-                $newInst = $this->createTraceError($e);
+
+                $newInst = $this->createTraceError($e, trace: [
+                    "file" => $e->getFile(),
+                    "line" => $e->getLine(),
+                ]);
+
                 $newInst->incrementError();
             }
             if ($newInst instanceof self) {
@@ -286,16 +309,15 @@ final class TestCase
      *
      * @param mixed $expect The expected value
      * @param Closure(Expect, Traverse): bool $validation
-     * @return $this
+     * @return TestUnit
      * @throws ErrorException
      */
-    public function validate(mixed $expect, Closure $validation): self
+    public function validate(mixed $expect, Closure $validation): TestUnit
     {
-        $this->expectAndValidate($expect, function (mixed $value, Expect $inst) use ($validation) {
+        return $this->expectAndValidate($expect, function (mixed $value, Expect $inst) use ($validation) {
             return $validation($inst, new Traverse($value));
         }, $this->error);
 
-        return $this;
     }
 
     /**
@@ -325,7 +347,7 @@ final class TestCase
      * @param array|Closure $validation A list of validation methods with arguments,
      *                                   or a closure defining the test logic.
      * @param string|null $message Optional custom message for test reporting.
-     * @return $this
+     * @return TestUnit
      * @throws ErrorException If validation fails during runtime execution.
      */
     protected function expectAndValidate(
@@ -334,7 +356,7 @@ final class TestCase
         ?string $message = null,
         ?string $description = null,
         ?array $trace = null
-    ): self {
+    ): TestUnit {
         $this->value = $expect;
         $test = new TestUnit($message);
         $test->setTestValue($this->value);
@@ -389,7 +411,7 @@ final class TestCase
         }
         $this->test[] = $test;
         $this->error = null;
-        return $this;
+        return $test;
     }
 
     /**
@@ -397,10 +419,11 @@ final class TestCase
      *
      * @param Throwable $exception
      * @param string|null $title
+     * @param array|null $trace
      * @return $this
      * @throws ErrorException
      */
-    public function createTraceError(Throwable $exception, ?string $title = null): self
+    public function createTraceError(Throwable $exception, ?string $title = null, ?array $trace = null): self
     {
         $newInst = clone $this;
         $message = Helpers::getExceptionMessage($exception, $exceptionItem);
@@ -410,8 +433,10 @@ final class TestCase
             fn () => false,
             $title,
             $message,
-            $exception->getTrace()[0]
+            ($trace !== null) ? $trace : $exception->getTrace()[0]
         );
+
+        $newInst->throwable = $exceptionItem;
         return $newInst;
     }
 
@@ -446,7 +471,8 @@ final class TestCase
      */
     public function add(mixed $expect, array|Closure $validation, ?string $message = null): TestCase
     {
-        return $this->expectAndValidate($expect, $validation, $message);
+        $this->expectAndValidate($expect, $validation, $message);
+        return $this;
     }
 
     /**

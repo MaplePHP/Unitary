@@ -132,11 +132,13 @@ class CliRenderer extends AbstractRenderHandler
                 }
 
                 if (!$test->isValid()) {
+                    $errorType = $this->getErrorType($test);
+                    //$type = $this->getType($test);
                     $msg = (string)$test->getMessage();
                     $this->command->message("");
                     $this->command->message(
-                        $this->command->getAnsi()->style(["bold", $this->color], "Error: ") .
-                        $this->command->getAnsi()->bold($msg)
+                        $this->command->getAnsi()->style(["bold", $this->color], ucfirst($errorType) . ": ") .
+                        $this->command->getAnsi()->bold(($msg !== "" ? $msg : $this->getCaseName($test)))
                     );
                     $this->command->message("");
 
@@ -150,19 +152,13 @@ class CliRenderer extends AbstractRenderHandler
 
                         /** @var TestItem $unit */
                         if (!$unit->isValid()) {
-                            $lengthA = $test->getValidationLength();
-                            $validation = $unit->getValidationTitle();
-                            $title = str_pad($validation, $lengthA);
-                            $compare = $unit->hasComparison() ? $unit->getComparison() : "";
-
-                            $failedMsg = "   " .$title . " → failed";
+                            $failedMsg = $this->getMessage($test, $unit);
+                            $compare = $this->getComparison($unit, $failedMsg);
                             $this->command->message($this->command->getAnsi()->style($this->color, $failedMsg));
 
-                            if ($compare) {
-                                $lengthB = (strlen($compare) + strlen($failedMsg) - 8);
-                                $comparePad = str_pad($compare, $lengthB, " ", STR_PAD_LEFT);
+                            if ($compare !== "") {
                                 $this->command->message(
-                                    $this->command->getAnsi()->style($this->color, $comparePad)
+                                    $this->command->getAnsi()->style($this->color, $compare)
                                 );
                             }
                         }
@@ -171,7 +167,7 @@ class CliRenderer extends AbstractRenderHandler
                         $this->command->message("");
                         $this->command->message(
                             $this->command->getAnsi()->bold("Input value: ") .
-                            Helpers::stringifyDataTypes($test->getValue())
+                            $this->getValue($test)
                         );
                     }
                 }

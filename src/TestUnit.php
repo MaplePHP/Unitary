@@ -35,7 +35,33 @@ final class TestUnit
     public function __construct(?string $message = null)
     {
         $this->valid = true;
-        $this->message = $message === null ? "Could not validate" : $message;
+        $this->message = $message === null ? "" : $message;
+    }
+
+    /**
+     * Add custom error message if validation fails
+     *
+     * @param ?string $message
+     * @return $this
+     */
+    public function describe(?string $message): self
+    {
+        if ($message !== null) {
+            $this->message = $message;
+        }
+        return $this;
+    }
+
+    // Alias to describe
+    public function error(?string $message): self
+    {
+        return $this->describe($message);
+    }
+
+    // Alias to describe
+    public function message(?string $message): self
+    {
+        return $this->describe($message);
     }
 
     /**

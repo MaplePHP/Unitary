@@ -13,6 +13,7 @@ class Mailer
 
     }
 
+
     public function send(): string
     {
         $this->sendEmail($this->getFromEmail());
