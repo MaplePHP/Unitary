@@ -119,12 +119,11 @@ class AbstractRenderHandler implements BodyInterface
     /**
      * Get error type
      *
-     * @param TestUnit $test
      * @return string
      */
-    public function getType(TestUnit $test): string
+    public function getType(): string
     {
-        return $this->case->getHasError() ? get_class($this->case->getThrowable()->getException()) : $test->getMessage();
+        return $this->case->getHasError() ? get_class($this->case->getThrowable()->getException()) : "Validation error";
     }
 
 

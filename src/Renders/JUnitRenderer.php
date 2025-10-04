@@ -34,8 +34,9 @@ class JUnitRenderer extends AbstractRenderHandler
     public function buildBody(): void
     {
         //$testFile = $this->formatFileTitle($this->suitName, 3, false);
+        $basename = basename($this->suitName);
         $msg = (string)$this->case->getMessage();
-        $duration = (string)$this->case->getDuration(6);
+        $duration = number_format($this->case->getDuration(6), 6, '.', '');
 
         $this->xml->startElement('testsuite');
         $this->xml->writeAttribute('name', $msg);
@@ -45,6 +46,10 @@ class JUnitRenderer extends AbstractRenderHandler
         $this->xml->writeAttribute('skipped', (string)$this->case->getSkipped());
         $this->xml->writeAttribute('time', $duration);
         $this->xml->writeAttribute('timestamp', Clock::value("now")->iso());
+        $this->xml->writeAttribute('id', $this->checksum);
+        if($this->case->getConfig()->select) {
+            $this->xml->writeAttribute('name', $this->case->getConfig()->select);
+        }
 
         foreach ($this->tests as $test) {
             if (!($test instanceof TestUnit)) {
@@ -52,19 +57,17 @@ class JUnitRenderer extends AbstractRenderHandler
             }
             $caseMsg = str_replace('"', "'", (string)$this->getCaseName($test));
             $this->xml->startElement('testcase');
+            $this->xml->writeAttribute('classname', $basename);
             $this->xml->writeAttribute('name', $caseMsg);
-            if($this->case->getConfig()->select) {
-                $this->xml->writeAttribute('name', $this->case->getConfig()->select);
-            }
-            $this->xml->writeAttribute('id', $this->checksum);
+
+
             $this->xml->writeAttribute('time', $duration);
             if (!$test->isValid()) {
-
                 $trace = $test->getCodeLine();
-                $this->xml->writeAttribute('file', $trace['file']);
-                $this->xml->writeAttribute('line', $trace['line']);
+                //$this->xml->writeAttribute('file', $trace['file']);
+                //$this->xml->writeAttribute('line', $trace['line']);
                 $errorType = $this->getErrorType($test);
-                $type = str_replace('"', "'", $this->getType($test));
+                $type = str_replace('"', "'", $this->getType());
 
                 foreach ($test->getUnits() as $unit) {
 

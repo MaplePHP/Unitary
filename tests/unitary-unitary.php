@@ -259,7 +259,7 @@ group("Example API Response", function(TestCase $case) {
 
     $case->error("qwdwqqdwdwq 2")->validate('{"response":{"status":501,"message":"Server"}}', function(Expect $expect) {
 
-        $expect->isJson()->hasJsonValueAt("response.status", 404);
+        $expect->isJson()->hasJsonValueAt("response.status", 501);
         assert($expect->isValid(), "Expected JSON structure did not match.");
     });
 
