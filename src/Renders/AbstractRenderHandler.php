@@ -3,6 +3,7 @@
 namespace MaplePHP\Unitary\Renders;
 
 use AssertionError;
+use MaplePHP\Blunder\ExceptionItem;
 use MaplePHP\Blunder\Exceptions\BlunderErrorException;
 use MaplePHP\Blunder\Handlers\CliHandler;
 use MaplePHP\Http\Interfaces\StreamInterface;
@@ -119,11 +120,13 @@ class AbstractRenderHandler implements BodyInterface
     /**
      * Get error type
      *
+     * @param TestUnit $test
      * @return string
      */
-    public function getType(): string
+    public function getType(TestUnit $test): string
     {
-        return $this->case->getHasError() ? get_class($this->case->getThrowable()->getException()) : "Validation error";
+        $throwable = $this->getThrowable($test);
+        return $throwable !== null ? get_class($throwable->getException()) : "Validation error";
     }
 
 
@@ -153,17 +156,35 @@ class AbstractRenderHandler implements BodyInterface
         if($test->isValid()) {
             return "";
         }
-        return $this->case->getHasError() ? "error" : "failure";
+        return ($test->hasError() || $this->case->getHasError()) ? "error" : "failure";
+    }
+
+    /**
+     * Get throwable from TestCase or TestUnit
+     * @param TestUnit $test
+     * @return ExceptionItem|null
+     */
+    public function getThrowable(TestUnit $test): ?ExceptionItem
+    {
+        if(!$this->case->getHasError() && !$test->hasError()) {
+            return null;
+        }
+        if($this->case->getThrowable() !== null) {
+            return $this->case->getThrowable();
+        }
+        return $test->getThrowable();
     }
 
     /**
      * Check if Error is a PHP error, if false and has error then the error is an unhandled exception error.
      *
+     * @param TestUnit $test
      * @return bool
      */
-    public function isPHPError(): bool
+    public function isPHPError(TestUnit $test): bool
     {
-        return ($this->case->getHasError() && $this->case->getThrowable()->getException() instanceof BlunderErrorException);
+        $throwable = $this->getThrowable($test);
+        return ($throwable !== null && $throwable->getException() instanceof BlunderErrorException);
     }
 
     /**
@@ -190,18 +211,45 @@ class AbstractRenderHandler implements BodyInterface
     }
 
     /**
-     * Get error message
+     * Get class name
      *
      * @return string
      */
-    public function getErrorMessage(): string
+    protected function getClassName(): string
     {
-        if(!$this->case->getHasError()) {
+        return str_replace(['_', '-'], '.', basename($this->suitName, ".php"));
+    }
+
+    /**
+     * Get error message
+     *
+     * @param TestUnit $test
+     * @return string
+     */
+    public function getErrorMessage(TestUnit $test): string
+    {
+        $throwable = $this->getThrowable($test);
+        if($throwable === null) {
             return "";
         }
         $cliErrorHandler = new CliHandler();
-        return $cliErrorHandler->getErrorMessage($this->case->getThrowable());
+        return $cliErrorHandler->getErrorMessage($throwable);
+    }
 
+    /**
+     * Get error message
+     *
+     * @param TestUnit $test
+     * @return string
+     */
+    public function getSmallErrorMessage(TestUnit $test): string
+    {
+        $throwable = $this->getThrowable($test);
+        if($throwable === null) {
+            return "";
+        }
+        $cliErrorHandler = new CliHandler();
+        return $cliErrorHandler->getSmallErrorMessage($throwable);
     }
 
     /**

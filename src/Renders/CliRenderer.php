@@ -3,12 +3,9 @@
 namespace MaplePHP\Unitary\Renders;
 
 use ErrorException;
-use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Unitary\TestItem;
 use MaplePHP\Unitary\TestUnit;
-use MaplePHP\Unitary\Support\Helpers;
-use MaplePHP\Unitary\Unit;
 use RuntimeException;
 
 class CliRenderer extends AbstractRenderHandler
@@ -148,18 +145,36 @@ class CliRenderer extends AbstractRenderHandler
                         $this->command->message($this->command->getAnsi()->style(["grey"], " → {$trace['code']}"));
                     }
 
-                    foreach ($test->getUnits() as $unit) {
+                    if($test->hasError()) {
+                        // IF error has been triggered in validation closure
+                        if($this->show) {
+                            $this->command->message($this->getErrorMessage($test));
+                        } else {
+                            $this->command->message($this->getSmallErrorMessage($test) . "→ failed");
+                        }
 
-                        /** @var TestItem $unit */
-                        if (!$unit->isValid()) {
-                            $failedMsg = $this->getMessage($test, $unit);
-                            $compare = $this->getComparison($unit, $failedMsg);
-                            $this->command->message($this->command->getAnsi()->style($this->color, $failedMsg));
+                    } else {
 
-                            if ($compare !== "") {
-                                $this->command->message(
-                                    $this->command->getAnsi()->style($this->color, $compare)
-                                );
+                        foreach ($test->getUnits() as $unit) {
+
+                            /** @var TestItem $unit */
+                            if (!$unit->isValid()) {
+
+
+                                if($this->show && $this->case->getHasError()) {
+                                    $this->command->message($this->getErrorMessage($test));
+                                } else {
+
+                                    $failedMsg = $this->getMessage($test, $unit);
+                                    $compare = $this->getComparison($unit, $failedMsg);
+                                    $this->command->message($this->command->getAnsi()->style($this->color, $failedMsg));
+
+                                    if ($compare !== "") {
+                                        $this->command->message(
+                                            $this->command->getAnsi()->style($this->color, $compare)
+                                        );
+                                    }
+                                }
                             }
                         }
                     }

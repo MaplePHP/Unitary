@@ -25,14 +25,21 @@ class HelpController extends DefaultController
 
         $blocks->addSection("Options", function (Blocks $inst) {
             return $inst
-                ->addOption("--help", "Show this help message")
-                ->addOption("--show=<hash|name>", "Run a specific test by hash or manual test name")
-                ->addOption("--errorsOnly", "Show only failing tests and skip passed test output")
-                ->addOption("--path=<path>", "Specify test path (absolute or relative)")
-                ->addOption("--exclude=<patterns>", "Exclude files or directories (comma-separated, relative to --path)")
-                ->addOption("--smartSearch", "If no test is found in sub-directory then Unitary will try to traverse back and auto find tests.")
+                ->addOption("--help", "Display this help message.")
+                ->addOption("--show=<hash|name>", "Run a specific test by hash or test name.")
+                ->addOption("--errorsOnly", "Show only failing tests, hide passed ones.")
+                ->addOption("--path=<path>", "Set test path (absolute or relative).")
+                ->addOption("--exclude=<patterns>", "Exclude files or directories (comma-separated, relative to --path).")
+                ->addOption("--discoverPattern", "Override test discovery pattern (`tests/` directories or default: `unitary-*.php` files).")
+                ->addOption("--smartSearch", "If no tests are found in a subdirectory, Unitary will traverse down to locate tests automatically.")
+                ->addOption("--alwaysShowFiles", "Always display full test file paths, even for passing tests.")
+                ->addOption("--timezone=<region/city>", "Set default timezone (e.g. `Europe/Stockholm`). Affects date handling.")
+                ->addOption("--locale=<locale>", "Set default locale (e.g. `en_US`). Affects date formatting.")
+                ->addOption("--verbose", "Show all warnings, including hidden ones.")
+                ->addOption("--failFast", "Stop immediately on the first error or exception.")
                 ;
         });
+
 
 
         $blocks->addSection("Function list", function (Blocks $inst) {
@@ -64,8 +71,6 @@ class HelpController extends DefaultController
                     'Run all tests under "tests/" excluding specified directories'
                 );
         });
-        // Make sure nothing else is executed when help is triggered
-        exit(0);
     }
 
     /**

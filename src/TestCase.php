@@ -357,12 +357,20 @@ final class TestCase
         ?string $description = null,
         ?array $trace = null
     ): TestUnit {
+
+        $listArr = [];
         $this->value = $expect;
         $test = new TestUnit($message);
         $test->setTestValue($this->value);
         if ($validation instanceof Closure) {
             $validPool = new Expect($this->value);
-            $listArr = $this->buildClosureTest($validation, $validPool, $description);
+
+            try {
+                $listArr = $this->buildClosureTest($validation, $validPool, $description);
+            } catch (Throwable $e) {
+                $test->setValid(false);
+                $test->setThrowable(Helpers::getExceptionItem($e));
+            }
 
             foreach ($listArr as $list) {
 

@@ -24,14 +24,13 @@ class ConfigProps extends AbstractConfigProps
     public ?string $exclude = null;
     public ?string $show = null;
     public ?string $timezone = null;
-    public ?string $local = null;
+    public ?string $locale = null;
     public ?int $exitCode = null;
     public ?bool $verbose = null;
     public ?bool $alwaysShowFiles = null;
     public ?bool $errorsOnly = null;
     public ?bool $smartSearch = null;
     public ?bool $failFast = null;
-
 
     /**
      * Hydrate the properties/object with expected data, and handle unexpected data
@@ -59,12 +58,12 @@ class ConfigProps extends AbstractConfigProps
                 // The default timezone is 'CET'
                 $this->timezone = (!is_string($value) || $value === '') ? 'Europe/Stockholm' : $value;
                 break;
-            case 'local':
+            case 'locale':
                 // The default timezone is 'CET'
-                $this->local = (!is_string($value) || $value === '') ? 'en_US' : $value;
-                if(!$this->isValidLocale($this->local)) {
+                $this->locale = (!is_string($value) || $value === '') ? 'en_US' : $value;
+                if(!$this->isValidLocale($this->locale)) {
                     throw new InvalidArgumentException(
-                        "Invalid locale '{$this->local}'. Expected format like 'en_US' (language_COUNTRY)."
+                        "Invalid locale '{$this->locale}'. Expected format like 'en_US' (language_COUNTRY)."
                     );
                 }
                 break;

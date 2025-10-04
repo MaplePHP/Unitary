@@ -39,7 +39,7 @@ class LocalMiddleware implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $props = $this->container->get("props");
-        Clock::setDefaultLocale($props->local);
+        Clock::setDefaultLocale($props->locale);
         Clock::setDefaultTimezone($props->timezone);
         return $handler->handle($request);
     }

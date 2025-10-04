@@ -20,6 +20,18 @@ use MaplePHP\DTO\Format\Str;
 
 final class Helpers
 {
+
+    /**
+     * Convert a throwable into ExceptionItem
+     *
+     * @param \Throwable $exception
+     * @return ExceptionItem
+     */
+    public static function getExceptionItem(\Throwable $exception): ExceptionItem
+    {
+        return new ExceptionItem($exception);
+    }
+
     /**
      * Get a pretty exception message from a Throwable instance
      *
@@ -29,7 +41,7 @@ final class Helpers
      */
     public static function getExceptionMessage(\Throwable $exception, ?ExceptionItem &$exceptionItem = null): string
     {
-        $exceptionItem = new ExceptionItem($exception);
+        $exceptionItem = self::getExceptionItem($exception);
         $cliErrorHandler = new CliHandler();
         return $cliErrorHandler->getSmallErrorMessage($exceptionItem);
     }

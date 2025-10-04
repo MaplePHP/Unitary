@@ -49,12 +49,29 @@ final class Unit
      */
     public function __construct(BodyInterface|null $handler = null)
     {
-        $this->handler = ($handler === null) ? new CliRenderer(new Command()) : $handler;
+        $this->setHandler($handler);
     }
 
+    /**
+     * Get the PSR stream from the handler
+     *
+     * @return StreamInterface
+     */
     public function getBody(): StreamInterface
     {
         return $this->handler->getBody();
+    }
+
+    /**
+     * Set output handler
+     *
+     * @param BodyInterface|null $handler
+     * @return $this
+     */
+    public function setHandler(BodyInterface|null $handler = null): self
+    {
+        $this->handler = ($handler === null) ? new CliRenderer(new Command()) : $handler;
+        return $this;
     }
 
     /**
@@ -131,19 +148,18 @@ final class Unit
     }
 
     /**
-     * This will help pass over some default for custom Unit instances
+     * This will pass over all relevant configurations to new Unit instances
      *
      * @param Unit $inst
      * @return $this
      */
     public function inheritConfigs(Unit $inst): Unit
     {
-        $this->setFile($inst->file);
-        $this->setShow($inst->show);
-        $this->setShowErrorsOnly($inst->showErrorsOnly);
-        $this->setFailFast($inst->failFast);
-        $this->setVerbose($inst->verbose);
-        $this->setAlwaysShowFiles($inst->alwaysShowFiles);
+        foreach (get_object_vars($inst) as $prop => $value) {
+            if($prop !== "index" && $prop !== "cases") {
+                $this->$prop = $value;
+            }
+        }
         return $this;
     }
 

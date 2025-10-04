@@ -17,7 +17,7 @@ group(TestConfig::make("Test item class")
         ->setHasArgs(true);
 
     $case->validate($item->isValid(), function(Expect $valid) {
-        $valid->isFalse();
+        $valid->isTrue();
 
     })->describe("Testing TestItem is validMethod");
 

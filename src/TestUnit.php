@@ -13,6 +13,8 @@ declare(strict_types=1);
 namespace MaplePHP\Unitary;
 
 use ErrorException;
+use MaplePHP\Blunder\ExceptionItem;
+use MaplePHP\Unitary\Console\Enum\UnitStatusType;
 use MaplePHP\Unitary\Support\Helpers;
 
 final class TestUnit
@@ -26,7 +28,8 @@ final class TestUnit
     private int $count = 0;
     private int $valLength = 0;
     private array $codeLine = ['line' => 0, 'code' => '', 'file' => ''];
-
+    private UnitStatusType $type = UnitStatusType::Failure;
+    private ?ExceptionItem $throwable = null;
     /**
      * Initiate the test
      *
@@ -36,6 +39,27 @@ final class TestUnit
     {
         $this->valid = true;
         $this->message = $message === null ? "" : $message;
+    }
+
+    public function setThrowable(ExceptionItem $throwable): void
+    {
+        $this->type = UnitStatusType::Error;
+        $this->throwable = $throwable;
+    }
+
+    public function hasError(): bool
+    {
+        return $this->type === UnitStatusType::Error;
+    }
+
+    public function getType(): UnitStatusType
+    {
+        return $this->type;
+    }
+
+    public function getThrowable(): ?ExceptionItem
+    {
+        return $this->throwable;
     }
 
     /**
@@ -88,6 +112,17 @@ final class TestUnit
 
 
     /**
+     * Set if validation is valid
+     *
+     * @param bool $isValid
+     * @return void
+     */
+    public function setValid(bool $isValid): void
+    {
+        $this->valid = $isValid;
+    }
+
+    /**
      * Create a test item
      *
      * @param TestItem $item
@@ -96,7 +131,7 @@ final class TestUnit
     public function setTestItem(TestItem $item): self
     {
         if (!$item->isValid()) {
-            $this->valid = false;
+            $this->setValid(false);
             $this->count++;
         }
 
