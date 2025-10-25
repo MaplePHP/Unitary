@@ -11,6 +11,7 @@ use MaplePHP\Unitary\Console\Middlewares\{
     AddCommandMiddleware,
     CliInitMiddleware,
     ConfigPropsMiddleware,
+    CheckAllowedProps,
     LocalMiddleware
 };
 
@@ -49,6 +50,7 @@ final class Application
         $kernel = new Kernel(new Container(), [
             AddCommandMiddleware::class,
             ConfigPropsMiddleware::class,
+            CheckAllowedProps::class,
             LocalMiddleware::class,
             CliInitMiddleware::class
         ]);

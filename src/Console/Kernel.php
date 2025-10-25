@@ -21,7 +21,7 @@ use MaplePHP\Http\Interfaces\ServerRequestInterface;
 use MaplePHP\Http\Interfaces\StreamInterface;
 use MaplePHP\Unitary\Support\Router;
 use MaplePHP\Container\Interfaces\ContainerInterface;
-use MaplePHP\Emitron\EmitronKernel;
+use MaplePHP\Emitron\Kernel as EmitronKernel;
 
 class Kernel
 {

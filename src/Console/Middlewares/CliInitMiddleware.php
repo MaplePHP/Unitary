@@ -24,7 +24,10 @@ class CliInitMiddleware implements MiddlewareInterface
     {
         $response = $handler->handle($request);
         if ($this->isCli()) {
-            $response = $response->withStatus(0);
+            // We can use 0 or a 200 range status code for CLI, but 200 is better as
+            // this is validatable, but any successful status code in CLI will actually
+            // EXIT with 0 by default
+            $response = $response->withStatus(200);
         }
         return $response;
     }

@@ -60,6 +60,8 @@ class Router implements RouterInterface
     }
 
     /**
+     * Add Middleware to Router
+     *
      * @param MiddlewareInterface|string $middleware
      * @return $this
      */

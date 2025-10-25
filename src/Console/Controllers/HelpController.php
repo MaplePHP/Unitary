@@ -40,14 +40,11 @@ class HelpController extends DefaultController
                 ;
         });
 
-
-
         $blocks->addSection("Function list", function (Blocks $inst) {
             return $inst
                 ->addOption("template", "Will give you a boilerplate test code")
                 ->addOption("coverage", "Will show you a how much code this is used");
         });
-
 
         $blocks->addSection("Examples", function (Blocks $inst) {
             return $inst
@@ -72,32 +69,4 @@ class HelpController extends DefaultController
                 );
         });
     }
-
-    /**
-     * Create a footer showing and end of script command
-     *
-     * This is not really part of the Unit test library, as other stuff might be present here
-     *
-     * @return void
-     */
-    protected function buildFooter(): void
-    {
-        $inst = TestDiscovery::getUnitaryInst();
-        if ($inst !== null) {
-            $dot = $this->command->getAnsi()->middot();
-            $peakMemory = (string)round(memory_get_peak_usage() / 1024, 2);
-
-            $this->command->message(
-                $this->command->getAnsi()->style(
-                    ["italic", "grey"],
-                    "Total tests: " . $inst::getPassedTests() . "/" . $inst::getTotalTests() . " $dot " .
-                    "Errors: " . $inst::getTotalErrors() . " $dot " .
-                    "Peak memory usage: " . $peakMemory . " KB"
-                )
-            );
-            $this->command->message("");
-        }
-
-    }
-
 }

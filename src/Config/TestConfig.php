@@ -19,7 +19,7 @@ final class TestConfig
     public string $select = "";
     private bool $updatedSubject = false;
 
-    public function __construct(string $message)
+    public function __construct(string $message = "")
     {
         $this->message = $message;
     }

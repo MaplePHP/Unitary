@@ -62,7 +62,7 @@ class ConfigPropsMiddleware implements MiddlewareInterface
         if ($this->props === null) {
 
             $args = $this->container->get("args");
-            $configs = $this->container->get("dispatchConfig");
+            $configs = $this->container->get("configuration");
             $command = $this->container->get("command");
 
             try {

@@ -2,15 +2,16 @@
 
 namespace MaplePHP\Unitary\Console\Controllers;
 
-use MaplePHP\Blunder\Interfaces\HandlerInterface;
 use MaplePHP\Container\Interfaces\ContainerExceptionInterface;
 use MaplePHP\Container\Interfaces\ContainerInterface;
 use MaplePHP\Container\Interfaces\NotFoundExceptionInterface;
 use MaplePHP\Emitron\Contracts\DispatchConfigInterface;
 use MaplePHP\Http\Interfaces\RequestInterface;
+use MaplePHP\Http\Interfaces\ResponseInterface;
 use MaplePHP\Http\Interfaces\ServerRequestInterface;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Unitary\Config\ConfigProps;
+use MaplePHP\Validate\Validator;
 
 abstract class DefaultController
 {
@@ -28,12 +29,32 @@ abstract class DefaultController
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    public function __construct(ContainerInterface $container)
+    public function __construct(ContainerInterface $container, ResponseInterface $response)
     {
         $this->container = $container;
         $this->args = $this->container->get("args");
         $this->command = $this->container->get("command");
         $this->request = $this->container->get("request");
-        $this->configs = $this->container->get("dispatchConfig");
+        $this->configs = $this->container->get("configuration");
+        $this->forceShowHelp($response);
+    }
+
+    /**
+     * This is a temporary solution that will show help if a user
+     * writes a wrong argv param in CLI
+     *
+     * @param ResponseInterface $response
+     * @return void
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \ErrorException
+     */
+    protected function forceShowHelp(ResponseInterface $response): void
+    {
+        if (!Validator::value($response->getStatusCode())->isHttpSuccess()) {
+            $help = new HelpController($this->container, $response->withStatus(200));
+            $help->index();
+            exit(1);
+        }
     }
 }
