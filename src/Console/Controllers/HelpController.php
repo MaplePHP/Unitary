@@ -21,7 +21,7 @@ class HelpController extends DefaultController
     {
         $blocks = new Blocks($this->command);
         $blocks->addHeadline("\n--- Unitary Help ---");
-        $blocks->addSection("Usage", "php vendor/bin/unitary [function] [options]");
+        $blocks->addSection("Usage", "php vendor/bin/unitary [type] [options]");
 
         $blocks->addSection("Options", function (Blocks $inst) {
             return $inst
@@ -40,29 +40,27 @@ class HelpController extends DefaultController
                 ;
         });
 
-        $blocks->addSection("Function list", function (Blocks $inst) {
+        $blocks->addSection("Type list", function (Blocks $inst) {
             return $inst
-                ->addOption("template", "Will give you a boilerplate test code")
-                ->addOption("coverage", "Will show you a how much code this is used");
+                ->addOption("run", "Run all Unitary tests")
+                ->addOption("template", "Show template/boilerplate Unitary test code")
+                ->addOption("coverage", "Show code coverage and how much code is used");
         });
 
-        $blocks->addSection("Examples", function (Blocks $inst) {
+        $blocks->addSection("Some examples", function (Blocks $inst) {
             return $inst
                 ->addExamples(
                     "php vendor/bin/unitary",
-                    "Run all tests in the default path (./tests)"
+                    "Run all unitary tests"
                 )->addExamples(
                     "php vendor/bin/unitary run",
-                    "Same as above"
+                    "Run all unitary tests"
                 )->addExamples(
                     "php vendor/bin/unitary --show=b0620ca8ef6ea7598e5ed56a530b1983",
                     "Run the test with a specific hash ID"
                 )->addExamples(
                     "php vendor/bin/unitary --show=YourNameHere",
                     "Run a manually named test case"
-                )->addExamples(
-                    "php vendor/bin/unitary coverage",
-                    "Run a and will give you template code for a new test"
                 )->addExamples(
                     'php vendor/bin/unitary --path="tests/" --exclude="tests/legacy/*,*/extras/*"',
                     'Run all tests under "tests/" excluding specified directories'
