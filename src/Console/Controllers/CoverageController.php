@@ -2,7 +2,7 @@
 
 namespace MaplePHP\Unitary\Console\Controllers;
 
-use MaplePHP\Http\Interfaces\ResponseInterface;
+use Psr\Http\Message\ResponseInterface;
 use MaplePHP\Prompts\Themes\Blocks;
 use MaplePHP\Unitary\Console\Services\RunTestService;
 use MaplePHP\Unitary\Renders\SilentRender;

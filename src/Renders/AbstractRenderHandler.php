@@ -6,7 +6,7 @@ use AssertionError;
 use MaplePHP\Blunder\ExceptionItem;
 use MaplePHP\Blunder\Exceptions\BlunderErrorException;
 use MaplePHP\Blunder\Handlers\CliHandler;
-use MaplePHP\Http\Interfaces\StreamInterface;
+use Psr\Http\Message\StreamInterface;
 use MaplePHP\Unitary\Interfaces\BodyInterface;
 use MaplePHP\Unitary\Support\Helpers;
 use MaplePHP\Unitary\TestCase;

@@ -2,13 +2,13 @@
 
 namespace MaplePHP\Unitary\Console\Middlewares;
 
-use MaplePHP\Container\Interfaces\ContainerExceptionInterface;
-use MaplePHP\Container\Interfaces\ContainerInterface;
-use MaplePHP\Container\Interfaces\NotFoundExceptionInterface;
-use MaplePHP\Emitron\Contracts\MiddlewareInterface;
-use MaplePHP\Emitron\Contracts\RequestHandlerInterface;
-use MaplePHP\Http\Interfaces\ResponseInterface;
-use MaplePHP\Http\Interfaces\ServerRequestInterface;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use Psr\Http\Server\MiddlewareInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use MaplePHP\Unitary\Config\ConfigProps;
 use Throwable;
 

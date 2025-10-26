@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace MaplePHP\Unitary\Support;
 
 use InvalidArgumentException;
-use MaplePHP\Emitron\Contracts\MiddlewareInterface;
+use Psr\Http\Server\MiddlewareInterface;
 use MaplePHP\Unitary\Interfaces\RouterInterface;
 
 class Router implements RouterInterface

@@ -2,13 +2,13 @@
 
 namespace MaplePHP\Unitary\Console\Controllers;
 
-use MaplePHP\Container\Interfaces\ContainerExceptionInterface;
-use MaplePHP\Container\Interfaces\ContainerInterface;
-use MaplePHP\Container\Interfaces\NotFoundExceptionInterface;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use MaplePHP\Emitron\Contracts\DispatchConfigInterface;
-use MaplePHP\Http\Interfaces\RequestInterface;
-use MaplePHP\Http\Interfaces\ResponseInterface;
-use MaplePHP\Http\Interfaces\ServerRequestInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Unitary\Config\ConfigProps;
 use MaplePHP\Validate\Validator;

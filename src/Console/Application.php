@@ -7,13 +7,11 @@ use MaplePHP\Container\Container;
 use MaplePHP\Http\Environment;
 use MaplePHP\Http\ServerRequest;
 use MaplePHP\Http\Uri;
-use MaplePHP\Unitary\Console\Middlewares\{
-    AddCommandMiddleware,
+use MaplePHP\Unitary\Console\Middlewares\{AddCommandMiddleware,
+    CheckAllowedProps,
     CliInitMiddleware,
     ConfigPropsMiddleware,
-    CheckAllowedProps,
-    LocalMiddleware
-};
+    LocalMiddleware};
 
 final class Application
 {

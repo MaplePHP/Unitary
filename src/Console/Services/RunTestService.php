@@ -3,9 +3,9 @@
 namespace MaplePHP\Unitary\Console\Services;
 
 use MaplePHP\Blunder\Exceptions\BlunderSoftException;
-use MaplePHP\Container\Interfaces\ContainerExceptionInterface;
-use MaplePHP\Container\Interfaces\NotFoundExceptionInterface;
-use MaplePHP\Http\Interfaces\ResponseInterface;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use Psr\Http\Message\ResponseInterface;
 use MaplePHP\Unitary\Discovery\TestDiscovery;
 use MaplePHP\Unitary\Interfaces\BodyInterface;
 use MaplePHP\Unitary\Unit;

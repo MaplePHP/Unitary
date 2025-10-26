@@ -17,10 +17,10 @@ namespace MaplePHP\Unitary\Console;
 use Exception;
 use MaplePHP\Emitron\Contracts\DispatchConfigInterface;
 use MaplePHP\Emitron\DispatchConfig;
-use MaplePHP\Http\Interfaces\ServerRequestInterface;
-use MaplePHP\Http\Interfaces\StreamInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\StreamInterface;
 use MaplePHP\Unitary\Support\Router;
-use MaplePHP\Container\Interfaces\ContainerInterface;
+use Psr\Container\ContainerInterface;
 use MaplePHP\Emitron\Kernel as EmitronKernel;
 
 class Kernel

@@ -2,10 +2,10 @@
 
 namespace MaplePHP\Unitary\Console\Middlewares;
 
-use MaplePHP\Emitron\Contracts\MiddlewareInterface;
-use MaplePHP\Emitron\Contracts\RequestHandlerInterface;
-use MaplePHP\Http\Interfaces\ResponseInterface;
-use MaplePHP\Http\Interfaces\ServerRequestInterface;
+use Psr\Http\Server\MiddlewareInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 class TestMiddleware implements MiddlewareInterface
 {

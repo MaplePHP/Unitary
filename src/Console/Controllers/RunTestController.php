@@ -5,7 +5,7 @@ namespace MaplePHP\Unitary\Console\Controllers;
 use MaplePHP\Unitary\Discovery\TestDiscovery;
 use MaplePHP\Unitary\Renders\CliRenderer;
 use MaplePHP\Unitary\Console\Services\RunTestService;
-use MaplePHP\Http\Interfaces\ResponseInterface;
+use Psr\Http\Message\ResponseInterface;
 use MaplePHP\Unitary\Renders\JUnitRenderer;
 
 class RunTestController extends DefaultController

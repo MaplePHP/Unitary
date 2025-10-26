@@ -2,7 +2,7 @@
 
 namespace MaplePHP\Unitary\Interfaces;
 
-use MaplePHP\Http\Interfaces\StreamInterface;
+use Psr\Http\Message\StreamInterface;
 use MaplePHP\Unitary\TestCase;
 
 interface BodyInterface
