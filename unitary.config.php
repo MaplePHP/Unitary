@@ -6,15 +6,15 @@
 return [
     //'path' => 'app/Libraries/Unitary/tests/unitary-test.php',
     'path' => false, // false|string|array<int, string>
-    'smartSearch' => false, // bool
-    'errorsOnly' => false, // bool
+    'smart-search' => false, // bool
+    'errors-only' => false, // bool
     'verbose' => false, // bool
     'exclude' => false, // false|string|array<int, string>
-    'discoverPattern' => false, // string|false (paths (`tests/`) and files (`unitary-*.php`).)
+    'discover-pattern' => false, // string|false (paths (`tests/`) and files (`unitary-*.php`).)
     'show' => false,
     'timezone' => 'Europe/Stockholm',
     'locale' => 'en_US',
-    'alwaysShowFiles' => false,
-    'failFast' => false, // bool
+    'always-show-files' => false,
+    'fail-fast' => false, // bool
     //'exit_error_code' => 1, ??
 ];

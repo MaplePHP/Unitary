@@ -81,16 +81,13 @@ class RunTestController extends DefaultController
                     "Skipped: " . $inst::getTotalSkipped() . " \n"
                 )
             );
-
             $this->command->message(
                 $this->command->getAnsi()->style(
                     ["italic", "grey"],
-
                     "Duration: " . Helpers::formatDuration($inst::getTotalDuration()) . " seconds $dot " .
                     "Memory: " . Helpers::byteToMegabyte($inst::getTotalMemory()) . " MB \n"
                 )
             );
-
             $this->command->message($this->command->getAnsi()->line(80));
             $this->command->message("");
         }
