@@ -309,8 +309,8 @@ class AbstractRenderHandler implements BodyInterface
     {
         $file = explode("/", $file);
         if ($removeSuffix) {
-            $pop = array_pop($file);
-            $file[] = substr($pop, (int)strpos($pop, 'unitary') + 8);
+            //$pop = array_pop($file);
+            //$file[] = substr($pop, (int)strpos($pop, 'unitary') + 8);
         }
         $file = array_chunk(array_reverse($file), $length);
         $file = implode("\\", array_reverse($file[0]));

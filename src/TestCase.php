@@ -58,6 +58,7 @@ final class TestCase
     private int $hasError = 0;
     private int $skipped = 0;
     private float $duration = 0;
+    private float $memory = 0;
     private bool $hasAssertError = false;
     private bool $failFast = false;
     private ?ExceptionItem $throwable = null;
@@ -115,15 +116,21 @@ final class TestCase
     /**
      * Get current test group duration
      *
-     * @param int $precision
      * @return float
      */
-    public function getDuration(int $precision = 0): float
+    public function getDuration(): float
     {
-        if($precision > 0) {
-            return round($this->duration, $precision);
-        }
         return $this->duration;
+    }
+
+    /**
+     * Get current test group memory
+     *
+     * @return float
+     */
+    public function getMemory(): float
+    {
+        return $this->memory;
     }
 
     /**
@@ -267,14 +274,15 @@ final class TestCase
         $row = $this;
         $test = $this->bind;
         $start = microtime(true);
+        $memStart = memory_get_usage();
         $newInst = null;
         if ($test !== null) {
             try {
-                $newInst = $test($this);
-                $inst = ($newInst instanceof self) ? $newInst : $this;
-                if($inst->getConfig()->skip) {
-                    $inst->incrementSkipped();
+                if($this->getConfig()->skip) {
+                    $this->incrementSkipped();
                 }
+                $newInst = $test($this);
+                //$inst = ($newInst instanceof self) ? $newInst : $this;
 
             } catch (AssertionError $e) {
                 $newInst = $this->createTraceError($e, "Assertion failed");
@@ -300,7 +308,9 @@ final class TestCase
             }
         }
 
+        $this->memory = (float)(memory_get_usage() - $memStart);
         $this->duration = (float)(microtime(true) - $start);
+
         return $this->test;
     }
 
@@ -347,6 +357,8 @@ final class TestCase
      * @param array|Closure $validation A list of validation methods with arguments,
      *                                   or a closure defining the test logic.
      * @param string|null $message Optional custom message for test reporting.
+     * @param string|null $description
+     * @param array|null $trace
      * @return TestUnit
      * @throws ErrorException If validation fails during runtime execution.
      */

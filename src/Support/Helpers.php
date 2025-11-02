@@ -22,6 +22,31 @@ final class Helpers
 {
 
     /**
+     * Convert bytes to megabytes and return as a string with fixed precision.
+     *
+     * Note: 1 MB = 1024 * 1024 bytes
+     *
+     * @param int $memoryInByte Memory size in bytes.
+     * @return string Memory size in megabytes
+     */
+    public static function byteToMegabyte(int $memoryInByte): string
+    {
+        return number_format(round($memoryInByte / 1048576, 4), 4, '.', '');
+    }
+
+    /**
+     * Round and format the duration for end-user display string with fixed precision.
+     *
+     * @param float $duration Duration in seconds.
+     * @return string Formatted duration (e.g. "0.123456").
+     */
+    public static function formatDuration(float $duration): string
+    {
+        return number_format(round($duration, 6), 6, '.', '');
+    }
+
+
+    /**
      * Convert a throwable into ExceptionItem
      *
      * @param \Throwable $exception

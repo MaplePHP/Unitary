@@ -3,8 +3,7 @@
 use MaplePHP\Unitary\{Config\TestConfig, Expect, TestCase, TestItem};
 
 
-group(TestConfig::make("Test item class")
-    ->withName("unitary"), function (TestCase $case) {
+group(TestConfig::make("Test item class")->withName("unitary-test-item"), function (TestCase $case) {
 
     $item = new TestItem();
 

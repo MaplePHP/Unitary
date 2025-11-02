@@ -25,6 +25,16 @@ class Expect extends ValidationChain
     protected Throwable|false|null $except = null;
 
     /**
+     * Static init validation chain
+     * @param mixed $value
+     * @return mixed
+     */
+    public static function value(mixed $value): self
+    {
+        return new self($value);
+    }
+
+    /**
      * Validate exception instance
      *
      * @param string|object|callable $compare

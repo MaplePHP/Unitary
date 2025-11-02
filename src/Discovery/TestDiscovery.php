@@ -164,6 +164,7 @@ final class TestDiscovery
                     $this->executeUnitFile((string)$file);
 
                 } catch (\Throwable $exception) {
+
                     if ($this->failFast) {
                         throw $exception;
                     }
@@ -189,10 +190,9 @@ final class TestDiscovery
      * Scope isolation, $this unbinding, State separation, Deferred execution
      *
      * @param string $file The full path to the test file to require.
-     * @param Closure $callback
      * @return void
-     * @throws ErrorException
      * @throws BlunderErrorException
+     * @throws ErrorException
      * @throws Throwable
      */
     private function executeUnitFile(string $file): void

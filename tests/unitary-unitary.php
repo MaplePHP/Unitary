@@ -26,10 +26,8 @@ group($config->withSubject("Tets old validation syntax"), function ($case) {
 });
 
 group($config->withSubject("Test json validation"), function(TestCase $case) {
-
     $case->validate('{"response":{"status":200,"message":"ok"}}', function(Expect $expect) {
         $expect->isJson()->hasJsonValueAt("response.status", 200);
         assert($expect->isValid(), "Expected JSON structure did not match.");
     })->describe("Test json validation");
-
 });

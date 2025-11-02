@@ -3,6 +3,7 @@
 namespace MaplePHP\Unitary\Renders;
 
 use MaplePHP\DTO\Format\Clock;
+use MaplePHP\Unitary\Support\Helpers;
 use MaplePHP\Unitary\TestItem;
 use MaplePHP\Unitary\TestUnit;
 use RuntimeException;
@@ -28,7 +29,7 @@ class JUnitRenderer extends AbstractRenderHandler
     {
         $className = $this->getClassName();
         $msg = (string)$this->case->getMessage();
-        $duration = number_format($this->case->getDuration(6), 6, '.', '');
+        $duration = Helpers::formatDuration($this->case->getDuration());
 
         $this->xml->startElement('testsuite');
         $this->xml->writeAttribute('name', $msg);

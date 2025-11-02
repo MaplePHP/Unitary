@@ -11,6 +11,7 @@ use TestLib\UserService;
 
 $config = TestConfig::make()->withName("mocker");
 
+
 group($config->withSubject("Can not mock final or private"), function(TestCase $case) {
 
     $user = $case->mock(UserService::class, function(MethodRegistry $method) {
@@ -159,7 +160,7 @@ group($config->withSubject("Test immutable PSR Response mocking and default mock
 
     $case->validate($response->getProtocolVersion(), function(Expect $inst) {
         // MockedValue is the default value that the mocked class will return
-        $inst->isEqualTo("MockedValue");
+        $inst->isEqualTo("myCustomMockStringValue");
     });
 
     $case->validate($response->getBody(), function(Expect $inst) {

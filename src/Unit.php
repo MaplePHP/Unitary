@@ -37,10 +37,12 @@ final class Unit
     private ?string $show = null;
     private bool $verbose = false;
     private bool $alwaysShowFiles = false;
-    private static float $duration = 0;
     private static int $totalPassedTests = 0;
     private static int $totalTests = 0;
     private static int $totalErrors = 0;
+    private static int $totalSkippedTests = 0;
+    private static float $totalMemory = 0;
+    private static float $totalDuration = 0;
 
     /**
      * Initialize Unit test instance with optional handler
@@ -216,6 +218,16 @@ final class Unit
     }
 
     /**
+     * Get the total number of skipped grouped test
+     *
+     * @return int
+     */
+    public static function getTotalSkipped(): int
+    {
+        return self::$totalSkippedTests;
+    }
+
+    /**
      * Increment error count
      *
      * @return void
@@ -228,15 +240,21 @@ final class Unit
     /**
      * Get total duration of all tests
      *
-     * @param int $precision
      * @return float
      */
-    public static function getDuration(int $precision = 0): float
+    public static function getTotalDuration(): float
     {
-        if($precision > 0) {
-            return round(self::$duration, $precision);
-        }
-        return self::$duration;
+        return self::$totalDuration;
+    }
+
+    /**
+     * Get total duration of all tests
+     *
+     * @return float
+     */
+    public static function getTotalMemory(): float
+    {
+        return self::$totalMemory;
     }
 
     /**
@@ -321,6 +339,7 @@ final class Unit
             if (!($row instanceof TestCase)) {
                 throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestCase.");
             }
+
             $row->dispatchTest($row);
             $tests = $row->runDeferredValidations();
             $checksum = $fileChecksum . $index;
@@ -349,8 +368,10 @@ final class Unit
             // Important to add test from skip as successfully count to make sure that
             // the total passed tests are correct, and it will not exit with code 1
             self::$totalPassedTests += ($row->getConfig()->skip) ? $row->getTotal() : $row->getCount();
+            self::$totalSkippedTests += $row->getSkipped();
             self::$totalTests += $row->getTotal();
-            self::$duration += $row->getDuration();
+            self::$totalMemory += $row->getMemory();
+            self::$totalDuration += $row->getDuration();
         }
         $out = $handler->outputBuffer();
         if ($out) {
