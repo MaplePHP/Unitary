@@ -13,7 +13,7 @@ class CoverageController extends DefaultController
     /**
      * Code Coverage Controller
      */
-    public function run(RunTestService $service): ResponseInterface
+    public function index(RunTestService $service): ResponseInterface
     {
         $coverage = new CodeCoverage();
         $coverage->start();

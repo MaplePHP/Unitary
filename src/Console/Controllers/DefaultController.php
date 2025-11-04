@@ -26,13 +26,16 @@ abstract class DefaultController
      * Set some data type safe object that comes from container and the dispatcher
      *
      * @param ContainerInterface $container
+     * @param ResponseInterface $response
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
+     * @throws \ErrorException
      */
     public function __construct(ContainerInterface $container, ResponseInterface $response)
     {
         $this->container = $container;
         $this->args = $this->container->get("args");
+        $this->props = $this->container->get("props");
         $this->command = $this->container->get("command");
         $this->request = $this->container->get("request");
         $this->configs = $this->container->get("configuration");

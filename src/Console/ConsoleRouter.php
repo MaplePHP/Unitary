@@ -10,8 +10,7 @@ use MaplePHP\Unitary\Console\Controllers\TemplateController;
 // $router->map(["", "test", "run"], [RunTestController::class, "run"])->with(TestMiddleware::class)
 
 return $router
-    ->map("coverage", [CoverageController::class, "run"])
-    ->map("template", [TemplateController::class, "run"])
-    ->map("junit", [RunTestController::class, "runJUnit"])
-    ->map(["", "test", "run"], [RunTestController::class, "run"])
+    ->map("coverage", [CoverageController::class, "index"])
+    ->map("template", [TemplateController::class, "index"])
+    ->map(["", "test", "run"], [RunTestController::class, "index"])
     ->map(["__404", "help"], [HelpController::class, "index"]);

@@ -2,6 +2,7 @@
 
 namespace MaplePHP\Unitary\Console\Controllers;
 
+use MaplePHP\Blunder\Exceptions\BlunderSoftException;
 use MaplePHP\Unitary\Discovery\TestDiscovery;
 use MaplePHP\Unitary\Renders\CliRenderer;
 use MaplePHP\Unitary\Console\Services\RunTestService;
@@ -11,10 +12,30 @@ use MaplePHP\Unitary\Renders\JUnitRenderer;
 
 class RunTestController extends DefaultController
 {
+
     /**
      * Main test runner
      */
-    public function run(RunTestService $service): ResponseInterface
+    public function index(RunTestService $service): ResponseInterface
+    {
+        switch ($this->props->type)
+        {
+            case "junit": case "xml":
+                return $this->runJUnit($service);
+            default;
+                if(!($this->props->type === null || $this->props->type === "cli" || $this->props->type === "default")) {
+                    throw new BlunderSoftException(
+                        "Unsupported argument type value: \"{$this->props->type}\". See the help documentation for details."
+                    );
+                }
+                return $this->runCli($service);
+        }
+    }
+
+    /**
+     * Main test runner
+     */
+    protected function runCli(RunTestService $service): ResponseInterface
     {
         $handler = new CliRenderer($this->command);
         $response = $service->run($handler);
@@ -25,7 +46,7 @@ class RunTestController extends DefaultController
     /**
      * Main test runner
      */
-    public function runJUnit(RunTestService $service): ResponseInterface
+    protected function runJUnit(RunTestService $service): ResponseInterface
     {
         $suites = new \XMLWriter();
         $suites->openMemory();

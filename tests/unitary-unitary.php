@@ -12,6 +12,19 @@ group($config->withSubject("Assert validations"), function ($case) {
     assert(1 === 1, "Assert has failed");
 });
 
+
+group("Example API Response", function(TestCase $case) {
+
+    $case->validate('{"response":{"status":200,"message":"ok"}}', function(Expect $expect) {
+
+        $expect->isJson()
+               ->hasJsonValueAt("response.status", 200)
+               ->describe("Json status response is invalid");
+
+    })->describe("Checking PSR Response");
+
+});
+
 group($config->withSubject("Tets old validation syntax"), function ($case) {
     $case->add("HelloWorld", [
         "isString" => [],

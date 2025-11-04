@@ -5,6 +5,7 @@
  */
 return [
     //'path' => 'app/Libraries/Unitary/tests/unitary-test.php',
+    'type' => "cli",
     'path' => false, // false|string|array<int, string>
     'smart-search' => false, // bool
     'errors-only' => false, // bool

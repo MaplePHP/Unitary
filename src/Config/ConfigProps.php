@@ -25,6 +25,7 @@ class ConfigProps extends AbstractConfigProps
     public ?string $show = null;
     public ?string $timezone = null;
     public ?string $locale = null;
+    public ?string $type = null;
     public ?int $exitCode = null;
     public ?bool $verbose = null;
     public ?bool $alwaysShowFiles = null;
@@ -53,6 +54,9 @@ class ConfigProps extends AbstractConfigProps
                 break;
             case 'show':
                 $this->show = (!is_string($value) || $value === '') ? null : $value;
+                break;
+            case 'type':
+                $this->type = (!is_string($value) || $value === '') ? null : $value;
                 break;
             case 'timezone':
                 // The default timezone is 'CET'

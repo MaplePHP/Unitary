@@ -13,7 +13,7 @@ class TemplateController extends DefaultController
      *
      * @return void
      */
-    public function run(): void
+    public function index(): void
     {
         $blocks = new Blocks($this->command);
         $blocks->addHeadline("\n--- Copy and paste code --->");

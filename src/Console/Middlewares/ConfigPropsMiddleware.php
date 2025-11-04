@@ -58,9 +58,7 @@ class ConfigPropsMiddleware implements MiddlewareInterface
      */
     private function getInitProps(): ConfigProps
     {
-
         if ($this->props === null) {
-
             $args = $this->container->get("args");
             $configs = $this->container->get("configuration");
             $command = $this->container->get("command");
@@ -79,6 +77,7 @@ class ConfigPropsMiddleware implements MiddlewareInterface
                 }
 
             } catch (Throwable $e) {
+                $this->props = $configs->getProps();
                 if (isset($args['verbose'])) {
                     $command->error($e->getMessage());
                     exit(1);
