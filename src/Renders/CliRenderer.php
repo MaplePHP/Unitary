@@ -13,6 +13,7 @@ class CliRenderer extends AbstractRenderHandler
     private Command $command;
     private string $color;
     private string $flag;
+    private bool $hardStop = false;
 
     /**
      * Pass the main command and stream to handler
@@ -97,11 +98,21 @@ class CliRenderer extends AbstractRenderHandler
         $this->command->message("");
 
         $dot = $this->command->getAnsi()->middot();
-        $passed = $this->command->getAnsi()->style(["bold", "grey"], "Passed: ");
+        if($this->hardStop && $this->case->getFailedCount()) {
+            $passed = $this->command->getAnsi()->style(["bold"], "Failed: ");
+            $passed .= $this->command->getAnsi()->style([$this->color], $this->case->getFailedCount());
+            $passed .= $this->command->getAnsi()->style(["grey"]," {$dot} ");
+            $passed .= $this->command->getAnsi()->style(["bold"], "Executed: ") . $this->command->getAnsi()->style(["yellow"], $this->case->getTotal());
+            $passed .= $this->command->getAnsi()->style(["grey"]," (hard stop)");
+
+        } else {
+            $passed = $this->command->getAnsi()->style(["bold"], "Passed: ");
+            //$passed .= $this->command->getAnsi()->style([$this->color], $this->case->getCount());
+            $passed .= $this->command->getAnsi()->style([$this->color], $this->case->getCount() . "/" . $this->case->getTotal());
+        }
 
         //$passed .= $this->command->getAnsi()->style([$this->color], $this->case->getCount() . "/" . $this->case->getTotal());
-        $passed .= $this->command->getAnsi()->style(["grey"], $this->case->getCount() . " {$dot} ");
-        $passed .= $this->command->getAnsi()->style(["bold", "grey"], "Executed: ") . $this->command->getAnsi()->style(["grey"], $this->case->getTotal());
+
 
         $footer = $passed .
             $this->command->getAnsi()->style(["italic", "grey"], " $dot ". $select);
@@ -132,6 +143,11 @@ class CliRenderer extends AbstractRenderHandler
                     $errorType = $this->getErrorType($test);
                     //$type = $this->getType($test);
                     $msg = (string)$test->getMessage();
+
+                    if($test->isAssert() || $this->case->isAssert()) {
+                        $this->hardStop = true;
+                    }
+
                     $this->command->message("");
                     $this->command->message(
                         $this->command->getAnsi()->style(["bold", $this->color], ucfirst($errorType) . ": ") .
@@ -163,6 +179,7 @@ class CliRenderer extends AbstractRenderHandler
                                     $this->command->message($this->getErrorMessage($test));
                                 } else {
 
+
                                     $failedMsg = $this->getMessage($test, $unit);
                                     $compare = $this->getComparison($unit, $failedMsg);
                                     $this->command->message($this->command->getAnsi()->style($this->color, $failedMsg));
@@ -179,7 +196,7 @@ class CliRenderer extends AbstractRenderHandler
                     if ($test->hasValue()) {
                         $this->command->message("");
                         $this->command->message(
-                            $this->command->getAnsi()->bold("Input value: ") .
+                            $this->command->getAnsi()->bold("Input: ") .
                             $this->getValue($test)
                         );
                     }
