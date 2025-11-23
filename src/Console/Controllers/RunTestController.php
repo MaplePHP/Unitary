@@ -3,6 +3,7 @@
 namespace MaplePHP\Unitary\Console\Controllers;
 
 use MaplePHP\Blunder\Exceptions\BlunderSoftException;
+use MaplePHP\DTO\Format\Clock;
 use MaplePHP\Unitary\Discovery\TestDiscovery;
 use MaplePHP\Unitary\Renders\CliRenderer;
 use MaplePHP\Unitary\Console\Services\RunTestService;
@@ -86,6 +87,7 @@ class RunTestController extends DefaultController
      * This is not really part of the Unit test library, as other stuff might be present here
      *
      * @return void
+     * @throws \Exception
      */
     protected function buildFooter(): void
     {
@@ -106,7 +108,8 @@ class RunTestController extends DefaultController
                 $this->command->getAnsi()->style(
                     ["italic", "grey"],
                     "Duration: " . Helpers::formatDuration($inst::getTotalDuration()) . " seconds $dot " .
-                    "Memory: " . Helpers::byteToMegabyte($inst::getTotalMemory()) . " MB \n"
+                    "Memory: " . Helpers::byteToMegabyte($inst::getTotalMemory()) . " MB $dot " .
+                    "Date: " . Clock::value("now")->iso() . "\n"
                 )
             );
             $this->command->message($this->command->getAnsi()->line(80));

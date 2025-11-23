@@ -142,7 +142,7 @@ class AbstractRenderHandler implements BodyInterface
         if($msg !== "") {
             return $msg;
         }
-        return $test->isValid() ? "All validations passed" : "Checks could not be validated";
+        return $test->isValid() ? "All validations passed" : "One or more validations failed";
     }
 
     /**
@@ -155,6 +155,10 @@ class AbstractRenderHandler implements BodyInterface
     {
         if($test->isValid()) {
             return "";
+        }
+
+        if($test->isAssert()) {
+            return "Assertion failure";
         }
         return ($test->hasError() || $this->case->getHasError()) ? "error" : "failure";
     }

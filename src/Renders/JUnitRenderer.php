@@ -30,13 +30,14 @@ class JUnitRenderer extends AbstractRenderHandler
         $className = $this->getClassName();
         $msg = (string)$this->case->getMessage();
         $duration = Helpers::formatDuration($this->case->getDuration());
+        $skippedCount = ($this->case->getSkipped() > 0) ? count($this->tests) : 0;
 
         $this->xml->startElement('testsuite');
         $this->xml->writeAttribute('name', $msg);
         $this->xml->writeAttribute('tests', (string)$this->case->getCount());
         $this->xml->writeAttribute('failures', (string)$this->case->getFailedCount());
         $this->xml->writeAttribute('errors', (string)$this->case->getErrors());
-        $this->xml->writeAttribute('skipped', (string)$this->case->getSkipped());
+        $this->xml->writeAttribute('skipped', (string)$skippedCount);
         $this->xml->writeAttribute('time', $duration);
         $this->xml->writeAttribute('timestamp', Clock::value("now")->iso());
         $this->xml->writeAttribute('id', $this->checksum);
@@ -68,7 +69,7 @@ class JUnitRenderer extends AbstractRenderHandler
                     // IF error has been triggered in validation closure
                     $this->buildErrors($test, $errorType, $type);
 
-                } else {
+                } else if(!$this->case->getConfig()->skip) {
                     foreach ($test->getUnits() as $unit) {
                         /** @var TestItem $unit */
                         if (!$unit->isValid()) {

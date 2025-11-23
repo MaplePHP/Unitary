@@ -19,6 +19,7 @@ use ErrorException;
 use Exception;
 use MaplePHP\Blunder\ExceptionItem;
 use MaplePHP\Blunder\Exceptions\BlunderErrorException;
+use MaplePHP\Blunder\Exceptions\BlunderSilentException;
 use MaplePHP\DTO\Format\Str;
 use MaplePHP\DTO\Traverse;
 use MaplePHP\Unitary\Config\TestConfig;
@@ -53,6 +54,7 @@ final class TestCase
     private ?Closure $bind = null;
     private ?string $error = null;
     private ?string $warning = null;
+    private bool $assert = false;
     private array $deferredValidation = [];
     private ?MockBuilder $mocker = null;
     private int $hasError = 0;
@@ -61,6 +63,7 @@ final class TestCase
     private float $memory = 0;
     private bool $hasAssertError = false;
     private bool $failFast = false;
+    private ?TestUnit $testUnit = null;
     private ?ExceptionItem $throwable = null;
 
     /**
@@ -198,7 +201,7 @@ final class TestCase
      *
      * @return void
      */
-    public function setHasAssertError(): void
+    public function setAsAssert(): void
     {
         $this->hasAssertError = true;
     }
@@ -208,7 +211,7 @@ final class TestCase
      *
      * @return bool
      */
-    public function getHasAssertError(): bool
+    public function isAssert(): bool
     {
         return $this->hasAssertError;
     }
@@ -232,6 +235,13 @@ final class TestCase
     public function warning(string $message): self
     {
         $this->warning = $message;
+        return $this;
+    }
+
+    public function assert(?string $message = null): self
+    {
+        $this->describe($message);
+        $this->assert = true;
         return $this;
     }
 
@@ -276,6 +286,7 @@ final class TestCase
         $start = microtime(true);
         $memStart = memory_get_usage();
         $newInst = null;
+
         if ($test !== null) {
             try {
                 if($this->getConfig()->skip) {
@@ -286,22 +297,24 @@ final class TestCase
 
             } catch (AssertionError $e) {
                 $newInst = $this->createTraceError($e, "Assertion failed");
-                $newInst->setHasAssertError();
+                $newInst->setAsAssert();
 
             } catch (Throwable $e) {
                 if (str_contains($e->getFile(), "eval()")) {
                     throw new BlunderErrorException($e->getMessage(), (int)$e->getCode());
                 }
-                if($this->failFast) {
-                    throw $e;
+
+                if(!($e instanceof BlunderSilentException)) {
+                    if($this->failFast) {
+                        throw $e;
+                    }
+                    $newInst = $this->createTraceError($e, trace: [
+                        "file" => $e->getFile(),
+                        "line" => $e->getLine(),
+                    ]);
+
+                    $newInst->incrementError();
                 }
-
-                $newInst = $this->createTraceError($e, trace: [
-                    "file" => $e->getFile(),
-                    "line" => $e->getLine(),
-                ]);
-
-                $newInst->incrementError();
             }
             if ($newInst instanceof self) {
                 $row = $newInst;
@@ -324,26 +337,10 @@ final class TestCase
      */
     public function validate(mixed $expect, Closure $validation): TestUnit
     {
-        return $this->expectAndValidate($expect, function (mixed $value, Expect $inst) use ($validation) {
+        $this->testUnit = $this->expectAndValidate($expect, function (mixed $value, Expect $inst) use ($validation) {
             return $validation($inst, new Traverse($value));
         }, $this->error);
-
-    }
-
-    /**
-     * Quickly validate with asserting
-     *
-     * @param bool $expect Assert value should be bool
-     * @param string|null $message
-     * @return $this
-     * @throws ErrorException
-     */
-    public function assert(bool $expect, ?string $message = null): self
-    {
-        $this->expectAndValidate($expect, function () use ($expect, $message) {
-            assert($expect, $assertMsg ?? $message);
-        }, $this->error);
-        return $this;
+        return $this->testUnit;
     }
 
     /**
@@ -356,7 +353,7 @@ final class TestCase
      * @param mixed $expect The value to test.
      * @param array|Closure $validation A list of validation methods with arguments,
      *                                   or a closure defining the test logic.
-     * @param string|null $message Optional custom message for test reporting.
+     * @param string|TestUnit|null $message Optional custom message for test reporting.
      * @param string|null $description
      * @param array|null $trace
      * @return TestUnit
@@ -365,14 +362,13 @@ final class TestCase
     protected function expectAndValidate(
         mixed $expect,
         array|Closure $validation,
-        ?string $message = null,
+        string|TestUnit|null $message = null,
         ?string $description = null,
         ?array $trace = null
     ): TestUnit {
-
         $listArr = [];
         $this->value = $expect;
-        $test = new TestUnit($message);
+        $test = ($message instanceof TestUnit) ? new $message : new TestUnit($message);
         $test->setTestValue($this->value);
         if ($validation instanceof Closure) {
             $validPool = new Expect($this->value);
@@ -409,6 +405,7 @@ final class TestCase
             $initValue = $validPool->getInitValue();
             $initValue = ($initValue !== null) ? $initValue : $this->getValue();
             $test->setTestValue($initValue);
+
         } else {
             foreach ($validation as $method => $args) {
                 if (!($args instanceof Closure) && !is_array($args)) {
@@ -431,6 +428,9 @@ final class TestCase
         }
         $this->test[] = $test;
         $this->error = null;
+        if($this->assert == true) {
+            $test->assert(null);
+        }
         return $test;
     }
 
@@ -480,8 +480,7 @@ final class TestCase
     }
 
     /**
-     * Same as "addTestUnit" but is public and will make sure the validation can be
-     * properly registered and traceable
+     * DEPRECTAED: Add test
      *
      * @param mixed $expect The expected value
      * @param array|Closure $validation The validation logic
@@ -489,9 +488,24 @@ final class TestCase
      * @return $this
      * @throws ErrorException
      */
-    public function add(mixed $expect, array|Closure $validation, ?string $message = null): TestCase
+    public function add(mixed $expect, array|Closure $validation, ?string $message = null): self
     {
         $this->expectAndValidate($expect, $validation, $message);
+        return $this;
+    }
+
+    /**
+     * Defer can be used to clean up group and will be excepted at the end of life
+     *
+     * @param Closure $defer
+     * @return $this
+     */
+    public function defer(Closure $defer): self
+    {
+        $this->deferredValidation[] = [
+            "trace" => null,
+            "call" => $defer
+        ];
         return $this;
     }
 
@@ -779,6 +793,9 @@ final class TestCase
 
             /** @var callable $row['call'] */
             $error = $row['call']();
+            if($row['trace'] === null) {
+                continue;
+            }
             $hasValidated = [];
             /** @var string $method */
             foreach ($error as $method => $arr) {

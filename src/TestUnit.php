@@ -14,12 +14,14 @@ namespace MaplePHP\Unitary;
 
 use ErrorException;
 use MaplePHP\Blunder\ExceptionItem;
+use MaplePHP\Blunder\Exceptions\BlunderSilentException;
 use MaplePHP\Unitary\Console\Enum\UnitStatusType;
 use MaplePHP\Unitary\Support\Helpers;
 
 final class TestUnit
 {
     private bool $valid;
+    private bool $assert = false;
     private mixed $value = null;
     private bool $hasValue = false;
     private ?string $message;
@@ -86,6 +88,36 @@ final class TestUnit
     public function message(?string $message): self
     {
         return $this->describe($message);
+    }
+
+    /**
+     * Set validation as an assert (Hard stop error)
+     *
+     * @param ?string $message
+     * @return $this
+     */
+    public function assert(?string $message = null): self
+    {
+        $this->assert = true;
+        $this->describe($message);
+        assert($this->isValid(), new BlunderSilentException("Silence is gold..."));
+        return $this;
+    }
+
+    /**
+     * Get if validation is assertion
+     *
+     * @return bool
+     */
+    public function isAssert(): bool
+    {
+        return $this->assert;
+    }
+
+    public function setAsAssert(): self
+    {
+        $this->assert = true;
+        return $this;
     }
 
     /**

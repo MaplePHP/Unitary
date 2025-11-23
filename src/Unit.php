@@ -16,6 +16,7 @@ namespace MaplePHP\Unitary;
 use Closure;
 use ErrorException;
 use MaplePHP\Blunder\Exceptions\BlunderErrorException;
+use MaplePHP\Blunder\Exceptions\BlunderSilentException;
 use Psr\Http\Message\StreamInterface;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Unitary\Config\TestConfig;
@@ -341,7 +342,7 @@ final class Unit
             }
 
             $row->dispatchTest($row);
-            $tests = $row->runDeferredValidations();
+            $deferred = $row->runDeferredValidations();
             $checksum = $fileChecksum . $index;
             $show = ($row->getConfig()->select === $this->show || $this->show === $checksum);
 
@@ -355,7 +356,7 @@ final class Unit
             $handler->setCase($row);
             $handler->setSuitName($this->file);
             $handler->setChecksum($checksum);
-            $handler->setTests($tests);
+            $handler->setTests($deferred);
             $handler->setShow($show);
             $handler->setVerbose($this->verbose);
             $handler->setAlwaysShowFiles($this->alwaysShowFiles);

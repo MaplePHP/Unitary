@@ -8,25 +8,25 @@ use TestLib\Mailer;
 $config = TestConfig::make("All A should fail")->withName("unitary-fail")->withSkip();
 group($config, function (TestCase $case) {
 
-    $case->error("Default validations")->validate(1, function(Expect $inst) {
+    $case->describe("Default validations")->validate(1, function(Expect $inst) {
         $inst->isEmail();
         $inst->length(100, 1);
         $inst->isString();
     });
 
-    $case->error("Return validation")->validate(true, function(Expect $inst) {
+    $case->describe("Return validation")->validate(true, function(Expect $inst) {
         return false;
     });
 
-    $case->error("Assert validation")->validate(true, function(Expect $inst) {
+    $case->describe("Assert validation")->validate(true, function(Expect $inst) {
         assert(1 == 2);
     });
 
-    $case->error("Assert with message validation")->validate(true, function(Expect $inst) {
+    $case->describe("Assert with message validation")->validate(true, function(Expect $inst) {
         assert(1 == 2, "Is not equal to 2");
     });
 
-    $case->error("Assert with all validation")->validate(true, function(Expect $inst) {
+    $case->describe("Assert with all validation")->validate(true, function(Expect $inst) {
         assert($inst->isEmail()->isString()->isValid(), "Is not email");
     });
 
@@ -37,6 +37,7 @@ group($config, function (TestCase $case) {
         }
     ], "Old validation syntax");
 
+    // Mocks is deferred validations
     $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
         $method->method("send")->keepOriginal()->called(0);
         $method->method("isValidEmail")->keepOriginal();
@@ -54,8 +55,16 @@ group($config, function (TestCase $case) {
             ->called(0);
     });
 
-    $case->error("Mocking validation")->validate(fn() => $mail->send(), function(Expect $inst) {
+    $case->describe("Mocking validation")->validate(fn() => $mail->send(), function(Expect $inst) {
         $inst->hasThrowableMessage("dwdwqdwqwdq email");
     });
-    assert(1 == 2, "Assert in group level");
+
+    $case->validate(false, function(Expect $inst) {
+        $inst->isTrue();
+    })->assert("A hard stop assert failure");
+
+    $case->describe("Will mot validate because of assert above")->validate(false, function(Expect $inst) {
+        $inst->isTrue();
+    });
+    //assert(1 == 2, "Assert in group level");
 });

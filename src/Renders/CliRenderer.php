@@ -96,15 +96,15 @@ class CliRenderer extends AbstractRenderHandler
         }
         $this->command->message("");
 
-        $passed = $this->command->getAnsi()->bold("Passed: ");
-        if ($this->case->getHasAssertError() || $this->case->getHasError()) {
-            $passed .= $this->command->getAnsi()->style(["grey"], "N/A");
-        } else {
-            $passed .= $this->command->getAnsi()->style([$this->color], $this->case->getCount() . "/" . $this->case->getTotal());
-        }
+        $dot = $this->command->getAnsi()->middot();
+        $passed = $this->command->getAnsi()->style(["bold", "grey"], "Passed: ");
+
+        //$passed .= $this->command->getAnsi()->style([$this->color], $this->case->getCount() . "/" . $this->case->getTotal());
+        $passed .= $this->command->getAnsi()->style(["grey"], $this->case->getCount() . " {$dot} ");
+        $passed .= $this->command->getAnsi()->style(["bold", "grey"], "Executed: ") . $this->command->getAnsi()->style(["grey"], $this->case->getTotal());
 
         $footer = $passed .
-            $this->command->getAnsi()->style(["italic", "grey"], " - ". $select);
+            $this->command->getAnsi()->style(["italic", "grey"], " $dot ". $select);
         if (!$this->show && $this->case->getConfig()->skip) {
             $footer = $this->command->getAnsi()->style(["italic", "grey"], $select);
         }
@@ -159,8 +159,6 @@ class CliRenderer extends AbstractRenderHandler
 
                             /** @var TestItem $unit */
                             if (!$unit->isValid()) {
-
-
                                 if($this->show && $this->case->getHasError()) {
                                     $this->command->message($this->getErrorMessage($test));
                                 } else {
