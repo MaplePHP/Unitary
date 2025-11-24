@@ -13,10 +13,10 @@ declare(strict_types=1);
 
 namespace MaplePHP\Unitary\Console\Enum;
 
-enum UnitStatusType
+enum UnitStatusType: string
 {
-    case Failure;
-    case Error;
+    case Failure = 'failure';
+    case Error = 'error';
 
     public function getStatus(): string
     {

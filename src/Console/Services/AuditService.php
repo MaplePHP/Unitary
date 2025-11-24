@@ -7,10 +7,13 @@ use FilesystemIterator;
 use MaplePHP\Blunder\Exceptions\BlunderSoftException;
 use MaplePHP\DTO\Traverse;
 use MaplePHP\Http\Client;
+use MaplePHP\Http\Exceptions\NetworkException;
+use MaplePHP\Http\Exceptions\RequestException;
 use MaplePHP\Http\Request;
 use MaplePHP\Http\Stream;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Prompts\Themes\Blocks;
+use MaplePHP\Unitary\Console\Enum\Severity;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -42,7 +45,7 @@ class AuditService
      */
     public function dependencyCheck(): array
     {
-        if(!is_file($this->path . '/composer.lock')) {
+        if (!is_file($this->path . '/composer.lock')) {
             throw new RuntimeException("Could not locate composer.lock file, try run composer install/update.");
         }
 
@@ -56,11 +59,10 @@ class AuditService
 
     }
 
-    // GET SERVERIES ONLY OF BOOL
-    public function rrrr() {
+    public function getSeverities(): array
+    {
 
         $packages = $this->dependencyCheck();
-
 
         $packages[] = [
             'package' => 'symfony/http-foundation',
@@ -72,70 +74,36 @@ class AuditService
             'version' => '6.5.7',
         ];
 
+        $advisories = $this->cveLookUpRequest($packages);
 
-        $advisories = $this->packagist($packages);
-        if ($advisories !== false) {
+
+        if ($advisories !== []) {
             $hits = $this->getHits($advisories, $packages);
-
-            $blocks = new Blocks($this->command);
-            $blocks->addHeadline("Vulnerability has been found");
-
-
-
-
-
-            $blocks->addTableSection(function(Blocks $inst) use ($hits) {
-                foreach($hits as $row) {
-                    $inst
-                        ->addTable("Title", $row['title'])
-                        ->addTable("Package", $row['package'])
-                        ->addTable("Version", $row['version'])
-                        ->addTable("Severity", $this->severity($row['severity']))
-                        ->addTable("CVE ID", $row['id'])
-                        ->addTable("Link", $row['link']);
-                }
+            usort($hits, function ($a, $b) {
+                return $a['severityIndex'] <=> $b['severityIndex'];
             });
-
-        } else {
-            $this->command->error('No serverity found');
+            return $hits;
         }
-
-
+        return [];
     }
 
-    /**
-     * Get severity in with a severity color
-     *
-     * @param string $severity
-     * @return string
-     */
-    public function severity(string $severity): string
-    {
-        switch (strtolower($severity)) {
-            case 'low':
-                return $this->command->getAnsi()->blue('Low');
-            case 'medium':
-                return $this->command->getAnsi()->yellow('Medium');
-        }
-
-        return $this->command->getAnsi()->red('High');
-    }
 
     /**
-     * Packagist API request
+     * CVE Look up API request to packagist CVE API service
      *
      * @param array $packages
-     * @return array|false
-     * @throws \MaplePHP\Http\Exceptions\NetworkException
-     * @throws \MaplePHP\Http\Exceptions\RequestException
+     * @return array
+     * @throws NetworkException
+     * @throws RequestException
      */
-    function packagist(array $packages)
+    protected function cveLookUpRequest(array $packages): array
     {
         $names = array_column($packages, 'package');
         $qs = http_build_query(['packages' => $names], '', '&', PHP_QUERY_RFC3986);
+        $url = 'https://packagist.org/api/security-advisories/?' . $qs;
 
         $client = new Client();
-        $request = new Request("GET", 'https://packagist.org/api/security-advisories/?' . $qs, [
+        $request = new Request("GET", $url, [
             'Accept' => 'application/json',
         ]);
         $response = $client->sendRequest($request);
@@ -143,11 +111,7 @@ class AuditService
             throw new RuntimeException('CSV database seem to be temporarily unavailable');
         }
         $data = json_decode($response->getBody()->getContents(), true);
-        $advisories = array_filter($data['advisories'] ?? []);
-        if($advisories !== []) {
-            return $advisories;
-        }
-        return false;
+        return array_filter($data['advisories'] ?? []);
     }
 
     /**
@@ -157,31 +121,32 @@ class AuditService
      * @param array $packages
      * @return array
      */
-    public function getHits(array $advisories, array $packages): array
+    protected function getHits(array $advisories, array $packages): array
     {
         $hits = [];
         $objFind = Traverse::value($packages);
-        foreach($advisories as $pack => $advisory) {
+        foreach ($advisories as $pack => $advisory) {
             $foundPackage = $objFind->searchWithKey('package', $pack)->toArray();
-            if($foundPackage !== []) {
+            if ($foundPackage !== []) {
                 foreach ($advisory as $adv) {
-
                     $affected = $adv['affectedVersions'];
                     $ranges = explode('|', $affected);
                     foreach ($ranges as $constraint) {
                         if (Semver::satisfies($foundPackage['version'], trim($constraint))) {
+                            $severityObj = Severity::tryFrom($adv['severity']);
+                            $severityIndex = ($severityObj?->index() ?? 0);
                             $hits[] = [
                                 'package' => $pack,
                                 'version' => $foundPackage['version'],
-                                'id'      => $adv['cve'] ?? ($adv['link'] ?? $adv['title']),
-                                'title'   => $adv['title'] ?? '',
-                                'link'    => $adv['link'] ?? '',
-                                'severity' => $adv['severity'] ?? 'Unknown',
+                                'id' => $adv['cve'] ?? ($adv['link'] ?? $adv['title']),
+                                'title' => $adv['title'] ?? '',
+                                'link' => $adv['link'] ?? '',
+                                'severity' => $severityObj ?? 'Unknown',
+                                'severityIndex' => $severityIndex,
                                 'reportedAt' => $adv['reportedAt'] ?? 'Unknown',
                             ];
                         }
                     }
-
                 }
             }
         }

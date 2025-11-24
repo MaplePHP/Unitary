@@ -1,6 +1,6 @@
 <?php
 
-use MaplePHP\Unitary\{Config\TestConfig, Expect, Mocker\MethodRegistry, TestCase, Unit};
+use MaplePHP\Unitary\{Config\TestConfig, Expect, TestCase};
 
 
 $config = TestConfig::make()->withName("unitary");
