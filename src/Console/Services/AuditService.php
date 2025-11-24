@@ -3,44 +3,29 @@
 namespace MaplePHP\Unitary\Console\Services;
 
 use Composer\Semver\Semver;
-use FilesystemIterator;
-use MaplePHP\Blunder\Exceptions\BlunderSoftException;
 use MaplePHP\DTO\Traverse;
 use MaplePHP\Http\Client;
 use MaplePHP\Http\Exceptions\NetworkException;
 use MaplePHP\Http\Exceptions\RequestException;
 use MaplePHP\Http\Request;
 use MaplePHP\Http\Stream;
-use MaplePHP\Prompts\Command;
-use MaplePHP\Prompts\Themes\Blocks;
 use MaplePHP\Unitary\Console\Enum\Severity;
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\ContainerInterface;
-use Psr\Container\NotFoundExceptionInterface;
-use Psr\Http\Message\ResponseInterface;
-use MaplePHP\Unitary\Discovery\TestDiscovery;
-use MaplePHP\Unitary\Interfaces\BodyInterface;
-use MaplePHP\Unitary\Unit;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 use RuntimeException;
 
 class AuditService
 {
-
-    const ENV = [];
-    private Command $command;
     private string|false $path;
 
 
-    public function __construct(ContainerInterface $container)
+    public function __construct()
     {
-        $this->command = $container->get("command");
-        $this->path = realpath(__DIR__ . "/../../../");
+        // This should be the composer root location
+        $this->path = realpath(__DIR__ . "/../../../../../../");
     }
 
     /**
-     * Get all dependencies from locked compoer file
+     * Get all dependencies from locked composer file
+     *
      * @return array
      */
     public function dependencyCheck(): array
@@ -59,24 +44,27 @@ class AuditService
 
     }
 
+    /**
+     * Get all severities as an array
+     *
+     * @throws RequestException
+     * @throws NetworkException
+     */
     public function getSeverities(): array
     {
-
         $packages = $this->dependencyCheck();
-
+        /*
+        // Some test packages that contains severities low to high
         $packages[] = [
             'package' => 'symfony/http-foundation',
             'version' => '5.4.22',
         ];
-
         $packages[] = [
             'package' => 'guzzlehttp/guzzle',
             'version' => '6.5.7',
         ];
-
+        */
         $advisories = $this->cveLookUpRequest($packages);
-
-
         if ($advisories !== []) {
             $hits = $this->getHits($advisories, $packages);
             usort($hits, function ($a, $b) {
@@ -86,7 +74,6 @@ class AuditService
         }
         return [];
     }
-
 
     /**
      * CVE Look up API request to packagist CVE API service
