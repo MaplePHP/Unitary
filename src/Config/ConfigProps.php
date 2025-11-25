@@ -32,6 +32,7 @@ class ConfigProps extends AbstractConfigProps
     public ?bool $errorsOnly = null;
     public ?bool $smartSearch = null;
     public ?bool $failFast = null;
+    public ?bool $help = null;
 
     /**
      * Hydrate the properties/object with expected data, and handle unexpected data
@@ -88,6 +89,9 @@ class ConfigProps extends AbstractConfigProps
                 break;
             case 'failFast':
                 $this->failFast = $this->dataToBool($value);
+                break;
+            case 'help':
+                $this->help = $this->dataToBool($value);
                 break;
         }
     }

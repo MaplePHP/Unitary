@@ -37,8 +37,7 @@ class HelpController extends DefaultController
                 ->addOption("--timezone=<region/city>", "Set default timezone (e.g. `Europe/Stockholm`). Affects date handling.")
                 ->addOption("--locale=<locale>", "Set default locale (e.g. `en_US`). Affects date formatting.")
                 ->addOption("--verbose", "Show all warnings, including hidden ones.")
-                ->addOption("--failFast", "Stop immediately on the first error or exception.")
-                ;
+                ->addOption("--failFast", "Stop immediately on the first error or exception.");
         });
 
         $blocks->addSection("Type list", function (Blocks $inst) {

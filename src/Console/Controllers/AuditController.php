@@ -2,26 +2,20 @@
 
 namespace MaplePHP\Unitary\Console\Controllers;
 
-use MaplePHP\Blunder\Exceptions\BlunderSoftException;
-use MaplePHP\DTO\Format\Clock;
+use MaplePHP\Http\Exceptions\NetworkException;
+use MaplePHP\Http\Exceptions\RequestException;
 use MaplePHP\Prompts\Themes\Blocks;
 use MaplePHP\Unitary\Console\Services\AuditService;
-use MaplePHP\Unitary\Discovery\TestDiscovery;
-use MaplePHP\Unitary\Renders\CliRenderer;
-use MaplePHP\Unitary\Console\Services\RunTestService;
-use MaplePHP\Unitary\Support\Helpers;
-use Psr\Http\Message\ResponseInterface;
-use MaplePHP\Unitary\Renders\JUnitRenderer;
 
 class AuditController extends DefaultController
 {
-
-
     /**
-     * Audit CLI index
+     * Audit CLI index to trigger dependencies or security scanner
      *
      * @param AuditService $service
      * @return void
+     * @throws NetworkException
+     * @throws RequestException
      */
     public function index(AuditService $service): void
     {
@@ -30,14 +24,52 @@ class AuditController extends DefaultController
             case "dependencies":
                 $this->supplyChain($service);
                 break;
-            default;
+            case "security":
+            case "severities":
+            case "vulnerabilities":
+            case "cve":
                 $this->vulnerabilityAudit($service);
+                break;
+            default:
+                $this->help();
                 break;
         }
     }
 
     /**
+     * Help page for Audit
+     *
+     * @return void
+     */
+    public function help(): void
+    {
+        $blocks = new Blocks($this->command);
+        $blocks->addHeadline("\n--- Unitary Audit Help ---");
+
+        $blocks->addSection("Options", function (Blocks $inst) {
+            return $inst->addOption("--type", "security, dependencies");
+        });
+
+        $blocks->addSection("Some examples", function (Blocks $inst) {
+            return $inst
+                ->addExamples(
+                    "php vendor/bin/unitary audit --type=security",
+                    "Scan project for vulnerabilities (CVE scan)"
+                )->addExamples(
+                    "php vendor/bin/unitary run --type=dependencies",
+                    "Inspect dependency tree and supply-chain footprint."
+                );
+        });
+        $blocks->addSpace();
+    }
+
+    /**
      * Package Vulnerability Audit
+     *
+     * @param AuditService $service
+     * @return void
+     * @throws NetworkException
+     * @throws RequestException
      */
     public function vulnerabilityAudit(AuditService $service): void
     {
@@ -46,7 +78,7 @@ class AuditController extends DefaultController
         $blocks = new Blocks($this->command);
 
         $this->command->message("");
-        $blocks->addHeadline("Package Vulnerability Audit");
+        $blocks->addHeadline("Unitary Security Audit");
 
         if ($severityCount > 0) {
             $this->command->message("");
@@ -63,20 +95,18 @@ class AuditController extends DefaultController
             }
 
             $this->command->message(
-                $this->command->getAnsi()->style(['bold', 'brightRed'], "{$severityCount} vulnerabilities detected")
+                $this->command->getAnsi()->style(['bold', 'brightRed'], "$severityCount vulnerabilities detected")
             );
 
             $this->command->message(
                 $this->command->getAnsi()->italic("Update affected packages to resolve the issues.")
             );
-            $this->command->message("");
 
         } else {
             $blocks->addText("All dependencies appear secure.", "green");
-            $this->command->message("");
         }
+        $this->command->message("");
     }
-
 
     /**
      * List all dependencies that you are using through composer
@@ -84,24 +114,24 @@ class AuditController extends DefaultController
      * @param AuditService $service
      * @return void
      */
-    public function supplyChain(AuditService $service)
+    public function supplyChain(AuditService $service): void
     {
         $data = $service->dependencyCheck();
         $total = count($data);
 
-        $this->command->message("");
         $blocks = new Blocks($this->command);
-        $blocks->addHeadline("Supply chain audit");
-
-        $blocks->addSection("Installed composer packages", function (Blocks $inst) use ($data) {
+        $blocks->addSpace();
+        $blocks->addHeadline("Unitary Dependency Audit");
+        $blocks->addSection("Installed packages", function (Blocks $inst) use ($data) {
             foreach ($data as $row) {
-                $inst = $inst->addList($row['package'], "v{$row['version']}");
+                $inst = $inst->addOption($row['package'], "v{$row['version']}");
             }
             return $inst;
         });
 
-        $this->command->message($this->command->getAnsi()->bold("Total packages: ") . $total);
-        $this->command->message("");
+        $blocks->addSpace();
+        $blocks->addText($this->command->getAnsi()->style(["bold"], "Total packages: ") . $total);
+        $blocks->addSpace();
     }
 
 }

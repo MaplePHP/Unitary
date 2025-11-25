@@ -15,7 +15,7 @@ use RuntimeException;
 class AuditService
 {
     private string|false $path;
-
+    const SEVERITY_TEST_PACKAGES = false;
 
     public function __construct()
     {
@@ -53,17 +53,9 @@ class AuditService
     public function getSeverities(): array
     {
         $packages = $this->dependencyCheck();
-        /*
-        // Some test packages that contains severities low to high
-        $packages[] = [
-            'package' => 'symfony/http-foundation',
-            'version' => '5.4.22',
-        ];
-        $packages[] = [
-            'package' => 'guzzlehttp/guzzle',
-            'version' => '6.5.7',
-        ];
-        */
+        if (self::SEVERITY_TEST_PACKAGES) {
+            $packages = array_merge($packages, $this->addTestPackages());
+        }
         $advisories = $this->cveLookUpRequest($packages);
         if ($advisories !== []) {
             $hits = $this->getHits($advisories, $packages);
@@ -140,4 +132,23 @@ class AuditService
         return $hits;
     }
 
+    /**
+     * Will ensure that CVE low to high is triggered without the need of
+     * adding any vulnerable packages.
+     *
+     * @return array
+     */
+    private function addTestPackages(): array
+    {
+        return [
+            [
+                'package' => 'symfony/http-foundation',
+                'version' => '5.4.22',
+            ],
+            [
+                'package' => 'guzzlehttp/guzzle',
+                'version' => '6.5.7',
+            ]
+        ];
+    }
 }
