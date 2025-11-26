@@ -30,17 +30,24 @@ class CheckAllowedProps implements MiddlewareInterface
         $this->configs = $container->get("configuration");
     }
 
-
+    /**
+     * Will automatically trigger 404 response codes if used prop does not exist
+     * as an option in config prop class, with exception for help and if CLI keyword is empty
+     *
+     * @param ServerRequestInterface $request
+     * @param RequestHandlerInterface $handler
+     * @return ResponseInterface
+     */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
+        $cliKeyword = $request->getCliKeyword();
         $response = $handler->handle($request);
         foreach ($this->args as $key => $value) {
-            if(!$this->configs->getProps()->hasProp($key)) {
+            if(!$this->configs->getProps()->hasProp($key) && ($cliKeyword === '' || $key !== "help")) {
                 $response = $response->withStatus(404);
                 break;
             }
         }
         return $response;
     }
-
 }
