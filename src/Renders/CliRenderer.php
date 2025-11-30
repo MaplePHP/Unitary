@@ -132,6 +132,7 @@ class CliRenderer extends AbstractRenderHandler
      */
     protected function showFailedTests(): void
     {
+        $this->hardStop = false;
         if (($this->show || !$this->case->getConfig()->skip)) {
             foreach ($this->tests as $test) {
 
@@ -140,13 +141,13 @@ class CliRenderer extends AbstractRenderHandler
                 }
 
                 if (!$test->isValid()) {
+                    if($test->isAssert()) {
+                        $this->hardStop = true;
+                    }
+
                     $errorType = $this->getErrorType($test);
                     //$type = $this->getType($test);
                     $msg = (string)$test->getMessage();
-
-                    if($test->isAssert() || $this->case->isAssert()) {
-                        $this->hardStop = true;
-                    }
 
                     $this->command->message("");
                     $this->command->message(
@@ -170,20 +171,15 @@ class CliRenderer extends AbstractRenderHandler
                         }
 
                     } else {
-
                         foreach ($test->getUnits() as $unit) {
-
                             /** @var TestItem $unit */
                             if (!$unit->isValid()) {
                                 if($this->show && $this->case->getHasError()) {
                                     $this->command->message($this->getErrorMessage($test));
                                 } else {
-
-
                                     $failedMsg = $this->getMessage($test, $unit);
                                     $compare = $this->getComparison($unit, $failedMsg);
                                     $this->command->message($this->command->getAnsi()->style($this->color, $failedMsg));
-
                                     if ($compare !== "") {
                                         $this->command->message(
                                             $this->command->getAnsi()->style($this->color, $compare)

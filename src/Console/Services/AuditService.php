@@ -3,6 +3,8 @@
 namespace MaplePHP\Unitary\Console\Services;
 
 use Composer\Semver\Semver;
+use MaplePHP\Cache\Cache;
+use MaplePHP\Cache\Handlers\FileSystemHandler;
 use MaplePHP\DTO\Traverse;
 use MaplePHP\Http\Client;
 use MaplePHP\Http\Exceptions\NetworkException;
@@ -56,6 +58,19 @@ class AuditService
         if (self::SEVERITY_TEST_PACKAGES) {
             $packages = array_merge($packages, $this->addTestPackages());
         }
+
+        $cache = $this->getCache();
+        if(!$cache->has('audit-dependencies')) {
+
+        }
+
+        //$cacheDir = $this->makeTemporaryDirectory();
+        //$cache = new Cache(new FileSystemHandler($cacheDir));
+        //$cache->get('audit-security', []);
+
+        print_r($this->getCache());
+        die;
+        die;
         $advisories = $this->cveLookUpRequest($packages);
         if ($advisories !== []) {
             $hits = $this->getHits($advisories, $packages);
@@ -130,6 +145,31 @@ class AuditService
             }
         }
         return $hits;
+    }
+
+    /**
+     * Get cache instance
+     *
+     * @return Cache
+     */
+    private function getCache(): Cache
+    {
+        $cacheDir = $this->makeTemporaryDirectory();
+        return new Cache(new FileSystemHandler($cacheDir));
+    }
+
+    /**
+     * Will create unitary main temporary cache directory
+     *
+     * @return string
+     */
+    private function makeTemporaryDirectory(): string
+    {
+        $cacheDir = sys_get_temp_dir() . '/unitary-cache';
+        if (!is_dir($cacheDir)) {
+            mkdir($cacheDir, 0777, true);
+        }
+        return $cacheDir;
     }
 
     /**

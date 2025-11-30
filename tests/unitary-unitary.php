@@ -5,22 +5,41 @@ use MaplePHP\Unitary\{Config\TestConfig, Expect, TestCase};
 
 $config = TestConfig::make()->withName("unitary");
 
-group($config->withSubject("Assert validations"), function ($case) {
+
+group($config->withSubject("Assert validations"), function (TestCase $case) {
+
+    $case->expect("HelloWorld")
+        ->isEqualTo("Hello World")
+        ->isEqualTo("Hello World2")
+        ->assert("HELOWOOWOW");
+
+
+    $case->expect("HelloWorld2")
+        ->isEqualTo("Hello World3")
+        ->isEqualTo("Hello World4")
+        ->validate("HELOWOOWOW2");
+});
+
+
+group($config->withSubject("Assert validations"), function (TestCase $case) {
     $case->validate("HelloWorld", function(Expect $inst) {
         assert($inst->isEqualTo("HelloWorld")->isValid(), "Assert has failed");
     });
     assert(1 === 1, "Assert has failed");
 });
 
-
 group("Example API Response", function(TestCase $case) {
 
     $case->validate('{"response":{"status":200,"message":"ok"}}', function(Expect $expect) {
-
         $expect->isJson()
-               ->hasJsonValueAt("response.status", 200)
-               ->describe("Json status response is invalid");
+               ->hasJsonValueAt("response.status", 210)
+               ->assert("Json status response is invalid");;
+    })->describe("Checking PSR Response");
 
+    $case->validate('{"response":{"status":200,"message":"ok"}}', function(Expect $expect) {
+        $expect->isJson()
+            ->hasJsonValueAt("response.status", 220)
+            ->validate("Json status response is invalid");;
     })->describe("Checking PSR Response");
 
 });

@@ -43,22 +43,43 @@ final class TestUnit
         $this->message = $message === null ? "" : $message;
     }
 
+    /**
+     * Set as throwable
+     *
+     * @param ExceptionItem $throwable
+     * @return void
+     */
     public function setThrowable(ExceptionItem $throwable): void
     {
         $this->type = UnitStatusType::Error;
         $this->throwable = $throwable;
     }
 
+    /**
+     * Check if test has any PHP errors
+     *
+     * @return bool
+     */
     public function hasError(): bool
     {
         return $this->type === UnitStatusType::Error;
     }
 
+    /**
+     * Check if is a failure or an error.
+     *
+     * @return UnitStatusType
+     */
     public function getType(): UnitStatusType
     {
         return $this->type;
     }
 
+    /**
+     * If it has a thrown exception, then you can return it with this method.
+     *
+     * @return ExceptionItem|null
+     */
     public function getThrowable(): ?ExceptionItem
     {
         return $this->throwable;
@@ -91,7 +112,7 @@ final class TestUnit
     }
 
     /**
-     * Set validation as an assert (Hard stop error)
+     * Set validation as an asserting (Hard stop error)
      *
      * @param ?string $message
      * @return $this
@@ -114,9 +135,9 @@ final class TestUnit
         return $this->assert;
     }
 
-    public function setAsAssert(): self
+    public function setAsAssert(bool $isAssert = true): self
     {
-        $this->assert = true;
+        $this->assert = $isAssert;
         return $this;
     }
 

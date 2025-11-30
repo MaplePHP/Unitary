@@ -24,6 +24,7 @@ class AbstractRenderHandler implements BodyInterface
     protected bool $alwaysShowFiles = false;
     protected array $tests;
     protected string $outputBuffer = "";
+
     protected StreamInterface $body;
 
     /**
@@ -129,6 +130,14 @@ class AbstractRenderHandler implements BodyInterface
         return $throwable !== null ? get_class($throwable->getException()) : "Validation error";
     }
 
+    /**
+     * @param TestUnit|null $test
+     * @return bool
+     */
+    public function isAssert(?TestUnit $test = null): bool
+    {
+        return $test?->isAssert() || $this->case->isAssert();
+    }
 
     /**
      * Get a expected case name/message
@@ -157,7 +166,7 @@ class AbstractRenderHandler implements BodyInterface
             return "";
         }
 
-        if($test->isAssert()) {
+        if($this->isAssert($test)) {
             return "Assertion failure";
         }
         return ($test->hasError() || $this->case->getHasError()) ? "error" : "failure";

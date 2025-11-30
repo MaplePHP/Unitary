@@ -65,6 +65,7 @@ final class TestCase
     private bool $failFast = false;
     private ?TestUnit $testUnit = null;
     private ?ExceptionItem $throwable = null;
+    private ?Expect $expect = null;
 
     /**
      * Initialize a new TestCase instance with an optional message.
@@ -238,6 +239,12 @@ final class TestCase
         return $this;
     }
 
+    /**
+     * Mark test validation as an assert
+     *
+     * @param string|null $message
+     * @return $this
+     */
     public function assert(?string $message = null): self
     {
         $this->describe($message);
@@ -289,7 +296,7 @@ final class TestCase
 
         if ($test !== null) {
             try {
-                if($this->getConfig()->skip) {
+                if ($this->getConfig()->skip) {
                     $this->incrementSkipped();
                 }
                 $newInst = $test($this);
@@ -304,15 +311,15 @@ final class TestCase
                     throw new BlunderErrorException($e->getMessage(), (int)$e->getCode());
                 }
 
-                if(!($e instanceof BlunderSilentException)) {
-                    if($this->failFast) {
+                if (!($e instanceof BlunderSilentException)) {
+                    if ($this->failFast) {
                         throw $e;
                     }
-                    $newInst = $this->createTraceError($e, trace: [
+                    $trace = ($e instanceof BlunderErrorException) ? $e->getTracedLine() : [
                         "file" => $e->getFile(),
-                        "line" => $e->getLine(),
-                    ]);
-
+                        "line" => $e->getLine()
+                    ];
+                    $newInst = $this->createTraceError($e, trace: $trace);
                     $newInst->incrementError();
                 }
             }
@@ -344,6 +351,20 @@ final class TestCase
     }
 
     /**
+     * Shortcut validation
+     *
+     * @param mixed $value
+     * @return Expect
+     */
+    public function expect(mixed $value): Expect
+    {
+        $this->value = $value;
+        $this->expect = new Expect($value);
+        $this->expect->setTestCase($this, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[0] ?? []);
+        return $this->expect;
+    }
+
+    /**
      * Executes a test case at runtime by validating the expected value.
      *
      * Accepts either a validation array (method => arguments) or a Closure
@@ -360,67 +381,36 @@ final class TestCase
      * @throws ErrorException If validation fails during runtime execution.
      */
     protected function expectAndValidate(
-        mixed $expect,
-        array|Closure $validation,
-        string|TestUnit|null $message = null,
-        ?string $description = null,
-        ?array $trace = null
-    ): TestUnit {
-        $listArr = [];
+        mixed         $expect,
+        Closure $validation,
+        string|null   $message = null,
+        ?string       $description = null,
+        ?array        $trace = null
+    ): TestUnit
+    {
         $this->value = $expect;
-        $test = ($message instanceof TestUnit) ? new $message : new TestUnit($message);
-        $test->setTestValue($this->value);
-        if ($validation instanceof Closure) {
-            $validPool = new Expect($this->value);
+        $test = new TestUnit($message);
+        //$test->setTestValue($this->value);
+        $validPool = new Expect($this->value);
+        $listArr = $this->buildClosureTest($validation, $validPool, $description);
+        $test = $validPool->setTestFeed($test, $listArr);
+        $test->setTestValue($this->getCurrentValue($validPool));
 
-            try {
-                $listArr = $this->buildClosureTest($validation, $validPool, $description);
-            } catch (Throwable $e) {
-                $test->setValid(false);
-                $test->setThrowable(Helpers::getExceptionItem($e));
-            }
+        return $this->setTest($test, $trace);
+    }
 
-            foreach ($listArr as $list) {
-
-                if (is_bool($list)) {
-                    $item = new TestItem();
-                    $item = $item->setIsValid($list)->setValidation("Validation");
-                    $test->setTestItem($item);
-                } else {
-                    foreach ($list as $method => $valid) {
-                        $item = new TestItem();
-                        /** @var array|bool $valid */
-                        $item = $item->setIsValid(false)->setValidation((string)$method);
-                        if (is_array($valid)) {
-                            $item = $item->setValidationArgs($valid);
-                        } else {
-                            $item = $item->setHasArgs(false);
-                        }
-                        $test->setTestItem($item);
-                    }
-                }
-            }
-            // In some rare cases the validation value might change along the rode
-            // tell the test to use the new value
-            $initValue = $validPool->getInitValue();
-            $initValue = ($initValue !== null) ? $initValue : $this->getValue();
-            $test->setTestValue($initValue);
-
-        } else {
-            foreach ($validation as $method => $args) {
-                if (!($args instanceof Closure) && !is_array($args)) {
-                    $args = [$args];
-                }
-                $item = new TestItem();
-                $item = $item->setIsValid($this->buildArrayTest($method, $args))
-                    ->setValidation($method)
-                    ->setValidationArgs((is_array($args) ? $args : []));
-                $test->setTestItem($item);
-            }
-        }
+    /**
+     * Set test item
+     * @param TestUnit $test
+     * @param array|null $trace
+     * @return TestUnit
+     * @throws ErrorException
+     */
+    public function setTest(TestUnit $test, ?array $trace = null): TestUnit
+    {
         if (!$test->isValid()) {
             if ($trace === null || $trace === []) {
-                $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1];
+                $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3)[2];
             }
 
             $test->setCodeLine($trace);
@@ -428,10 +418,27 @@ final class TestCase
         }
         $this->test[] = $test;
         $this->error = null;
-        if($this->assert == true) {
+        if ($this->assert == true) {
             $test->assert(null);
         }
         return $test;
+    }
+
+    /**
+     * Get the current value
+     *
+     * Note: In some rare cases the validation value might change along the rode
+     * tell the test to use the new value
+     *
+     * @param Expect $validPool
+     * @return mixed
+     */
+    public function getCurrentValue(Expect $validPool): mixed
+    {
+        // In some rare cases the validation value might change along the rode
+        // tell the test to use the new value
+        $initValue = $validPool->getInitValue();
+        return ($initValue !== null) ? $initValue : $this->getValue();
     }
 
     /**
@@ -450,7 +457,7 @@ final class TestCase
         $title = ($title !== null) ? $title : "PHP " . $exceptionItem->getSeverityTitle();
         $newInst->expectAndValidate(
             true,
-            fn () => false,
+            fn() => false,
             $title,
             $message,
             ($trace !== null) ? $trace : $exception->getTrace()[0]
@@ -490,7 +497,22 @@ final class TestCase
      */
     public function add(mixed $expect, array|Closure $validation, ?string $message = null): self
     {
-        $this->expectAndValidate($expect, $validation, $message);
+        $this->value = $expect;
+        $test = new TestUnit($message);
+        $test->setTestValue($this->value);
+        foreach ($validation as $method => $args) {
+            if (!($args instanceof Closure) && !is_array($args)) {
+                $args = [$args];
+            }
+            $item = new TestItem();
+            $item = $item->setIsValid($this->buildArrayTest($method, $args))
+                ->setValidation($method)
+                ->setValidationArgs((is_array($args) ? $args : []));
+            $test->setTestItem($item);
+        }
+
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+        $this->setTest($test, $trace);
         return $this;
     }
 
@@ -557,11 +579,11 @@ final class TestCase
             $pool = $this->prepareValidation($this->mocker, $validate);
         }
         /** @psalm-suppress MixedReturnStatement */
-        $class =  $this->mocker->execute();
+        $class = $this->mocker->execute();
         if ($this->mocker->hasFinal() && isset($pool)) {
             $finalMethods = $pool->getSelected($this->mocker->getFinalMethods());
             if ($finalMethods !== []) {
-                $this->warning = "Warning: Final methods cannot be mocked or have their behavior modified: " .  implode(", ", $finalMethods);
+                $this->warning = "Warning: Final methods cannot be mocked or have their behavior modified: " . implode(", ", $finalMethods);
             }
         }
         return $class;
@@ -614,7 +636,7 @@ final class TestCase
             throw new ErrorException("A callable Closure could not be bound to the method pool!");
         }
         $fn($pool);
-        $this->deferValidation(fn () => $this->runValidation($mocker, $pool));
+        $this->deferValidation(fn() => $this->runValidation($mocker, $pool));
         return $pool;
     }
 
@@ -791,9 +813,9 @@ final class TestCase
                 throw new ErrorException("The validation call is not callable!");
             }
 
-            /** @var callable $row['call'] */
+            /** @var callable $row ['call'] */
             $error = $row['call']();
-            if($row['trace'] === null) {
+            if ($row['trace'] === null) {
                 continue;
             }
             $hasValidated = [];
@@ -840,7 +862,7 @@ final class TestCase
      */
     public function getCount(): int
     {
-        return $this->getTotal() -  $this->getFailedCount();
+        return $this->getTotal() - $this->getFailedCount();
     }
 
     /**
@@ -920,6 +942,7 @@ final class TestCase
             try {
                 $bool = $validation($this->value, $validPool);
             } catch (AssertionError $e) {
+                $this->setAsAssert();
                 $bool = false;
                 $message = $e->getMessage();
             }

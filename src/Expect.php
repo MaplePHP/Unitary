@@ -23,15 +23,99 @@ class Expect extends ValidationChain
 {
     protected mixed $initValue = null;
     protected Throwable|false|null $except = null;
+    private ?TestCase $testCase = null;
+    private ?array $trace = null;
 
     /**
      * Static init validation chain
+     *
      * @param mixed $value
      * @return mixed
      */
     public static function value(mixed $value): self
     {
         return new self($value);
+    }
+
+    /**
+     * We need to pass a test case to Exception to create one loop
+     *
+     * @param TestCase $testCase
+     * @param array $trace We can change the trace
+     * @return $this
+     */
+    public function setTestCase(TestCase $testCase, array $trace): self
+    {
+        $this->testCase = $testCase;
+        $this->trace = $trace;
+        return $this;
+    }
+
+    /**
+     * Set a test from array
+     *
+     * @param TestUnit $test
+     * @param array $listArr
+     * @param string|null $message
+     * @return TestUnit
+     */
+    public function setTestFeed(TestUnit $test, array $listArr, ?string $message = null): TestUnit
+    {
+        foreach ($listArr as $list) {
+            if (is_bool($list)) {
+                $item = new TestItem();
+                $item = $item->setIsValid($list)->setValidation("Validation");
+                $test->setTestItem($item);
+            } else {
+                foreach ($list as $method => $valid) {
+                    $item = new TestItem();
+                    /** @var array|bool $valid */
+                    $item = $item->setIsValid(false)->setValidation((string)$method);
+                    if (is_array($valid)) {
+                        $item = $item->setValidationArgs($valid);
+                    } else {
+                        $item = $item->setHasArgs(false);
+                    }
+                    $test->setTestItem($item);
+                }
+            }
+        }
+        return $test;
+    }
+
+    /**
+     * Validate the test feed
+     *
+     * @param string|null $description
+     * @return void
+     * @throws \ErrorException
+     */
+    public function validate(?string $description = null): void
+    {
+        $test = new TestUnit($description);
+        $test = $this->setTestFeed($test, $this->getError(), $description);
+        $test->setTestValue($this->testCase?->getCurrentValue($this));
+        $this->testCase?->setTest($test, $this->trace);
+    }
+
+    /**
+     * Validate and assert the test feed
+     *
+     * @param string|null $description
+     * @return void
+     * @throws \ErrorException
+     */
+    public function assert(?string $description = null): void
+    {
+        if ($this->testCase === null) {
+            // Assert inherits the test configuration from below due to the internal flow of validate()
+            assert($this->isValid(), $description);
+        }
+        $list = $this->getError();
+        $test = new TestUnit($description);
+        $test->setTestValue($this->testCase->getValue());
+        $this->testCase?->assert($description);
+        $this->testCase?->setTest($this->setTestFeed($test, $list, $description), $this->trace);
     }
 
     /**
@@ -47,7 +131,7 @@ class Expect extends ValidationChain
             $this->setValue($except);
         }
         /** @psalm-suppress PossiblyInvalidCast */
-        $this->validateExcept(__METHOD__, $compare, fn () => $this->isClass((string)$compare));
+        $this->validateExcept(__METHOD__, $compare, fn() => $this->isClass((string)$compare));
         return $this;
     }
 
@@ -64,7 +148,7 @@ class Expect extends ValidationChain
             $this->setValue($except->getMessage());
         }
         /** @psalm-suppress PossiblyInvalidCast */
-        $this->validateExcept(__METHOD__, $compare, fn () => $this->isEqualTo($compare));
+        $this->validateExcept(__METHOD__, $compare, fn() => $this->isEqualTo($compare));
         return $this;
     }
 
@@ -81,7 +165,7 @@ class Expect extends ValidationChain
             $this->setValue($except->getCode());
         }
         /** @psalm-suppress PossiblyInvalidCast */
-        $this->validateExcept(__METHOD__, $compare, fn () => $this->isEqualTo($compare));
+        $this->validateExcept(__METHOD__, $compare, fn() => $this->isEqualTo($compare));
         return $this;
     }
 
@@ -99,7 +183,7 @@ class Expect extends ValidationChain
             $this->setValue($value);
         }
         /** @psalm-suppress PossiblyInvalidCast */
-        $this->validateExcept(__METHOD__, $compare, fn () => $this->isEqualTo($compare));
+        $this->validateExcept(__METHOD__, $compare, fn() => $this->isEqualTo($compare));
         return $this;
     }
 
@@ -116,7 +200,7 @@ class Expect extends ValidationChain
             $this->setValue($except->getFile());
         }
         /** @psalm-suppress PossiblyInvalidCast */
-        $this->validateExcept(__METHOD__, $compare, fn () => $this->isEqualTo($compare));
+        $this->validateExcept(__METHOD__, $compare, fn() => $this->isEqualTo($compare));
         return $this;
     }
 
@@ -133,7 +217,7 @@ class Expect extends ValidationChain
             $this->setValue($except->getLine());
         }
         /** @psalm-suppress PossiblyInvalidCast */
-        $this->validateExcept(__METHOD__, $compare, fn () => $this->isEqualTo($compare));
+        $this->validateExcept(__METHOD__, $compare, fn() => $this->isEqualTo($compare));
         return $this;
     }
 
@@ -202,6 +286,5 @@ class Expect extends ValidationChain
             return $this->except;
         }
         return false;
-
     }
 }
