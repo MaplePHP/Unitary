@@ -113,7 +113,7 @@ class Expect extends ValidationChain
         }
         $list = $this->getError();
         $test = new TestUnit($description);
-        $test->setTestValue($this->testCase->getValue());
+        $test->setTestValue($this->testCase?->getValue());
         $this->testCase?->assert($description);
         $this->testCase?->setTest($this->setTestFeed($test, $list, $description), $this->trace);
     }

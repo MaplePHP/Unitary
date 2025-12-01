@@ -141,7 +141,7 @@ class CliRenderer extends AbstractRenderHandler
                 }
 
                 if (!$test->isValid()) {
-                    if($test->isAssert()) {
+                    if($test->isHardStop()) {
                         $this->hardStop = true;
                     }
 
@@ -188,6 +188,9 @@ class CliRenderer extends AbstractRenderHandler
                                 }
                             }
                         }
+                    }
+                    if($test->isSoftStop()) {
+                        $this->command->message($this->command->getAnsi()->style(["grey", "italic"], $this->setPad($test, "Soft stop")));
                     }
                     if ($test->hasValue()) {
                         $this->command->message("");

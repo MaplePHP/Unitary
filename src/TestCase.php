@@ -392,7 +392,7 @@ final class TestCase
         $test = new TestUnit($message);
         //$test->setTestValue($this->value);
         $validPool = new Expect($this->value);
-        $listArr = $this->buildClosureTest($validation, $validPool, $description);
+        $listArr = $this->buildClosureTest($validation, $validPool, $test, $description);
         $test = $validPool->setTestFeed($test, $listArr);
         $test->setTestValue($this->getCurrentValue($validPool));
 
@@ -930,10 +930,11 @@ final class TestCase
      *
      * @param Closure $validation
      * @param Expect $validPool
+     * @param TestUnit $test
      * @param string|null $message
      * @return array
      */
-    protected function buildClosureTest(Closure $validation, Expect $validPool, ?string $message = null): array
+    protected function buildClosureTest(Closure $validation, Expect $validPool, TestUnit $test, ?string $message = null): array
     {
         //$bool = false;
         $validation = $validation->bindTo($validPool);
@@ -942,7 +943,8 @@ final class TestCase
             try {
                 $bool = $validation($this->value, $validPool);
             } catch (AssertionError $e) {
-                $this->setAsAssert();
+                //$this->setAsAssert();
+                $test->setSoftStop(true);
                 $bool = false;
                 $message = $e->getMessage();
             }

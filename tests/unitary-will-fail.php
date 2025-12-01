@@ -38,11 +38,11 @@ group($config, function (TestCase $case) {
     ], "Old validation syntax");
 
     // Mocks is deferred validations
+    // Each mock count as a test (IS THIS RIGHT?)
     $mail = $case->mock(Mailer::class, function (MethodRegistry $method) {
         $method->method("send")->keepOriginal()->called(0);
-        $method->method("isValidEmail")->keepOriginal();
+        $method->method("isValidEmail")->keepOriginal(); // Counts as PASS BUT WILL not be SHOWN
         $method->method("sendEmail")->keepOriginal()->called(0);
-
         $method->method("addBCC")
             ->isProtected()
             ->hasDocComment()

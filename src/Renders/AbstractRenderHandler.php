@@ -136,7 +136,7 @@ class AbstractRenderHandler implements BodyInterface
      */
     public function isAssert(?TestUnit $test = null): bool
     {
-        return $test?->isAssert() || $this->case->isAssert();
+        return $test?->isHardStop() || $this->case->isAssert();
     }
 
     /**
@@ -277,6 +277,18 @@ class AbstractRenderHandler implements BodyInterface
         $lengthA = $test->getValidationLength();
         $validation = $unit->getValidationTitle();
         return "   " . str_pad($validation, $lengthA) . " → failed";
+    }
+
+    /**
+     * The default string pad left
+     *
+     * @param TestUnit $test
+     * @param string $text
+     * @return string
+     */
+    public function setPad(TestUnit $test, string $text) {
+        $length = $test->getValidationLength();
+        return "   " . str_pad($text, $length);
     }
 
     /**

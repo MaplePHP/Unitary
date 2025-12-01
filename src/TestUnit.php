@@ -21,7 +21,7 @@ use MaplePHP\Unitary\Support\Helpers;
 final class TestUnit
 {
     private bool $valid;
-    private bool $assert = false;
+    private bool $hardStop = false;
     private mixed $value = null;
     private bool $hasValue = false;
     private ?string $message;
@@ -32,6 +32,8 @@ final class TestUnit
     private array $codeLine = ['line' => 0, 'code' => '', 'file' => ''];
     private UnitStatusType $type = UnitStatusType::Failure;
     private ?ExceptionItem $throwable = null;
+    private bool $softStop = false;
+
     /**
      * Initiate the test
      *
@@ -119,25 +121,57 @@ final class TestUnit
      */
     public function assert(?string $message = null): self
     {
-        $this->assert = true;
+        $this->setHardStop(true);
         $this->describe($message);
         assert($this->isValid(), new BlunderSilentException("Silence is gold..."));
         return $this;
     }
 
     /**
-     * Get if validation is assertion
+     * Indicates that this test triggered a hard stop.
+     * A hard stop halts the current group and skips all
+     * remaining validations in it.
      *
      * @return bool
      */
-    public function isAssert(): bool
+    public function isHardStop(): bool
     {
-        return $this->assert;
+        return $this->hardStop;
     }
 
-    public function setAsAssert(bool $isAssert = true): self
+    /**
+     * Marks this test as hard-stopped (asserted) or not.
+     *
+     * @param bool $isHardStop
+     * @return $this
+     */
+    public function setHardStop(bool $isHardStop): self
     {
-        $this->assert = $isAssert;
+        $this->hardStop = $isHardStop;
+        return $this;
+    }
+
+    /**
+     * Indicates that an assertion triggered a soft stop.
+     * A soft stop counts as executed but may prevent some
+     * validations from running for this specific test.
+     *
+     * @return bool
+     */
+    public function isSoftStop(): bool
+    {
+        return $this->softStop;
+    }
+
+    /**
+     * Marks this test as soft-stopped or not.
+     *
+     * @param bool $isSoftStop
+     * @return $this
+     */
+    public function setSoftStop(bool $isSoftStop): self
+    {
+        $this->softStop = $isSoftStop;
         return $this;
     }
 
