@@ -15,8 +15,8 @@ $config = TestConfig::make()->withName("mocker");
 group($config->withSubject("Can not mock final or private"), function(TestCase $case) {
 
     $user = $case->mock(UserService::class, function(MethodRegistry $method) {
-        $method->method("getUserRole")->willReturn("admin");
-        $method->method("getUserType")->willReturn("admin");
+        $method->method("getUserRole")->willReturn("admin")->called(1);
+        $method->method("getUserType")->isFinal()->willReturn("admin");
     });
 
     // You cannot mock final with data (should return a warning)
