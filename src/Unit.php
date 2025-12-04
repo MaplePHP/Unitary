@@ -16,7 +16,6 @@ namespace MaplePHP\Unitary;
 use Closure;
 use ErrorException;
 use MaplePHP\Blunder\Exceptions\BlunderErrorException;
-use MaplePHP\Blunder\Exceptions\BlunderSilentException;
 use Psr\Http\Message\StreamInterface;
 use MaplePHP\Prompts\Command;
 use MaplePHP\Unitary\Config\TestConfig;

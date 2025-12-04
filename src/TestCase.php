@@ -53,7 +53,7 @@ final class TestCase
     private int $count = 0;
     private ?Closure $bind = null;
     private ?string $error = null;
-    private ?string $warning = null;
+    private array $warning = [];
     private bool $assert = false;
     private array $deferredValidation = [];
     private ?MockBuilder $mocker = null;
@@ -202,7 +202,7 @@ final class TestCase
      *
      * @return void
      */
-    public function setAsAssert(): void
+    private function setAsAssert(): void
     {
         $this->hasAssertError = true;
     }
@@ -224,7 +224,7 @@ final class TestCase
      */
     public function getWarning(): ?string
     {
-        return $this->warning;
+        return implode("\n", $this->warning);
     }
 
     /**
@@ -233,9 +233,9 @@ final class TestCase
      * @param string $message
      * @return $this
      */
-    public function warning(string $message): self
+    public function addWarning(string $message): self
     {
-        $this->warning = $message;
+        $this->warning[] = $message;
         return $this;
     }
 
@@ -395,7 +395,6 @@ final class TestCase
         $listArr = $this->buildClosureTest($validation, $validPool, $test, $description);
         $test = $validPool->setTestFeed($test, $listArr);
         $test->setTestValue($this->getCurrentValue($validPool));
-
         return $this->setTest($test, $trace);
     }
 
@@ -433,9 +432,9 @@ final class TestCase
      * @param Expect $validPool
      * @return mixed
      */
-    public function getCurrentValue(Expect $validPool): mixed
+    private function getCurrentValue(Expect $validPool): mixed
     {
-        // In some rare cases the validation value might change along the rode
+        // In some rare cases, the validation value might change along the rode
         // tell the test to use the new value
         $initValue = $validPool->getInitValue();
         return ($initValue !== null) ? $initValue : $this->getValue();
@@ -524,6 +523,7 @@ final class TestCase
      */
     public function defer(Closure $defer): self
     {
+        $defer = $defer->bindTo($this);
         $this->deferredValidation[] = [
             "trace" => null,
             "call" => $defer
@@ -565,6 +565,8 @@ final class TestCase
     }
 
     /**
+     * Can be used with immutable mocker object
+     *
      * @param Closure|null $validate
      * @return T
      * @throws ErrorException
@@ -583,7 +585,7 @@ final class TestCase
         if ($this->mocker->hasFinal() && isset($pool)) {
             $finalMethods = $pool->getSelected($this->mocker->getFinalMethods());
             if ($finalMethods !== []) {
-                $this->warning = "Warning: Final methods cannot be mocked or have their behavior modified: " . implode(", ", $finalMethods);
+                $this->addWarning("Warning: Final methods cannot be mocked or have their behavior modified: " . implode(", ", $finalMethods));
             }
         }
         return $class;
@@ -890,7 +892,7 @@ final class TestCase
      *
      * @return mixed
      */
-    public function getValue(): mixed
+    private function getValue(): mixed
     {
         return $this->value;
     }

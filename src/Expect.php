@@ -94,7 +94,8 @@ class Expect extends ValidationChain
     {
         $test = new TestUnit($description);
         $test = $this->setTestFeed($test, $this->getError(), $description);
-        $test->setTestValue($this->testCase?->getCurrentValue($this));
+        $value = ($this->getInitValue() !== null) ? $this->getInitValue() : $this->getValue();
+        $test->setTestValue($value);
         $this->testCase?->setTest($test, $this->trace);
     }
 
@@ -113,7 +114,8 @@ class Expect extends ValidationChain
         }
         $list = $this->getError();
         $test = new TestUnit($description);
-        $test->setTestValue($this->testCase?->getValue());
+        $value = ($this->getInitValue() !== null) ? $this->getInitValue() : $this->getValue();
+        $test->setTestValue($value);
         $this->testCase?->assert($description);
         $this->testCase?->setTest($this->setTestFeed($test, $list, $description), $this->trace);
     }

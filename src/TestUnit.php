@@ -317,7 +317,7 @@ final class TestUnit
     }
 
     /**
-     * Gte the original value
+     * Get the original value
      *
      * @return mixed
      */

@@ -141,11 +141,6 @@ final class TestDiscovery
             $path = $rootDir . "/" . $path;
         }
         $files = $this->findFiles($path, $rootDir);
-
-        // Init Blunder error handling framework
-        //$this->runBlunder();
-        //echo $wddwwqd;
-
         if (empty($files) && $this->verbose) {
             throw new BlunderSoftException("Unitary could not find any test files matching the pattern \"" .
                 $this->pattern . "\" in directory \"" . dirname($path) .
@@ -164,7 +159,6 @@ final class TestDiscovery
                     $this->executeUnitFile((string)$file);
 
                 } catch (\Throwable $exception) {
-
                     if ($this->failFast) {
                         throw $exception;
                     }
