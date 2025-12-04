@@ -150,26 +150,48 @@ final class Helpers
      */
     public static function getTrace(array $trace): array
     {
-        $codeLine = [];
+        $codeLine = [
+            'line' => 0,
+            'file' => '',
+            'code' => 0
+        ];
         $file = (string)($trace['file'] ?? '');
-        $line = (int)($trace['line'] ?? 0);
-        $lines = file($file);
-        $code = "";
-        if ($lines !== false) {
-            $code = trim($lines[$line - 1] ?? '');
-            if (str_starts_with($code, '->')) {
-                $code = substr($code, 2);
+        if (is_file($file)) {
+            $line = (int)($trace['line'] ?? 0);
+            $lines = file($file);
+            $code = "";
+            if ($lines !== false) {
+                $code = trim($lines[$line - 1] ?? '');
+                if (str_starts_with($code, '->')) {
+                    $code = substr($code, 2);
+                }
+                $code = self::excerpt($code);
             }
-            $code = self::excerpt($code);
-        }
 
-        $codeLine['line'] = $line;
-        $codeLine['file'] = $file;
-        $codeLine['code'] = $code;
+            $codeLine['line'] = $line;
+            $codeLine['file'] = $file;
+            $codeLine['code'] = $code;
+
+        }
 
         return $codeLine;
     }
 
+    /**
+     * Create a checksum that is this array
+     *
+     * @param array $array
+     * @return string
+     * @throws \JsonException
+     */
+    public static function md5Array(array $array): string
+    {
+        $normalized = json_encode($array, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        if($normalized === false) {
+            return '';
+        }
+        return md5($normalized);
+    }
 
     /**
      * Generates an excerpt from the given string with a specified maximum length.

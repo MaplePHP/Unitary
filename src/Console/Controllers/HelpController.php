@@ -37,14 +37,15 @@ class HelpController extends DefaultController
                 ->addOption("--timezone=<region/city>", "Set default timezone (e.g. `Europe/Stockholm`). Affects date handling.")
                 ->addOption("--locale=<locale>", "Set default locale (e.g. `en_US`). Affects date formatting.")
                 ->addOption("--verbose", "Show all warnings, including hidden ones.")
-                ->addOption("--failFast", "Stop immediately on the first error or exception.");
+                ->addOption("--fail-fast", "Stop immediately on the first error or exception.");
         });
 
         $blocks->addSection("Type list", function (Blocks $inst) {
             return $inst
                 ->addOption("run", "Run all Unitary tests")
                 ->addOption("template", "Show template/boilerplate Unitary test code")
-                ->addOption("coverage", "Show code coverage and how much code is used");
+                ->addOption("coverage", "Show code coverage and how much code is used")
+                ->addOption("audio", "Audit vulnerabilities and dependencies");
         });
 
         $blocks->addSection("Some examples", function (Blocks $inst) {

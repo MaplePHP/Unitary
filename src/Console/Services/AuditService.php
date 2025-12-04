@@ -12,6 +12,7 @@ use MaplePHP\Http\Exceptions\RequestException;
 use MaplePHP\Http\Request;
 use MaplePHP\Http\Stream;
 use MaplePHP\Unitary\Console\Enum\Severity;
+use MaplePHP\Unitary\Support\Helpers;
 use RuntimeException;
 
 class AuditService
@@ -49,8 +50,10 @@ class AuditService
     /**
      * Get all severities as an array
      *
-     * @throws RequestException
+     * @return array
      * @throws NetworkException
+     * @throws RequestException
+     * @throws \JsonException
      */
     public function getSeverities(): array
     {
@@ -59,19 +62,8 @@ class AuditService
             $packages = array_merge($packages, $this->addTestPackages());
         }
 
-        $cache = $this->getCache();
-        if(!$cache->has('audit-dependencies')) {
+        $advisories = $this->getAdvisories($packages);
 
-        }
-
-        //$cacheDir = $this->makeTemporaryDirectory();
-        //$cache = new Cache(new FileSystemHandler($cacheDir));
-        //$cache->get('audit-security', []);
-
-        print_r($this->getCache());
-        die;
-        die;
-        $advisories = $this->cveLookUpRequest($packages);
         if ($advisories !== []) {
             $hits = $this->getHits($advisories, $packages);
             usort($hits, function ($a, $b) {
@@ -80,6 +72,29 @@ class AuditService
             return $hits;
         }
         return [];
+    }
+
+    /**
+     * Make a severity request lookup and safe to a cache file
+     * if any package change then cache will be cleared
+     *
+     * @param array $packages
+     * @return array
+     * @throws NetworkException
+     * @throws RequestException
+     * @throws \JsonException
+     */
+    protected function getAdvisories(array $packages): array
+    {
+        $checksum = Helpers::md5Array($packages);
+        $name = "vurl-" . $checksum;
+        $advisories = [];
+        $cache = $this->cache();
+        if (!$cache->has($name)) {
+            $advisories = $this->cveLookUpRequest($packages);
+            $cache->set($name, $advisories);
+        }
+        return $cache->get($name, $advisories);
     }
 
     /**
@@ -152,7 +167,7 @@ class AuditService
      *
      * @return Cache
      */
-    private function getCache(): Cache
+    private function cache(): Cache
     {
         $cacheDir = $this->makeTemporaryDirectory();
         return new Cache(new FileSystemHandler($cacheDir));
