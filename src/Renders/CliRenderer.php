@@ -134,7 +134,9 @@ class CliRenderer extends AbstractRenderHandler
     {
         $this->hardStop = false;
         if (($this->show || !$this->case->getConfig()->skip)) {
-            foreach ($this->tests as $test) {
+
+            $length = count($this->tests);
+            foreach ($this->tests as $index => $test) {
 
                 if (!($test instanceof TestUnit)) {
                     throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestUnit.");
@@ -148,7 +150,6 @@ class CliRenderer extends AbstractRenderHandler
                     $errorType = $this->getErrorType($test);
                     //$type = $this->getType($test);
                     $msg = (string)$test->getMessage();
-
                     $this->command->message("");
                     $this->command->message(
                         $this->command->getAnsi()->style(["bold", $this->color], ucfirst($errorType) . ": ") .
@@ -198,6 +199,11 @@ class CliRenderer extends AbstractRenderHandler
                             $this->command->getAnsi()->bold("Input: ") .
                             $this->getValue($test)
                         );
+                    }
+
+                    if(($length-1) > $index) {
+                        $this->command->message("");
+                        $this->command->message($this->command->getAnsi()->dashedLine(80));
                     }
                 }
             }
