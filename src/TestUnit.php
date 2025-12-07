@@ -28,6 +28,7 @@ final class TestUnit
     private ?string $validation = null;
     private array $unit = [];
     private int $count = 0;
+    private int $failureCount = 0;
     private int $valLength = 0;
     private array $codeLine = ['line' => 0, 'code' => '', 'file' => ''];
     private UnitStatusType $type = UnitStatusType::Failure;
@@ -217,9 +218,11 @@ final class TestUnit
      */
     public function setTestItem(TestItem $item): self
     {
+
+        $this->count++;
         if (!$item->isValid()) {
             $this->setValid(false);
-            $this->count++;
+            $this->failureCount++;
         }
 
         $this->validation = $item->getValidation();
@@ -287,13 +290,23 @@ final class TestUnit
     }
 
     /**
+     * Get total test count
+     *
+     * @return int
+     */
+    public function getTestCount(): int
+    {
+        return $this->count;
+    }
+
+    /**
      * Get a failed test count
      *
      * @return int
      */
     public function getFailedTestCount(): int
     {
-        return $this->count;
+        return $this->failureCount;
     }
 
     /**

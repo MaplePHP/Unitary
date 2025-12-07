@@ -6,11 +6,13 @@ $config = TestConfig::make()->withName("unitary");
 
 group($config->withSubject("Assert validations"), function (TestCase $case) {
 
-    $case->defer(function() {
+
+
+    $case->defer(function() use ($case) {
         // Deferred to execute last
-        $this->expect("HelloWorld0")
-            ->isEqualTo("Hello World")
-            ->isEqualTo("Hello World2")
+        $case->expect("HelloWorld0")
+            ->isEqualTo("Hello World5")
+            ->isEqualTo("Hello World6")
             ->validate("HELOWOOWOW0");
     });
 
@@ -18,7 +20,7 @@ group($config->withSubject("Assert validations"), function (TestCase $case) {
     $case->expect("HelloWorld")
         ->isEqualTo("Hello World")
         ->isEqualTo("Hello World2")
-        ->validate("HELOWOOWOW");
+        ->assert("HELOWOOWOW1");
 
     $case->expect("HelloWorld2")
         ->isEqualTo("Hello World3")

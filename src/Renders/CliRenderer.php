@@ -134,7 +134,6 @@ class CliRenderer extends AbstractRenderHandler
     {
         $this->hardStop = false;
         if (($this->show || !$this->case->getConfig()->skip)) {
-
             $length = count($this->tests);
             foreach ($this->tests as $index => $test) {
 
@@ -201,7 +200,7 @@ class CliRenderer extends AbstractRenderHandler
                         );
                     }
 
-                    if(($length-1) > $index) {
+                    if($test->getFailedTestCount() > 1 && ($length-1) > $index) {
                         $this->command->message("");
                         $this->command->message($this->command->getAnsi()->dashedLine(80));
                     }

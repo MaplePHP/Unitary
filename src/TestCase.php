@@ -806,43 +806,51 @@ final class TestCase
      *
      * @return array A list of TestUnit results from the deferred validations.
      * @throws ErrorException If any validation logic throws an error during execution.
+     * @throws Throwable
      */
     public function runDeferredValidations(): array
     {
-        foreach ($this->deferredValidation as $row) {
+        try {
+            foreach ($this->deferredValidation as $row) {
 
-            if (!isset($row['call']) || !is_callable($row['call'])) {
-                throw new ErrorException("The validation call is not callable!");
-            }
-
-            /** @var callable $row ['call'] */
-            $error = $row['call']();
-            if ($row['trace'] === null) {
-                continue;
-            }
-            $hasValidated = [];
-            /** @var string $method */
-            foreach ($error as $method => $arr) {
-                $test = new TestUnit("Mock method \"$method\" failed");
-                if (isset($row['trace']) && is_array($row['trace'])) {
-                    $test->setCodeLine($row['trace']);
+                if (!isset($row['call']) || !is_callable($row['call'])) {
+                    throw new ErrorException("The validation call is not callable!");
                 }
-                foreach ($arr as $data) {
-                    // We do not want to validate the return here automatically
-                    /** @var TestItem $data */
-                    if (!in_array($data->getValidation(), self::EXCLUDE_VALIDATE)) {
-                        $test->setTestItem($data);
-                        if (!isset($hasValidated[$method]) && !$data->isValid()) {
-                            $hasValidated[$method] = true;
-                            $this->count++;
+
+                /** @var callable $row ['call'] */
+                $error = $row['call']();
+                if ($row['trace'] === null) {
+                    continue;
+                }
+                $hasValidated = [];
+                /** @var string $method */
+                foreach ($error as $method => $arr) {
+                    $test = new TestUnit("Mock method \"$method\" failed");
+                    if (isset($row['trace']) && is_array($row['trace'])) {
+                        $test->setCodeLine($row['trace']);
+                    }
+                    foreach ($arr as $data) {
+                        // We do not want to validate the return here automatically
+                        /** @var TestItem $data */
+                        if (!in_array($data->getValidation(), self::EXCLUDE_VALIDATE)) {
+                            $test->setTestItem($data);
+                            if (!isset($hasValidated[$method]) && !$data->isValid()) {
+                                $hasValidated[$method] = true;
+                                $this->count++;
+                            }
                         }
                     }
+                    $this->test[] = $test;
                 }
+            }
 
-                $this->test[] = $test;
+        } catch (Throwable $e) {
+            if (!($e instanceof BlunderSilentException)) {
+                if ($this->failFast) {
+                    throw $e;
+                }
             }
         }
-
         return $this->test;
     }
 

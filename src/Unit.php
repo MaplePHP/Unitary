@@ -341,6 +341,7 @@ final class Unit
             }
 
             $row->dispatchTest($row);
+
             $deferred = $row->runDeferredValidations();
             $checksum = $fileChecksum . $index;
             $show = ($row->getConfig()->select === $this->show || $this->show === $checksum);

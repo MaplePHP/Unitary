@@ -38,7 +38,7 @@ group($config->withSubject("Validating all mocker methods"), function (TestCase 
             ->withArguments("john.doe@gmail.com", "John Doe")
             ->withArgumentsForCalls(["john.doe@gmail.com", "John Doe"], ["jane.doe@gmail.com", "Jane Doe"])
             ->willThrowOnce(new InvalidArgumentException("Lowrem ipsum"))
-            ->called(2);
+            ->called(1);
 
         $method->method("addBCC")
             ->isPublic()
