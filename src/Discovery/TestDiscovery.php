@@ -252,9 +252,11 @@ final class TestDiscovery
                 $files += $this->getFileIterateReclusive($path);
             }
         }
+
         // If smart search flag then step back if no test files have been found and try again
-        if ($rootDir !== false && count($files) <= 0 && str_starts_with($path, $rootDir) && $this->smartSearch) {
+        if ($rootDir !== false && count($files) <= 0 && $this->smartSearch) {
             $path = (string)realpath($path . "/..") . "/";
+
             return $this->findFiles($path, $rootDir);
         }
         return $files;

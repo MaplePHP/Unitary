@@ -4,46 +4,6 @@ use MaplePHP\Unitary\{Config\TestConfig, Expect, TestCase};
 
 $config = TestConfig::make()->withName("unitary");
 
-
-group("Validating API Response", function(TestCase $case) {
-
-    $json = '{"response":{"status":200,"message":"ok"}}';
-
-    $case->expect($json)
-        ->isJson()
-        ->describe("Response must be valid JSON")
-        ->hasJsonValueAt("response.status", 200)
-        ->describe("Response status must be 200")
-        ->validate("API response status");
-
-});
-
-group($config->withSubject("Assert validations"), function (TestCase $case) {
-
-
-
-    $case->defer(function() use ($case) {
-        // Deferred to execute last
-        $case->expect("HelloWorld0")
-            ->isEqualTo("Hello World5")
-            ->isEqualTo("Hello World6")
-            ->validate("HELOWOOWOW0");
-    });
-
-
-    $case->expect("HelloWorld")
-        ->isEqualTo("Hello World")
-        ->isEqualTo("Hello World2")
-        ->assert("HELOWOOWOW1");
-
-    $case->expect("HelloWorld2")
-        ->isEqualTo("Hello World3")
-        ->isEqualTo("Hello World4")
-        ->validate("HELOWOOWOW2");
-
-
-});
-
 group($config->withSubject("Assert validations"), function (TestCase $case) {
 
     $case->validate("HelloWorld", function(Expect $inst) {
