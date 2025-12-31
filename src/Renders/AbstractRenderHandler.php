@@ -274,9 +274,21 @@ class AbstractRenderHandler implements BodyInterface
      */
     public function getMessage(TestUnit $test, TestItem $unit): string
     {
-        $lengthA = $test->getValidationLength();
         $validation = $unit->getValidationTitle();
-        return "   " . str_pad($validation, $lengthA) . " → failed";
+        return $this->padString($test, $validation) . " → failed";
+    }
+
+    /**
+     * Will pad validation method string
+     *
+     * @param TestUnit $test
+     * @param string $description
+     * @return string
+     */
+    public function padString(TestUnit $test, string $description): string
+    {
+        $lengthA = $test->getValidationLength();
+        return "   " . str_pad($description, $lengthA);
     }
 
     /**

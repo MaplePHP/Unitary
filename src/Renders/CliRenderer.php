@@ -179,7 +179,13 @@ class CliRenderer extends AbstractRenderHandler
                                 } else {
                                     $failedMsg = $this->getMessage($test, $unit);
                                     $compare = $this->getComparison($unit, $failedMsg);
-                                    $this->command->message($this->command->getAnsi()->style($this->color, $failedMsg));
+
+                                    if($unit->getStringifyArgs() !== "") {
+                                        $this->command->message($this->command->getAnsi()->style($this->color, $failedMsg));
+                                    } else {
+                                        $this->command->message($this->command->getAnsi()->style(['yellow', 'italic'], $this->padString($test, $unit->getValidation())));
+                                    }
+
                                     if ($compare !== "") {
                                         $this->command->message(
                                             $this->command->getAnsi()->style($this->color, $compare)
