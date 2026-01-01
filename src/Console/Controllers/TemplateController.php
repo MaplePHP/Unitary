@@ -23,15 +23,12 @@ class TemplateController extends DefaultController
                 
                 group("Your test subject", function (TestCase $case) {
                 
-                    $case->validate("Your test value", function(Expect $valid) {
-                        $valid->isString();
-                    });
-                    
+                    $case->expect("YourValue")
+                        ->isString()
+                        ->validate();
                 });
                 PHP
         );
         $blocks->addHeadline("---------------------------\n");
     }
-
-
 }
