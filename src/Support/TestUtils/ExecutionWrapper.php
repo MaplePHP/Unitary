@@ -101,6 +101,7 @@ abstract class ExecutionWrapper
         if (!is_callable($call)) {
             throw new Exception("Closure is not callable.");
         }
+
         $this->methods[$method] = $call;
         return $this;
     }
@@ -123,6 +124,18 @@ abstract class ExecutionWrapper
             return call_user_func_array([$this->instance, $name], $arguments);
         }
         throw new Exception("Method $name does not exist.");
+    }
+
+    /**
+     * Access the wrapped class and a new possible added method
+     *
+     * @param string $name
+     * @param ...$arguments
+     * @return mixed
+     */
+    public function this(string $name, ...$arguments): mixed
+    {
+        return $this->methods[$name](...$arguments);
     }
 
     /**
