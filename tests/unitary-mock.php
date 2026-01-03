@@ -11,6 +11,64 @@ use TestLib\UserService;
 
 $config = TestConfig::make()->withName("mocker");
 
+group($config->withSubject("Wrapper"), function (TestCase $case) {
+
+    $mailer = $case->wrap("TestLib\Mailer");
+
+    $mailer->override("sendEmail", fn(string $email) => "email:{$email}");
+
+    $mailer->add("sendEmail2", function(string $email) use ($mailer) {
+
+
+        if($this->ssl) {
+            return false;
+        }
+
+        // the method "isValidEmail" is from the original TestLib\Mailer class
+        if(!$this->isValidEmail($email)) {
+            return false;
+        }
+        // the method "this" and "sendEmail" the override method above
+        return "chained:" . $mailer->this("sendEmail", $email);
+    });
+
+    $case->expect($mailer->sendEmail("john@gmail.com"))
+        ->isEqualTo("email:john@gmail.com")
+        ->validate();
+
+    $case->expect($mailer->sendEmail2("jane@gmail.com"))
+        ->isEqualTo("chained:email:jane@gmail.com")
+        ->validate();
+});
+
+group($config->withSubject("Wrapper2"), function (TestCase $case) {
+
+
+    $mailer = $case->mock(Mailer::class, function(MethodRegistry $method) {
+
+        // Wrap the mocked method "sendEmail" with new functionality "BUT" with access to
+        // the original Mailer class instance
+        $method->method("sendEmail")->wrap(function($email) {
+            if(!$this->isValidEmail($email)) {
+                return "FAILED";
+            }
+            return "email:{$email}";
+        });
+
+        // Tell the mocked "isValidEmail" method to return a specific value
+        $method->method("isValidEmail")->willReturn(true);
+        // Keep the original method functionality from the Mailer class
+        $method->method("getFromEmail")->keepOriginal();
+    });
+
+    $case->expect($mailer->sendEmail("john@gmail.com"))
+        ->isEqualTo("email:john@gmail.com")
+        ->validate();
+
+    $case->expect($mailer->isValidEmail("mocked"))
+        ->isTrue()
+        ->validate();
+});
 
 group($config->withSubject("Can not mock final or private"), function(TestCase $case) {
 
@@ -38,7 +96,7 @@ group($config->withSubject("Validating all mocker methods"), function (TestCase 
             ->withArguments("john.doe@gmail.com", "John Doe")
             ->withArgumentsForCalls(["john.doe@gmail.com", "John Doe"], ["jane.doe@gmail.com", "Jane Doe"])
             ->willThrowOnce(new InvalidArgumentException("Lowrem ipsum"))
-            ->called(1);
+            ->called(2);
 
         $method->method("addBCC")
             ->isPublic()

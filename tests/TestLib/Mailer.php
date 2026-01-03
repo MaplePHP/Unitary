@@ -7,7 +7,6 @@ class Mailer
     public $from = "";
     public $bcc = "";
 
-
     public function __construct()
     {
 
