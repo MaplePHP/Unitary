@@ -21,6 +21,7 @@ abstract class DefaultController
     protected DispatchConfigInterface $configs;
     protected array $args;
     protected ?ConfigProps $props = null;
+    protected string|bool $path;
 
     /**
      * Set some data type safe object that comes from container and the dispatcher
@@ -39,6 +40,9 @@ abstract class DefaultController
         $this->command = $this->container->get("command");
         $this->request = $this->container->get("request");
         $this->configs = $this->container->get("configuration");
+        $defaultPath = $this->container->get("request")->getUri()->getDir();
+        $defaultPath = ($this->configs->getProps()->path !== null) ? $this->configs->getProps()->path : $defaultPath;
+        $this->path = realpath($this->args['path'] ?? $defaultPath);
         $this->forceShowHelp($response);
     }
 

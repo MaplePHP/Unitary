@@ -20,8 +20,9 @@ class CoverageController extends DefaultController
             return $response;
         }
 
+
         $coverage = new CodeCoverage();
-        $coverage->start();
+        $coverage->start($this->path !== false ? $this->path : null);
         $handler = new SilentRender();
         $response = $service->run($handler);
         $coverage->end();

@@ -20,6 +20,7 @@ class CodeCoverage
 {
     private CoverageIssue $coverageIssue = CoverageIssue::None;
     private ?array $data = null;
+    private ?string $path = null;
     private array $exclude = [];
     /** @var array<int, string> */
     private const DEFAULT_EXCLUDED_FILES = [
@@ -45,6 +46,11 @@ class CodeCoverage
         ".git",
         ".github"
     ];
+
+    public function __construct()
+    {
+        $this->exclude = self::DEFAULT_EXCLUDED_FILES;
+    }
 
     /**
      * Check if Xdebug is enabled
@@ -102,13 +108,12 @@ class CodeCoverage
      *
      * @psalm-suppress UndefinedFunction
      * @psalm-suppress UndefinedConstant
-     * @noinspection PhpUndefinedFunctionInspection
-     * @noinspection PhpUndefinedConstantInspection
-     *
+     * @param string|null $path (start path to include from)
      * @return void
      */
-    public function start(): void
+    public function start(?string $path = null): void
     {
+        $this->path = $path;
         $this->data = [];
         if ($this->hasXdebugCoverage()) {
             \xdebug_start_code_coverage(XDEBUG_CC_UNUSED | XDEBUG_CC_DEAD_CODE);
@@ -132,6 +137,7 @@ class CodeCoverage
 
             $this->data = \xdebug_get_code_coverage();
             \xdebug_stop_code_coverage();
+
         }
     }
 
@@ -170,15 +176,14 @@ class CodeCoverage
         if ($this->hasIssue()) {
             return false;
         }
-
         $totalLines = 0;
         $executedLines = 0;
         foreach ($this->data as $file => $lines) {
-            if ($this->excludePattern($file)) {
+            if ($this->excludePattern($file) || !($this->path !== null && str_starts_with($file, $this->path))) {
                 continue;
             }
-
-            foreach ($lines as $line => $status) {
+            //Add key "=> $line" for line numbers
+            foreach ($lines as $status) {
                 if ($status === -2) {
                     continue;
                 }

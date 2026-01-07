@@ -22,7 +22,17 @@ class RunTestService extends AbstractMainService
         $iterator->addExcludePaths($this->props->exclude);
         $iterator->setDiscoverPattern($this->props->discoverPattern);
 
-        $iterator = $this->iterateTest($iterator, $handler);
+        try {
+            $iterator = $this->iterateTest($iterator, $handler);
+        } catch (\Exception $exception) {
+            if($this->props->verbose || $this->props->failFast) {
+                throw $exception;
+            }
+            $this->command->message("");
+            $this->command->error("Could not iterate over tests correctly.");
+            $this->command->error($exception->getMessage());
+        }
+
 
         // CLI Response
         if (PHP_SAPI === 'cli') {

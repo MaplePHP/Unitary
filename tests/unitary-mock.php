@@ -19,11 +19,6 @@ group($config->withSubject("Wrapper"), function (TestCase $case) {
 
     $mailer->add("sendEmail2", function(string $email) use ($mailer) {
 
-
-        if($this->ssl) {
-            return false;
-        }
-
         // the method "isValidEmail" is from the original TestLib\Mailer class
         if(!$this->isValidEmail($email)) {
             return false;
