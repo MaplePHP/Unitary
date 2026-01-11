@@ -56,7 +56,7 @@ class AuditController extends DefaultController
                     "php vendor/bin/unitary audit --type=security",
                     "Scan project for vulnerabilities (CVE scan)"
                 )->addExamples(
-                    "php vendor/bin/unitary run --type=dependencies",
+                    "php vendor/bin/unitary audit --type=dependencies",
                     "Inspect dependency tree and supply-chain footprint."
                 );
         });

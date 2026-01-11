@@ -45,7 +45,7 @@ class HelpController extends DefaultController
                 ->addOption("run", "Run all Unitary tests")
                 ->addOption("template", "Show template/boilerplate Unitary test code")
                 ->addOption("coverage", "Show code coverage and how much code is used")
-                ->addOption("audio", "Audit vulnerabilities and dependencies");
+                ->addOption("audit", "Audit vulnerabilities and dependencies");
         });
 
         $blocks->addSection("Some examples", function (Blocks $inst) {
