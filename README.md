@@ -1,8 +1,8 @@
 # MaplePHP Unitary — Fast Testing, Full Control, Zero Friction
 
-Unitary is a modern PHP testing framework built for developers who want speed, precision, and complete freedom. No config. No noise. Just a clean, purpose-built system that runs 100,000+ tests in a second and scales effortlessly—from quick checks to full-suite validation.
+Unitary is a modern PHP testing framework for developers who value speed, precision, and full control. No configuration. No clutter. Just a clean, purpose-built core that can execute 100,000+ tests per second and scales smoothly from quick sanity checks to full integration suites.
 
-Mocking, validation, and assertions are all built in—ready to use without setup or plugins. The CLI is intuitive, the experience is consistent, and getting started takes seconds. Whether you’re testing one function or an entire system, Unitary helps you move fast and test with confidence.
+Mocking, validation, and assertions are built in from the start, with no plugins, adapters, or bootstrapping required. The CLI is fast and intuitive, the workflow is consistent, and getting started takes seconds. Whether you are validating a single function or an entire system, Unitary lets you move quickly and test with confidence.
 
 ![Prompt demo](http://wazabii.se/github-assets/unitary/unitary-cli-states.png)
 
@@ -11,17 +11,19 @@ _Do you like the CLI theme? [Download it here](https://github.com/MaplePHP/DarkB
 
 ### Familiar Syntax. Fast Feedback.
 
-Unitary is designed to feel natural for developers. With clear syntax, built-in validation, and zero setup required, writing tests becomes a smooth part of your daily flow—not a separate chore.
+Unitary is designed to feel natural for developers. With clear syntax, built-in validation, and zero setup required, writing tests becomes a smooth part of your daily flow and not a separate chore.
 
 ```php
-group("Has a about page", function(TestCase $case) {
+use MaplePHP\Unitary\TestCase;
 
-    $response = $this->get("/about");
-    $statusCode = $response->getStatusCode();
-    
-    $case->validate($statusCode, function(Expect $valid) {
-        $valid->isHttpSuccess();
-    });
+group("Your grouped test subject", function (TestCase $case) {
+
+    $json = '{"response":{"status":200,"message":"ok"}}';
+
+    $case->expect($json)
+         ->isJson()
+         ->hasJsonValueAt("response.status", 200)
+         ->validate();
 });
 ```
 
@@ -29,7 +31,7 @@ group("Has a about page", function(TestCase $case) {
 
 ## Next-Gen PHP Testing Framework
 
-**Unitary** is a blazing-fast, developer-first testing framework for PHP, built from scratch with zero dependencies on legacy tools like many others. It’s simple to get started, lightning-fast to run, and powerful enough to test everything from units to mocks.
+Unitary is a blazing-fast, developer-first testing framework for PHP, built from the ground up with zero third-party dependencies and a highly optimized core, not just a wrapper around legacy tools. It’s simple to get started, lightning-fast to run, and powerful enough to test everything from units to mocks.
 
 > 🚀 *Test 100,000+ cases in \~1 second. No config. No bloat. Just results.*
 
@@ -81,16 +83,20 @@ Create a file like `tests/unitary-request.php`. Unitary automatically scans all 
 Paste this test boilerplate to get started:
 
 ```php
-use MaplePHP\Unitary\{Expect,TestCase,Unit};
+use MaplePHP\Unitary\{TestCase};
 
-group("Your test subject", function (TestCase $case) {
-    $case->validate("Your test value", function(Expect $valid) {
-        $valid->isString();
-    });
+group("HTTP Request", function(TestCase $case) {
+
+    $request = new Request("GET", "https://example.com/?id=1&slug=hello");
+
+    $case->expect($request->getUri()->getQuery())
+        ->hasQueryParam("id", 1)
+        ->hasQueryParam("slug", "hello")
+        ->validate();
 });
 ```
 
-> 💡 Tip: Run `php vendor/bin/unitary --template` to auto-generate this boilerplate code above.
+> 💡 Tip: Run `php vendor/bin/unitary --template` to auto-generate this boilerplate code.
 
 ---
 
@@ -100,14 +106,14 @@ group("Your test subject", function (TestCase $case) {
 php vendor/bin/unitary
 ```
 
-Need help?
+#### Need help?
 
 ```bash
 php vendor/bin/unitary --help
 ```
 
 #### The Output:
-![Prompt demo](http://wazabii.se/github-assets/maplephp-unitary-result.png)
+![Prompt demo](http://wazabii.se/github-assets/unitary/unitary-cli-state-pass.png)
 *And that is it! Your tests have been successfully executed!*
 
 With that, you are ready to create your own tests!
@@ -116,7 +122,7 @@ With that, you are ready to create your own tests!
 
 ## 📅 Latest Release
 
-**v1.3.0 – 2025-06-20**
+**v2.0.0**
 This release marks Unitary’s transition from a testing utility to a full framework. With the core in place, expect rapid improvements in upcoming versions.
 
 ---
@@ -125,13 +131,15 @@ This release marks Unitary’s transition from a testing utility to a full frame
 
 Unitary stands on a solid foundation of years of groundwork. Before Unitary was possible, these independent components were developed:
 
-* [`maplephp/http`](https://github.com/maplephp/http) – PSR-7 HTTP messaging
-* [`maplephp/stream`](https://github.com/maplephp/stream) – PHP stream handling
-* [`maplephp/cli`](https://github.com/maplephp/prompts) – Interactive prompt/command engine
+
+* [`maplephp/Emitron`](https://github.com/maplephp/emitron) – PSR-15 kernel and middleware engine 
+* [`maplephp/http`](https://github.com/maplephp/http) – PSR-7 HTTP messaging and stream handling
+* [`maplephp/prompts`](https://github.com/maplephp/prompts) – Interactive prompt/command engine
 * [`maplephp/blunder`](https://github.com/maplephp/blunder) – A pretty error handling framework
 * [`maplephp/validate`](https://github.com/maplephp/validate) – Type-safe input validation
 * [`maplephp/dto`](https://github.com/maplephp/dto) – Strong data transport
 * [`maplephp/container`](https://github.com/maplephp/container) – PSR-11 Container, container and DI system
+* [`maplephp/cache`](https://github.com/maplephp/cache) – PSR-6 and PSR-16 caching library
 
 This full control means everything works together, no patching, no adapters and no guesswork.
 
