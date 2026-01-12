@@ -55,10 +55,6 @@ Unitary runs large test suites in a fraction of the time — even **100,000+** t
 
 🚀 That’s up to 46× faster than the most widely used testing frameworks. 
 
-
-> Benchmarks based on real-world test cases.
-> 👉 [See full benchmark comparison →](https://your-docs-link.com/benchmarks)
-
 ---
 
 
@@ -178,4 +174,4 @@ If you like what you see, consider:
 
 Follow the full suite of MaplePHP tools:
 
-* [https://github.com/maplephp](https://github.com/maplephp)
+* [https://github.com/MaplePHP](https://github.com/MaplePHP)
