@@ -17,8 +17,8 @@
       "email": "daniel.ronkainen@wazabii.se"
     },
     {
-      "name": "MaplePHP",
-      "homepage": "https://wazabii.se"
+      "name": "Unitary",
+      "homepage": "https://maplephp.github.io/Unitary/"
     }
   ],
   "require": {
