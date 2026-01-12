@@ -30,7 +30,8 @@
     "maplephp/http": "^2.0",
     "maplephp/validate": "^2.0",
     "maplephp/prompts": "^1.2",
-    "maplephp/container": "^2.0"
+    "maplephp/container": "^2.0",
+    "maplephp/cache": "^2.0"
   },
   "autoload": {
     "files": [
