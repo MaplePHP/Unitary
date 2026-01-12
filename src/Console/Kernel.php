@@ -26,7 +26,8 @@ use MaplePHP\Emitron\Kernel as EmitronKernel;
 class Kernel
 {
     private const DEFAULT_ROUTER_FILE = '/src/Console/ConsoleRouter.php';
-    public const CONFIG_FILE_PATH = __DIR__ . '/../../unitary.config';
+    public const UNITARY_DIR = __DIR__ . '/../../';
+    public const DEFAULT_CONFIG_FILE_PATH = __DIR__ . '/../../unitary.config';
 
     private ContainerInterface $container;
     private array $userMiddlewares;
@@ -47,7 +48,13 @@ class Kernel
         $this->container = $container;
         $this->userMiddlewares = $userMiddlewares;
         $this->config = $dispatchConfig;
-        EmitronKernel::setConfigFilePath(self::CONFIG_FILE_PATH);
+
+        if(is_file(self::UNITARY_DIR . '/../../../unitary.config.php')) {
+            EmitronKernel::setConfigFilePath(self::UNITARY_DIR . '/../../../unitary.config');
+        } else {
+            EmitronKernel::setConfigFilePath(self::DEFAULT_CONFIG_FILE_PATH);
+        }
+        EmitronKernel::setRouterFilePath(self::UNITARY_DIR);
     }
 
     /**
