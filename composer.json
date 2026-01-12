@@ -28,7 +28,8 @@
     "maplephp/dto": "^3.1",
     "maplephp/http": "^2.0",
     "maplephp/validate": "^2.0",
-    "maplephp/prompts": "^1.2"
+    "maplephp/prompts": "^1.2",
+    "MaplePHP/container": "^2.0"
   },
   "autoload": {
     "files": [
