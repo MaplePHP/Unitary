@@ -1,0 +1,93 @@
+<?php
+
+/**
+ * TestConfig — Part of the MaplePHP Unitary Testing Library
+ *
+ * @package:    MaplePHP\Unitary
+ * @author:     Daniel Ronkainen
+ * @licence:    Apache-2.0 license, Copyright © Daniel Ronkainen
+ *              Don't delete this comment, it's part of the license.
+ */
+declare(strict_types=1);
+
+namespace MaplePHP\Unitary\Config;
+
+final class TestConfig
+{
+    public ?string $message;
+    public bool $skip = false;
+    public string $select = "";
+    private bool $updatedSubject = false;
+
+    public function __construct(string $message = "")
+    {
+        $this->message = $message;
+    }
+
+    /**
+     * Statically make instance.
+     *
+     * @param string $message
+     * @return self
+     */
+    public static function make(string $message = "Validating"): self
+    {
+        return new self($message);
+    }
+
+    /**
+     * Sets the select state for the current instance.
+     *
+     * @param string $key The key to set.
+     * @return self
+     */
+    public function withName(string $key): self
+    {
+        $inst = clone $this;
+        $inst->select = $key;
+        return $inst;
+    }
+
+    // Alias for setName()
+    public function setSelect(string $key): self
+    {
+        return $this->withName($key);
+    }
+
+    /**
+     * Sets the message for the current instance.
+     *
+     * @param string $subject The message to set.
+     * @return self
+     */
+    public function withSubject(string $subject): self
+    {
+        $inst = clone $this;
+        $inst->updatedSubject = true;
+        $inst->message = $subject;
+        return $inst;
+    }
+
+    /**
+     * Check if a subject has been added in `withSubject`
+     *
+     * @return bool
+     */
+    public function hasSubject(): bool
+    {
+        return $this->updatedSubject;
+    }
+
+    /**
+     * Sets the skip state for the current instance.
+     *
+     * @param bool $bool Optional. The value to set for the skip state. Defaults to true.
+     * @return self
+     */
+    public function withSkip(bool $bool = true): self
+    {
+        $inst = clone $this;
+        $inst->skip = $bool;
+        return $inst;
+    }
+}

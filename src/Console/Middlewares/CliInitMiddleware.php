@@ -1,0 +1,44 @@
+<?php
+
+namespace MaplePHP\Unitary\Console\Middlewares;
+
+use Psr\Container\ContainerInterface;
+use Psr\Http\Server\MiddlewareInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\StreamInterface;
+use MaplePHP\Prompts\Command;
+
+class CliInitMiddleware implements MiddlewareInterface
+{
+    /**
+     * In CLI, the status code is used as the exit code rather than an HTTP status code.
+     * By default, a successful execution should return 0 as the exit code.
+     *
+     * @param ServerRequestInterface $request
+     * @param RequestHandlerInterface $handler
+     * @return ResponseInterface
+     */
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+    {
+        $response = $handler->handle($request);
+        if ($this->isCli()) {
+            // We can use 0 or a 200 range status code for CLI, but 200 is better as
+            // this is validatable, but any successful status code in CLI will actually
+            // EXIT with 0 by default
+            $response = $response->withStatus(200);
+        }
+        return $response;
+    }
+
+    /**
+     * Check if is inside a command line interface (CLI)
+     *
+     * @return bool
+     */
+    protected function isCli(): bool
+    {
+        return PHP_SAPI === 'cli';
+    }
+}

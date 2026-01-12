@@ -1,0 +1,239 @@
+<?php
+
+namespace MaplePHP\Unitary\Renders;
+
+use ErrorException;
+use MaplePHP\Prompts\Command;
+use MaplePHP\Unitary\TestItem;
+use MaplePHP\Unitary\TestUnit;
+use RuntimeException;
+
+class CliRenderer extends AbstractRenderHandler
+{
+    private Command $command;
+    private string $color;
+    private string $flag;
+    private bool $hardStop = false;
+
+    /**
+     * Pass the main command and stream to handler
+     *
+     * @param Command $command
+     */
+    public function __construct(Command $command)
+    {
+        $this->command = $command;
+        // Pass the active stream to `AbstractRenderHandler::getBody()`
+        $this->body = $this->command->getStream();
+    }
+
+    /**
+     * {@inheritDoc}
+     * @throws ErrorException
+     */
+    public function buildBody(): void
+    {
+        $this->initDefault();
+
+        $this->command->message("");
+        $this->command->message(
+            $this->flag . " " .
+            $this->command->getAnsi()->style(["bold"], $this->formatFileTitle($this->suitName)) .
+            " - " .
+            $this->command->getAnsi()->style(["bold", $this->color], (string)$this->case->getMessage())
+        );
+
+        if (($this->show || $this->alwaysShowFiles || $this->verbose) && ($this->case->getConfig()->skip || !$this->case->hasFailed())) {
+            $this->command->message("");
+            $this->command->message(
+                $this->command->getAnsi()->style(["italic", $this->color], "Test file: " . $this->suitName)
+            );
+        }
+
+        if (($this->show || !$this->case->getConfig()->skip)) {
+            // Show possible warnings
+            if ($this->case->getWarning()) {
+                $this->command->message("");
+                $this->command->message(
+                    $this->command->getAnsi()->style(["italic", "yellow"], $this->case->getWarning())
+                );
+            }
+
+            // Show Failed tests
+            $this->showFailedTests();
+        }
+
+        $this->showFooter();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function buildNotes(): void
+    {
+        if ($this->outputBuffer) {
+            $lineLength = 80;
+            $output = wordwrap($this->outputBuffer, $lineLength);
+            $line = $this->command->getAnsi()->line($lineLength);
+
+            $this->command->message("");
+            $this->command->message($this->command->getAnsi()->style(["bold"], "Note:"));
+            $this->command->message($line);
+            $this->command->message($output);
+            $this->command->message($line);
+        }
+    }
+
+    /**
+     * Footer template part
+     *
+     * @return void
+     */
+    protected function showFooter(): void
+    {
+        $select = $this->checksum;
+        if ($this->case->getConfig()->select) {
+            $select .= " (" . $this->case->getConfig()->select . ")";
+        }
+        $this->command->message("");
+
+        $dot = $this->command->getAnsi()->middot();
+        if($this->hardStop && $this->case->getFailedCount()) {
+            $passed = $this->command->getAnsi()->style(["bold"], "Failed: ");
+            $passed .= $this->command->getAnsi()->style([$this->color], $this->case->getFailedCount());
+            $passed .= $this->command->getAnsi()->style(["grey"]," {$dot} ");
+            $passed .= $this->command->getAnsi()->style(["bold"], "Executed: ") . $this->command->getAnsi()->style(["yellow"], $this->case->getTotal());
+            $passed .= $this->command->getAnsi()->style(["grey"]," (hard stop)");
+
+        } else {
+            $passed = $this->command->getAnsi()->style(["bold"], "Passed: ");
+            //$passed .= $this->command->getAnsi()->style([$this->color], $this->case->getCount());
+            $passed .= $this->command->getAnsi()->style([$this->color], $this->case->getCount() . "/" . $this->case->getTotal());
+        }
+
+        //$passed .= $this->command->getAnsi()->style([$this->color], $this->case->getCount() . "/" . $this->case->getTotal());
+
+
+        $footer = $passed .
+            $this->command->getAnsi()->style(["italic", "grey"], " $dot ". $select);
+        if (!$this->show && $this->case->getConfig()->skip) {
+            $footer = $this->command->getAnsi()->style(["italic", "grey"], $select);
+        }
+        $this->command->message($footer);
+        $this->command->message("");
+
+    }
+
+    /**
+     * Failed tests template part
+     *
+     * @return void
+     * @throws ErrorException
+     */
+    protected function showFailedTests(): void
+    {
+        $this->hardStop = false;
+        if (($this->show || !$this->case->getConfig()->skip)) {
+            $length = count($this->tests);
+            foreach ($this->tests as $index => $test) {
+
+                if (!($test instanceof TestUnit)) {
+                    throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestUnit.");
+                }
+
+                if (!$test->isValid()) {
+                    if($test->isHardStop()) {
+                        $this->hardStop = true;
+                    }
+
+                    $errorType = $this->getErrorType($test);
+                    //$type = $this->getType($test);
+                    $msg = (string)$test->getMessage();
+                    $this->command->message("");
+                    $this->command->message(
+                        $this->command->getAnsi()->style(["bold", $this->color], ucfirst($errorType) . ": ") .
+                        $this->command->getAnsi()->bold(($msg !== "" ? $msg : $this->getCaseName($test)))
+                    );
+                    $this->command->message("");
+
+                    $trace = $test->getCodeLine();
+                    if (!empty($trace['code'])) {
+                        $this->command->message($this->command->getAnsi()->style(["bold", "grey"], "Failed on {$trace['file']}:{$trace['line']}"));
+                        $this->command->message($this->command->getAnsi()->style(["grey"], " → {$trace['code']}"));
+                    }
+
+                    if($test->hasError()) {
+                        // IF error has been triggered in validation closure
+                        if($this->show) {
+                            $this->command->message($this->getErrorMessage($test));
+                        } else {
+                            $this->command->message($this->getSmallErrorMessage($test) . "→ failed");
+                        }
+
+                    } else {
+                        foreach ($test->getUnits() as $unit) {
+                            /** @var TestItem $unit */
+                            if (!$unit->isValid()) {
+                                if($this->show && $this->case->getHasError()) {
+                                    $this->command->message($this->getErrorMessage($test));
+                                } else {
+                                    $failedMsg = $this->getMessage($test, $unit);
+                                    $compare = $this->getComparison($unit, $failedMsg);
+
+                                    if($unit->getStringifyArgs() !== "") {
+                                        $this->command->message($this->command->getAnsi()->style($this->color, $failedMsg));
+                                    } else {
+                                        $this->command->message($this->command->getAnsi()->style(['yellow', 'italic'], $this->padString($test, $unit->getValidation())));
+                                    }
+
+                                    if ($compare !== "") {
+                                        $this->command->message(
+                                            $this->command->getAnsi()->style($this->color, $compare)
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if($test->isSoftStop()) {
+                        $this->command->message($this->command->getAnsi()->style(["grey", "italic"], $this->setPad($test, "Soft stop")));
+                    }
+                    if ($test->hasValue()) {
+                        $this->command->message("");
+                        $this->command->message(
+                            $this->command->getAnsi()->bold("Input: ") .
+                            $this->getValue($test)
+                        );
+                    }
+
+                    if($test->getFailedTestCount() > 1 && ($length-1) > $index) {
+                        $this->command->message("");
+                        $this->command->message($this->command->getAnsi()->dashedLine(80));
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Init some default styled object
+     *
+     * @return void
+     */
+    protected function initDefault(): void
+    {
+        $this->color = ($this->case->hasFailed() ? "brightRed" : "brightBlue");
+        $this->flag = $this->command->getAnsi()->style(['blueBg', 'brightWhite'], " PASS ");
+        if ($this->case->hasFailed()) {
+            $this->flag = $this->command->getAnsi()->style(['redBg', 'brightWhite'], " FAIL ");
+        }
+        if ($this->case->getConfig()->skip) {
+            $this->color = "yellow";
+            $this->flag = $this->command->getAnsi()->style(['brightYellowBg', 'black'], " SKIP ");
+        }
+
+        if ($this->case->getHasError()) {
+            $this->flag = $this->command->getAnsi()->style(['redBg', 'brightWhite'], " ERROR ");
+        }
+    }
+}

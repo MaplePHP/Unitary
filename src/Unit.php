@@ -1,430 +1,450 @@
 <?php
 
+/**
+ * Unit — Part of the MaplePHP Unitary Testing Library
+ *
+ * @package:    MaplePHP\Unitary
+ * @author:     Daniel Ronkainen
+ * @licence:    Apache-2.0 license, Copyright © Daniel Ronkainen
+ *              Don't delete this comment, it's part of the license.
+ */
+
 declare(strict_types=1);
 
 namespace MaplePHP\Unitary;
 
 use Closure;
 use ErrorException;
-use Exception;
-use RuntimeException;
-use MaplePHP\Unitary\Handlers\HandlerInterface;
-use MaplePHP\Http\Interfaces\StreamInterface;
+use MaplePHP\Blunder\Exceptions\BlunderErrorException;
+use Psr\Http\Message\StreamInterface;
 use MaplePHP\Prompts\Command;
+use MaplePHP\Unitary\Config\TestConfig;
+use MaplePHP\Unitary\Renders\CliRenderer;
+use MaplePHP\Unitary\Interfaces\BodyInterface;
+use RuntimeException;
 use Throwable;
 
-class Unit
+final class Unit
 {
-    private ?HandlerInterface $handler = null;
-    private Command $command;
-    private string $output = "";
+    private ?BodyInterface $handler;
     private int $index = 0;
     private array $cases = [];
-    private bool $skip = false;
+    private bool $disableAllTests = false;
     private bool $executed = false;
-    private static array $headers = [];
-    private static ?Unit $current;
-    private static array $manual = [];
-    public static int $totalPassedTests = 0;
-    public static int $totalTests = 0;
-
-    public function __construct(HandlerInterface|StreamInterface|null $handler = null)
-    {
-        if($handler instanceof HandlerInterface) {
-            $this->handler = $handler;
-            $this->command = $this->handler->getCommand();
-        } else {
-            $this->command = new Command($handler);
-        }
-        self::$current = $this;
-    }
+    private string $file = "";
+    private bool $showErrorsOnly = false;
+    private bool $failFast = false;
+    private ?string $show = null;
+    private bool $verbose = false;
+    private bool $alwaysShowFiles = false;
+    private static int $totalPassedTests = 0;
+    private static int $totalTests = 0;
+    private static int $totalErrors = 0;
+    private static int $totalSkippedTests = 0;
+    private static float $totalMemory = 0;
+    private static float $totalDuration = 0;
 
     /**
-     * Skip you can add this if you want to turn of validation of a unit case
-     * @param bool $skip
-     * @return $this
+     * Initialize Unit test instance with optional handler
+     *
+     * @param BodyInterface|null $handler Optional handler for test execution
      */
-    public function skip(bool $skip): self
+    public function __construct(BodyInterface|null $handler = null)
     {
-        $this->skip = $skip;
-        return $this;
+        $this->setHandler($handler);
     }
 
     /**
-     * Make script manually callable
-     * @param string $key
-     * @return $this
-     */
-    public function manual(string $key): self
-    {
-        if(isset(self::$manual[$key])) {
-            $file = (string)(self::$headers['file'] ?? "none");
-            throw new RuntimeException("The manual key \"$key\" already exists.
-                Please set a unique key in the " . $file. " file.");
-        }
-        self::$manual[$key] = self::$headers['checksum'];
-        return $this->skip(true);
-    }
-
-    /**
-     * Access command instance
-     * @return Command
-     */
-    public function getCommand(): Command
-    {
-        return $this->command;
-    }
-
-    /**
-     * Access command instance
+     * Get the PSR stream from the handler
+     *
      * @return StreamInterface
      */
-    public function getStream(): StreamInterface
+    public function getBody(): StreamInterface
     {
-        return $this->command->getStream();
+        return $this->handler->getBody();
     }
 
     /**
-     * Disable ANSI
-     * @param bool $disableAnsi
-     * @return self
+     * Set output handler
+     *
+     * @param BodyInterface|null $handler
+     * @return $this
      */
-    public function disableAnsi(bool $disableAnsi): self
+    public function setHandler(BodyInterface|null $handler = null): self
     {
-        $this->command->getAnsi()->disableAnsi($disableAnsi);
+        $this->handler = ($handler === null) ? new CliRenderer(new Command()) : $handler;
         return $this;
     }
 
     /**
-     * Print message
-     * @param string $message
-     * @return false|string
+     * Will pass a test file name to script used to:
+     * - Allocate tests
+     * - Show where tests is executed
+     *
+     * @param string $file
+     * @return $this
      */
-    public function message(string $message): false|string
+    public function setFile(string $file): Unit
     {
-        return $this->command->message($message);
+        $this->file = $file;
+        return $this;
     }
 
     /**
-     * confirm for execute
-     * @param string $message
+     * Will exit script if errors is thrown
+     *
+     * @param bool $failFast
+     * @return $this
+     */
+    public function setFailFast(bool $failFast): Unit
+    {
+        $this->failFast = $failFast;
+        return $this;
+    }
+
+    /**
+     * Will only display error and hide passed tests
+     *
+     * @param bool $showErrorsOnly
+     * @return $this
+     */
+    public function setShowErrorsOnly(bool $showErrorsOnly): Unit
+    {
+        $this->showErrorsOnly = $showErrorsOnly;
+        return $this;
+    }
+
+    /**
+     * Display only one test -
+     * Will accept either file checksum or name form named tests
+     *
+     * @param string|null $show
+     * @return $this
+     */
+    public function setShow(?string $show = null): Unit
+    {
+        $this->show = $show;
+        return $this;
+    }
+
+    /**
+     * Show hidden messages
+     *
+     * @param bool $verbose
+     * @return void
+     */
+    public function setVerbose(bool $verbose): void
+    {
+        $this->verbose = $verbose;
+    }
+
+    /**
+     * Show file paths even on passed tests
+     *
+     * @param bool $alwaysShowFiles
+     * @return void
+     */
+    public function setAlwaysShowFiles(bool $alwaysShowFiles): void
+    {
+        $this->alwaysShowFiles = $alwaysShowFiles;
+    }
+
+    /**
+     * This will pass over all relevant configurations to new Unit instances
+     *
+     * @param Unit $inst
+     * @return $this
+     */
+    public function inheritConfigs(Unit $inst): Unit
+    {
+        foreach (get_object_vars($inst) as $prop => $value) {
+            if($prop !== "index" && $prop !== "cases") {
+                $this->$prop = $value;
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * Check if all executed tests is successful
+     *
      * @return bool
      */
-    public function confirm(string $message = "Do you wish to continue?"): bool
+    public static function isSuccessful(): bool
     {
-        return $this->command->confirm($message);
+        return (self::$totalPassedTests === self::$totalTests);
     }
 
     /**
-     * DEPRECATED: Name has been changed to case
+     * Get number of executed passed tests
+     *
+     * @return int
+     */
+    public static function getPassedTests(): int
+    {
+        return self::$totalPassedTests;
+    }
+
+    /**
+     * Get number of executed tests
+     *
+     * @return int
+     */
+    public static function getTotalTests(): int
+    {
+        return self::$totalTests;
+    }
+
+    /**
+     * Get the total number of failed tests
+     *
+     * @return int
+     */
+    public static function getTotalFailed(): int
+    {
+        return self::$totalTests-self::$totalPassedTests;
+    }
+
+    /**
+     * Get the total number of error
+     *
+     * NOTE: That an error is a PHP failure or a exception that has been thrown.
+     *
+     * @return int
+     */
+    public static function getTotalErrors(): int
+    {
+        return self::$totalErrors;
+    }
+
+    /**
+     * Get the total number of skipped grouped test
+     *
+     * @return int
+     */
+    public static function getTotalSkipped(): int
+    {
+        return self::$totalSkippedTests;
+    }
+
+    /**
+     * Increment error count
+     *
+     * @return void
+     */
+    public static function incrementErrors(): void
+    {
+        self::$totalErrors++;
+    }
+
+    /**
+     * Get total duration of all tests
+     *
+     * @return float
+     */
+    public static function getTotalDuration(): float
+    {
+        return self::$totalDuration;
+    }
+
+    /**
+     * Get total duration of all tests
+     *
+     * @return float
+     */
+    public static function getTotalMemory(): float
+    {
+        return self::$totalMemory;
+    }
+
+    /**
+     * This will disable "ALL" tests in the test file
+     * If you want to skip a specific test, use the TestConfig class instead
+     *
+     * @param bool $disable
+     * @return void
+     */
+    public function disableAllTest(bool $disable): void
+    {
+        $this->disableAllTests = $disable;
+    }
+
+    /**
+     * Name has been changed to case
+     *
+     * Note: This will become DEPRECATED in the future with exception
+     *
      * @param string $message
      * @param Closure $callback
      * @return void
      */
     public function add(string $message, Closure $callback): void
     {
-        // Might be trigger in future
-        //trigger_error('Method ' . __METHOD__ . ' is deprecated', E_USER_DEPRECATED);
         $this->case($message, $callback);
     }
 
     /**
-     * Add a test unit/group
-     * @param string $message
-     * @param Closure $callback
+     * Adds a test case to the collection (group() is preferred over case())
+     * The key difference from group() is that this TestCase will NOT be bound the Closure
+     *
+     * @param string|TestConfig $message The message or configuration for the test case.
+     * @param Closure $expect The closure containing the test case logic.
+     * @param TestConfig|null $config
      * @return void
      */
-    public function case(string $message, Closure $callback): void
+    public function group(string|TestConfig $message, Closure $expect, ?TestConfig $config = null): void
     {
-        $testCase = new TestCase($message);
-        $testCase->bind($callback);
-        $this->cases[$this->index] = $testCase;
-        $this->index++;
+        if ($config !== null && !$config->hasSubject()) {
+            $addMessage = ($message instanceof TestConfig && $message->hasSubject()) ? $message->message : $message;
+            $message = $config->withSubject($addMessage);
+        }
+        $this->addCase($message, $expect);
     }
 
-    public function performance(Closure $func, ?string $title = null): void
+    /**
+     * Adds a test case to the collection.
+     * The key difference from group() is that this TestCase will be bound the Closure
+     * Not Deprecated but might be in the far future
+     *
+     * @param string|TestConfig $message The message or configuration for the test case.
+     * @param Closure $callback The closure containing the test case logic.
+     * @return void
+     */
+    public function case(string|TestConfig $message, Closure $callback): void
     {
-        $start = new TestMem();
-        $func = $func->bindTo($this);
-        if(!is_null($func)) {
-            $func();
-        }
-        $line = $this->command->getAnsi()->line(80);
-        $this->command->message("");
-        $this->command->message($this->command->getAnsi()->style(["bold", "yellow"], "Performance" . (!is_null($title) ? " - $title:" : ":")));
-
-        $this->command->message($line);
-        $this->command->message(
-            $this->command->getAnsi()->style(["bold"], "Execution time: ") .
-            (round($start->getExecutionTime(), 3) . " seconds")
-        );
-        $this->command->message(
-            $this->command->getAnsi()->style(["bold"], "Memory Usage: ") .
-            (round($start->getMemoryUsage(), 2) . " KB")
-        );
-        /*
-         $this->command->message(
-            $this->command->getAnsi()->style(["bold", "grey"], "Peak Memory Usage: ") .
-            $this->command->getAnsi()->blue(round($start->getMemoryPeakUsage(), 2) . " KB")
-        );
-         */
-        $this->command->message($line);
+        $this->addCase($message, $callback, true);
     }
 
     /**
      * Execute tests suite
+     *
      * @return bool
      * @throws ErrorException
+     * @throws BlunderErrorException
+     * @throws Throwable
      */
     public function execute(): bool
     {
-        if($this->executed || !$this->validate()) {
+        if ($this->executed || $this->disableAllTests) {
             return false;
         }
-
-        // LOOP through each case
         ob_start();
-        foreach($this->cases as $row) {
-
-            if(!($row instanceof TestCase)) {
+        //$countCases = count($this->cases);
+        $handler = $this->handler;
+        if (count($this->cases) === 0) {
+            return false;
+        }
+        $fileChecksum = md5($this->file);
+        foreach ($this->cases as $index => $row) {
+            if (!($row instanceof TestCase)) {
                 throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestCase.");
             }
 
-            try {
-                $tests = $row->dispatchTest();
-            } catch (Throwable $e) {
-                $file = $this->formatFileTitle((string)(self::$headers['file'] ?? ""), 5, false);
-                throw new RuntimeException($e->getMessage() . ". Error originated from: ". $file, (int)$e->getCode(), $e);
+            $row->dispatchTest($row);
+
+            $deferred = $row->runDeferredValidations();
+            $checksum = $fileChecksum . $index;
+            $show = ($row->getConfig()->select === $this->show || $this->show === $checksum);
+
+            if (($this->show !== null) && !$show) {
+                continue;
+            }
+            // Success, no need to try to show errors, continue with the next test
+            if ($this->showErrorsOnly !== false && !$row->hasFailed()) {
+                continue;
+            }
+            $handler->setCase($row);
+            $handler->setSuitName($this->file);
+            $handler->setChecksum($checksum);
+            $handler->setTests($deferred);
+            $handler->setShow($show);
+            $handler->setVerbose($this->verbose);
+            $handler->setAlwaysShowFiles($this->alwaysShowFiles);
+            $handler->buildBody();
+
+            if($row->getHasError()) {
+                self::incrementErrors();
             }
 
-            $color = ($row->hasFailed() ? "brightRed" : "brightBlue");
-            $flag = $this->command->getAnsi()->style(['blueBg', 'brightWhite'], " PASS ");
-            if($row->hasFailed()) {
-                $flag = $this->command->getAnsi()->style(['redBg', 'brightWhite'], " FAIL ");
-            }
-
-            $this->command->message("");
-            $this->command->message(
-                $flag . " " .
-                $this->command->getAnsi()->style(["bold"], $this->formatFileTitle((string)(self::$headers['file'] ?? ""))) .
-                " - " .
-                $this->command->getAnsi()->style(["bold", $color], (string)$row->getMessage())
-            );
-
-            foreach($tests as $test) {
-                if(!($test instanceof TestUnit)) {
-                    throw new RuntimeException("The @cases (object->array) should return a row with instanceof TestUnit.");
-                }
-
-                if(!$test->isValid()) {
-                    $msg = (string)$test->getMessage();
-                    $this->command->message("");
-                    $this->command->message($this->command->getAnsi()->style(["bold", "brightRed"], "Error: " . $msg));
-                    /** @var array<string, string> $unit */
-                    foreach($test->getUnits() as $unit) {
-                        $this->command->message(
-                            $this->command->getAnsi()->bold("Validation: ") .
-                            $this->command->getAnsi()->style(
-                                ((!$unit['valid']) ? "brightRed" : null),
-                                $unit['validation'] . ((!$unit['valid']) ? " (fail)" : "")
-                            )
-                        );
-                    }
-                    $this->command->message($this->command->getAnsi()->bold("Value: ") . $test->getReadValue());
-                }
-            }
-
-            self::$totalPassedTests += $row->getCount();
+            // Important to add test from skip as successfully count to make sure that
+            // the total passed tests are correct, and it will not exit with code 1
+            self::$totalPassedTests += ($row->getConfig()->skip) ? $row->getTotal() : $row->getCount();
+            self::$totalSkippedTests += $row->getSkipped();
             self::$totalTests += $row->getTotal();
-
-            $checksum = (string)(self::$headers['checksum'] ?? "");
-            $this->command->message("");
-
-            $this->command->message(
-                $this->command->getAnsi()->bold("Passed: ") .
-                $this->command->getAnsi()->style([$color], $row->getCount() . "/" . $row->getTotal()) .
-                $this->command->getAnsi()->style(["italic", "grey"], " - ". $checksum)
-            );
+            self::$totalMemory += $row->getMemory();
+            self::$totalDuration += $row->getDuration();
         }
-        $this->output .= ob_get_clean();
-
-        if($this->output) {
-            $this->buildNotice("Note:", $this->output, 80);
-        }
-        if(!is_null($this->handler)) {
-            $this->handler->execute();
+        $out = $handler->outputBuffer();
+        if ($out) {
+            $handler->buildNotes();
         }
         $this->executed = true;
         return true;
     }
 
     /**
-     * Will reset the execute and stream if is a seekable stream.
-     * @return bool
+     * Validate method that must be called within a group method
+     *
+     * @return self
+     * @throws RuntimeException When called outside a group method
      */
-    public function resetExecute(): bool
+    public function validate(): self
     {
-        if($this->executed) {
-            if($this->getStream()->isSeekable()) {
-                $this->getStream()->rewind();
-            }
-            $this->executed = false;
-            return true;
-        }
-        return false;
+        throw new RuntimeException("The validate() method must be called inside a group() method! " .
+            "Move this validate() call inside your group() callback function.");
     }
 
     /**
-     * Validate before execute test
-     * @return bool
+     * Validate method that must be called within a group method
+     *
+     * @return self
+     * @throws RuntimeException When called outside a group method
      */
-    private function validate(): bool
+    public function assert(): self
     {
-        $args = (array)(self::$headers['args'] ?? []);
-        $manual = isset($args['show']) ? (string)$args['show'] : "";
-        if(isset($args['show'])) {
-            return !((self::$manual[$manual] ?? "") !== self::$headers['checksum'] && $manual !== self::$headers['checksum']);
-        }
-        if($this->skip) {
-            return false;
-        }
-        return true;
+        throw new RuntimeException("The assert() method must be called inside a group() method! " .
+            "Move this assert() call inside your group() callback function.");
     }
 
     /**
-     * Build the notification stream
-     * @param string $title
-     * @param string $output
-     * @param int $lineLength
+     * Adds a test case to the collection.
+     *
+     * @param string|TestConfig $message The description or configuration of the test case.
+     * @param Closure $expect The closure that defines the test case logic.
+     * @param bool $bindToClosure Indicates whether the closure should be bound to TestCase.
      * @return void
      */
-    public function buildNotice(string $title, string $output, int $lineLength): void
+    protected function addCase(string|TestConfig $message, Closure $expect, bool $bindToClosure = false): void
     {
-        $this->output = wordwrap($output, $lineLength);
-        $line = $this->command->getAnsi()->line($lineLength);
+        $testCase = new TestCase($message);
+        $testCase->setFailFast($this->failFast);
+        $testCase->bind($expect, $bindToClosure);
+        $this->cases[$this->index] = $testCase;
+        $this->index++;
+    }
 
-        $this->command->message("");
-        $this->command->message($this->command->getAnsi()->style(["bold"], $title));
-        $this->command->message($line);
-        $this->command->message($this->output);
-        $this->command->message($line);
+    // Deprecated: Almost same as `disableAllTest`, for older versions
+    public function skip(bool $disable): self
+    {
+        $this->disableAllTests = $disable;
+        return $this;
     }
 
     /**
-     * Make file path into a title
-     * @param string $file
-     * @param int $length
-     * @param bool $removeSuffix
-     * @return string
-     */
-    private function formatFileTitle(string $file, int $length = 3, bool $removeSuffix = true): string
-    {
-        $file = explode("/", $file);
-        if ($removeSuffix) {
-            $pop = array_pop($file);
-            $file[] = substr($pop, (int)strpos($pop, 'unitary') + 8);
-        }
-
-        $file = array_chunk(array_reverse($file), $length);
-        $file = implode("\\", array_reverse($file[0]));
-        $exp = explode('.', $file);
-        $file = reset($exp);
-        return ".." . $file;
-    }
-
-    /**
-     * Global header information
-     * @param array $headers
+     * DEPRECATED: Use TestConfig::setSelect instead
+     * See documentation for more information
+     *
      * @return void
      */
-    public static function setHeaders(array $headers): void
+    public function manual(): void
     {
-        self::$headers = $headers;
-    }
-
-    /**
-     * Get global header
-     * @param string $key
-     * @return mixed
-     */
-    public static function getArgs(string $key): mixed
-    {
-        return (self::$headers['args'][$key] ?? false);
-    }
-
-    /**
-     * Append to global header
-     * @param string $key
-     * @param mixed $value
-     * @return void
-     */
-    public static function appendHeader(string $key, mixed $value): void
-    {
-        self::$headers[$key] = $value;
-    }
-
-    /**
-     * Used to reset current instance
-     * @return void
-     */
-    public static function resetUnit(): void
-    {
-        self::$current = null;
-    }
-
-    /**
-     * Used to check if instance is set
-     * @return bool
-     */
-    public static function hasUnit(): bool
-    {
-        return !is_null(self::$current);
-    }
-
-    /**
-     * Used to get instance
-     * @return ?Unit
-     * @throws Exception
-     */
-    public static function getUnit(): ?Unit
-    {
-        if(is_null(self::hasUnit())) {
-            throw new Exception("Unit has not been set yet. It needs to be set first.");
-        }
-        return self::$current;
-    }
-
-    /**
-     * This will be called when every test has been run by the FileIterator
-     * @return void
-     */
-    public static function completed(): void
-    {
-        if(!is_null(self::$current) && is_null(self::$current->handler)) {
-            $dot = self::$current->command->getAnsi()->middot();
-
-            self::$current->command->message("");
-            self::$current->command->message(
-                self::$current->command->getAnsi()->style(
-                    ["italic", "grey"],
-                    "Total: " . self::$totalPassedTests . "/" . self::$totalTests . " $dot " .
-                    "Peak memory usage: " . round(memory_get_peak_usage() / 1024, 2) . " KB"
-                )
-            );
-        }
-    }
-
-    /**
-     * Check if successful
-     * @return bool
-     */
-    public static function isSuccessful(): bool
-    {
-        return (self::$totalPassedTests !== self::$totalTests);
+        throw new RuntimeException("Manual method has been deprecated, use TestConfig::setSelect instead. " .
+            "See documentation for more information.");
     }
 
     /**
      * DEPRECATED: Not used anymore
+     *
      * @return $this
      */
     public function addTitle(): self

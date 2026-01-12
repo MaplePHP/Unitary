@@ -1,360 +1,181 @@
-# MaplePHP - Unitary
+# MaplePHP Unitary — Fast Testing, Full Control, Zero Friction
 
-PHP Unitary is a **user-friendly** and robust unit testing library designed to make writing and running tests for your PHP code easy. With an intuitive CLI interface that works on all platforms and robust validation options, Unitary makes it easy for you as a developer to ensure your code is reliable and functions as intended.
+Unitary is a modern PHP testing framework for developers who value speed, precision, and full control. No configuration. No clutter. Just a clean, purpose-built core that can execute 100,000+ tests per second and scales smoothly from quick sanity checks to full integration suites.
 
-![Prompt demo](http://wazabii.se/github-assets/maplephp-unitary.png)
+Mocking, validation, and assertions are built in from the start, with no plugins, adapters, or bootstrapping required. The CLI is fast and intuitive, the workflow is consistent, and getting started takes seconds. Whether you are validating a single function or an entire system, Unitary lets you move quickly and test with confidence.
 
-### Syntax You Will Love
+![Prompt demo](http://wazabii.se/github-assets/unitary/unitary-cli-states.png)
+
+_Do you like the CLI theme? [Download it here](https://github.com/MaplePHP/DarkBark)_
+
+
+### Familiar Syntax. Fast Feedback.
+
+Unitary is designed to feel natural for developers. With clear syntax, built-in validation, and zero setup required, writing tests becomes a smooth part of your daily flow and not a separate chore.
+
 ```php
-$unit->case("MaplePHP Request URI path test", function() {
-    $response = new Response(200);
+use MaplePHP\Unitary\TestCase;
 
-    $this->add($response->getStatusCode(), function() {
-        return $this->equal(200);
-    }, "Did not return HTTP status code 200");
+group("Your grouped test subject", function (TestCase $case) {
+
+    $json = '{"response":{"status":200,"message":"ok"}}';
+
+    $case->expect($json)
+         ->isJson()
+         ->hasJsonValueAt("response.status", 200)
+         ->validate();
 });
 ```
 
-## Documentation
-The documentation is divided into several sections:
-- [Installation](#installation)
-- [Guide](#guide)
-    - [1. Create a Test File](#1-create-a-test-file)
-    - [2. Create a Test Case](#2-create-a-test-case)
-    - [3. Run the Tests](#3-run-the-tests)
-- [Configurations](#configurations)
-- [Validation List](#validation-list)
-    - [Data Type Checks](#data-type-checks)
-    - [Equality and Length Checks](#equality-and-length-checks)
-    - [Numeric Range Checks](#numeric-range-checks)
-    - [String and Pattern Checks](#string-and-pattern-checks)
-    - [Required and Boolean-Like Checks](#required-and-boolean-like-checks)
-    - [Date and Time Checks](#date-and-time-checks)
-    - [Version Checks](#version-checks)
-    - [Logical Checks](#logical-checks)
+---
+
+## Next-Gen PHP Testing Framework
+
+Unitary is a blazing-fast, developer-first testing framework for PHP, built from the ground up with zero third-party dependencies and a highly optimized core, not just a wrapper around legacy tools. It’s simple to get started, lightning-fast to run, and powerful enough to test everything from units to mocks.
+
+> 🚀 *Test 100,000+ cases in \~1 second. No config. No bloat. Just results.*
+
+---
+
+## 🔧 Why Use Unitary?
+
+* **Works out of the box** – No setup, no config files.
+* **Not built on PHPUnit** – Unitary is a standalone framework.
+* **100% agnostic** – Every sub-library is purpose-built for speed and control.
+* **First-class CLI** – Intuitive test runner that works across platforms.
+* **Powerful validation** – Built-in expectation engine, assert support, and structured output.
+* **Mocking included** – No external mocking libraries needed.
+* **Super low memory usage** – Ideal for local runs and parallel CI jobs.
+
+---
+
+## ⚡ Blazing Fast Performance
+
+Unitary runs large test suites in a fraction of the time — even **100,000+** tests in just **1 second**.
+
+🚀 That’s up to 46× faster than the most widely used testing frameworks. 
 
 
-## Installation
+> Benchmarks based on real-world test cases.
+> 👉 [See full benchmark comparison →](https://your-docs-link.com/benchmarks)
 
-To install MaplePHP Unitary, run the following command:
+---
+
+
+## Getting Started (Under 1 Minute)
+
+Set up your first test in three easy steps:
+
+### 1. Install
 
 ```bash
 composer require --dev maplephp/unitary
 ```
 
-## Guide
+_You can run unitary globally if preferred with `composer global require maplephp/unitary`._
 
-### 1. Create a Test File
+---
 
-Unitary will, by default, find all files prefixed with "unitary-" recursively from your project's root directory (where your "composer.json" file exists). The vendor directory will be excluded by default.
+### 2. Create a Test File
 
-Start by creating a test file with a name that starts with "unitary-", e.g., "unitary-request.php". You can place the file inside your library directory, for example like this: `tests/unitary-request.php`.
+Create a file like `tests/unitary-request.php`. Unitary automatically scans all files prefixed with `unitary-` (excluding `vendor/`).
 
-**Note: All of your library classes will automatically be autoloaded through Composer's autoloader inside your test file!**
-
-### 2. Create a Test Case
-
-Now that we have created a test file, e.g., `tests/unitary-request.php`, we will need to add our test cases and tests. I will create a test for one of my other libraries below, which is MaplePHP/HTTP, specifically the Request library that has full PSR-7 support.
-
-I will show you three different ways to test your application below.
+Paste this test boilerplate to get started:
 
 ```php
-<?php
+use MaplePHP\Unitary\{TestCase};
 
-$unit = new MaplePHP\Unitary\Unit();
+group("HTTP Request", function(TestCase $case) {
 
-// If you build your library correctly, it will become very easy to mock, as I have below.
-$request = new MaplePHP\Http\Request(
-    "GET",
-    "https://admin:mypass@example.com:65535/test.php?id=5221&greeting=hello",
-);
+    $request = new Request("GET", "https://example.com/?id=1&slug=hello");
 
-// Begin by adding a test case
-$unit->case("MaplePHP Request URI path test", function() use($request) {
-
-    // Then add tests to your case:
-    // Test 1: Access the validation instance inside the add closure
-    $this->add($request->getMethod(), function($value) {
-        return $this->equal("GET");
-
-    }, "HTTP Request method type does not equal GET");
-    // Adding an error message is not required, but it is highly recommended.
-
-    // Test 2: Built-in validation shortcuts
-    $this->add($request->getUri()->getPort(), [
-        "isInt" => [], // Has no arguments = empty array
-        "min" => [1], // The strict way is to pass each argument as an array item
-        "max" => 65535, // If it's only one argument, then this is acceptable too
-        "length" => [1, 5]
-
-    ], "Is not a valid port number");
-
-    // Test 3: It is also possible to combine them all in one. 
-    $this->add($request->getUri()->getUserInfo(), [
-        "isString" => [],
-        "User validation" => function($value) {
-            $arr = explode(":", $value);
-            return ($this->withValue($arr[0])->equal("admin") && $this->withValue($arr[1])->equal("mypass"));
-        }
-
-    ], "Did not get the expected user info credentials");
+    $case->expect($request->getUri()->getQuery())
+        ->hasQueryParam("id", 1)
+        ->hasQueryParam("slug", "hello")
+        ->validate();
 });
 ```
 
-The example above uses both built-in validation and custom validation (see below for all built-in validation options).
+> 💡 Tip: Run `php vendor/bin/unitary --template` to auto-generate this boilerplate code.
 
-### 3. Run the Tests
+---
 
-Now you are ready to execute the tests. Open your command line of choice, navigate (cd) to your project's root directory (where your `composer.json` file exists), and execute the following command:
+### 3. Run Tests
 
 ```bash
 php vendor/bin/unitary
 ```
 
+#### Need help?
+
+```bash
+php vendor/bin/unitary --help
+```
+
 #### The Output:
-![Prompt demo](http://wazabii.se/github-assets/maplephp-unitary-result.png)
+![Prompt demo](http://wazabii.se/github-assets/unitary/unitary-cli-state-pass.png)
 *And that is it! Your tests have been successfully executed!*
 
 With that, you are ready to create your own tests!
 
-## Configurations
+---
 
-### Select a Test File to Run
+## 📅 Latest Release
 
-After each test, a hash key is shown, allowing you to run specific tests instead of all.
+**v2.0.0**
+This release marks Unitary’s transition from a testing utility to a full framework. With the core in place, expect rapid improvements in upcoming versions.
 
-```bash
-php vendor/bin/unitary --show=b0620ca8ef6ea7598eaed56a530b1983
-```
+---
 
-### Run Test Case Manually
+## 🧱 Built From the Ground Up
 
-You can also mark a test case to run manually, excluding it from the main test batch.
+Unitary stands on a solid foundation of years of groundwork. Before Unitary was possible, these independent components were developed:
 
-```php
-$unit->manual('maplePHPRequest')->case("MaplePHP Request URI path test", function() {
-    ...
-});
-```
 
-And this will only run the manual test:
-```bash
-php vendor/bin/unitary --show=maplePHPRequest
-```
+* [`maplephp/Emitron`](https://github.com/maplephp/emitron) – PSR-15 kernel and middleware engine 
+* [`maplephp/http`](https://github.com/maplephp/http) – PSR-7 HTTP messaging and stream handling
+* [`maplephp/prompts`](https://github.com/maplephp/prompts) – Interactive prompt/command engine
+* [`maplephp/blunder`](https://github.com/maplephp/blunder) – A pretty error handling framework
+* [`maplephp/validate`](https://github.com/maplephp/validate) – Type-safe input validation
+* [`maplephp/dto`](https://github.com/maplephp/dto) – Strong data transport
+* [`maplephp/container`](https://github.com/maplephp/container) – PSR-11 Container, container and DI system
+* [`maplephp/cache`](https://github.com/maplephp/cache) – PSR-6 and PSR-16 caching library
 
-### Change Test Path
+This full control means everything works together, no patching, no adapters and no guesswork.
 
-The path argument takes both absolute and relative paths. The command below will find all tests recursively from the "tests" directory.
+---
 
-```bash
-php vendor/bin/unitary --path="/tests/"
-```
+## Philosophy
 
-**Note: The `vendor` directory will be excluded from tests by default. However, if you change the `--path`, you will need to manually exclude the `vendor` directory.**
+> **Test everything. All the time. Without friction.**
 
-### Exclude Files or Directories
+TDD becomes natural when your test suite runs in under a second, even with 100,000 cases. No more cherry-picking. No more skipping.
 
-The exclude argument will always be a relative path from the `--path` argument's path.
+---
 
-```bash
-php vendor/bin/unitary --exclude="./tests/unitary-query-php, tests/otherTests/*, */extras/*"
-```
+## Like The CLI Theme?
+That’s DarkBark. Dark, quiet, confident, like a rainy-night synthwave playlist for your CLI.
 
+[Download it here](https://github.com/MaplePHP/DarkBark)
 
-## Validation List
 
-Each prompt can have validation rules and custom error messages. Validation can be defined using built-in rules (e.g., length, email) or custom functions. Errors can be specified as static messages or dynamic functions based on the error type.
+---
 
-### Data Type Checks
-1. **isString**
-    - **Description**: Checks if the value is a string.
-    - **Usage**: `"isString" => []`
+## 🤝 Contribute
 
-2. **isInt**
-    - **Description**: Checks if the value is an integer.
-    - **Usage**: `"isInt" => []`
+Unitary is still young — your bug reports, feedback, and suggestions are hugely appreciated.
 
-3. **isFloat**
-    - **Description**: Checks if the value is a float.
-    - **Usage**: `"isFloat" => []`
+If you like what you see, consider:
 
-4. **isBool**
-    - **Description**: Checks if the value is a boolean.
-    - **Usage**: `"isBool" => []`
+* Reporting issues
+* Sharing feedback
+* Submitting PRs
+* Starring the repo ⭐
 
-5. **isArray**
-    - **Description**: Checks if the value is an array.
-    - **Usage**: `"isArray" => []`
+---
 
-6. **isObject**
-    - **Description**: Checks if the value is an object.
-    - **Usage**: `"isObject" => []`
+## 📬 Stay in Touch
 
-7. **isFile**
-    - **Description**: Checks if the value is a valid file.
-    - **Usage**: `"isFile" => []`
+Follow the full suite of MaplePHP tools:
 
-8. **isDir**
-    - **Description**: Checks if the value is a valid directory.
-    - **Usage**: `"isDir" => []`
-
-9. **isResource**
-    - **Description**: Checks if the value is a valid resource.
-    - **Usage**: `"isResource" => []`
-
-10. **number**
-    - **Description**: Checks if the value is numeric.
-    - **Usage**: `"number" => []`
-
-### Equality and Length Checks
-11. **equal**
-    - **Description**: Checks if the value is equal to a specified value.
-    - **Usage**: `"equal" => ["someValue"]`
-
-12. **notEqual**
-    - **Description**: Checks if the value is not equal to a specified value.
-    - **Usage**: `"notEqual" => ["someValue"]`
-
-13. **length**
-    - **Description**: Checks if the string length is between a specified start and end length.
-    - **Usage**: `"length" => [1, 200]`
-
-14. **equalLength**
-    - **Description**: Checks if the string length is equal to a specified length.
-    - **Usage**: `"equalLength" => [10]`
-
-### Numeric Range Checks
-15. **min**
-    - **Description**: Checks if the value is greater than or equal to a specified minimum.
-    - **Usage**: `"min" => [10]`
-
-16. **max**
-    - **Description**: Checks if the value is less than or equal to a specified maximum.
-    - **Usage**: `"max" => [100]`
-
-17. **positive**
-    - **Description**: Checks if the value is a positive number.
-    - **Usage**: `"positive" => []`
-
-18. **negative**
-    - **Description**: Checks if the value is a negative number.
-    - **Usage**: `"negative" => []`
-
-### String and Pattern Checks
-19. **pregMatch**
-    - **Description**: Validates if the value matches a given regular expression pattern.
-    - **Usage**: `"pregMatch" => ["a-zA-Z"]`
-
-20. **atoZ (lower and upper)**
-    - **Description**: Checks if the value consists of characters between `a-z` or `A-Z`.
-    - **Usage**: `"atoZ" => []`
-
-21. **lowerAtoZ**
-    - **Description**: Checks if the value consists of lowercase characters between `a-z`.
-    - **Usage**: `"lowerAtoZ" => []`
-
-22. **upperAtoZ**
-    - **Description**: Checks if the value consists of uppercase characters between `A-Z`.
-    - **Usage**: `"upperAtoZ" => []`
-
-23. **hex**
-    - **Description**: Checks if the value is a valid hex color code.
-    - **Usage**: `"hex" => []`
-
-24. **email**
-    - **Description**: Validates email addresses.
-    - **Usage**: `"email" => []`
-
-25. **url**
-    - **Description**: Checks if the value is a valid URL (http|https is required).
-    - **Usage**: `"url" => []`
-
-26. **phone**
-    - **Description**: Validates phone numbers.
-    - **Usage**: `"phone" => []`
-
-27. **zip**
-    - **Description**: Validates ZIP codes within a specified length range.
-    - **Usage**: `"zip" => [5, 9]`
-
-28. **domain**
-    - **Description**: Checks if the value is a valid domain.
-    - **Usage**: `"domain" => [true]`
-
-29. **dns**
-    - **Description**: Checks if the host/domain has a valid DNS record (A, AAAA, MX).
-    - **Usage**: `"dns" => []`
-
-30. **matchDNS**
-    - **Description**: Matches DNS records by searching for a specific type and value.
-    - **Usage**: `"matchDNS" => [DNS_A]`
-
-31. **lossyPassword**
-    - **Description**: Validates a password with allowed characters `[a-zA-Z\d$@$!%*?&]` and a minimum length.
-    - **Usage**: `"lossyPassword" => [8]`
-
-32. **strictPassword**
-    - **Description**: Validates a strict password with specific character requirements and a minimum length.
-    - **Usage**: `"strictPassword" => [8]`
-
-### Required and Boolean-Like Checks
-33. **required**
-    - **Description**: Checks if the value is not empty (e.g., not `""`, `0`, `NULL`).
-    - **Usage**: `"required" => []`
-
-34. **isBoolVal**
-    - **Description**: Checks if the value is a boolean-like value (e.g., "on", "yes", "1", "true").
-    - **Usage**: `"isBoolVal" => []`
-
-35. **hasValue**
-    - **Description**: Checks if the value itself is interpreted as having value (e.g., 0 is valid).
-    - **Usage**: `"hasValue" => []`
-
-36. **isNull**
-    - **Description**: Checks if the value is null.
-    - **Usage**: `"isNull" => []`
-
-### Date and Time Checks
-37. **date**
-    - **Description**: Checks if the value is a valid date with the specified format.
-    - **Usage**: `"date" => ["Y-m-d"]`
-
-38. **dateTime**
-    - **Description**: Checks if the value is a valid date and time with the specified format.
-    - **Usage**: `"dateTime" => ["Y-m-d H:i"]`
-
-39. **time**
-    - **Description**: Checks if the value is a valid time with the specified format.
-    - **Usage**: `"time" => ["H:i"]`
-
-40. **age**
-    - **Description**: Checks if the value represents an age equal to or greater than the specified minimum.
-    - **Usage**: `"age" => [18]`
-
-### Version Checks
-41. **validVersion**
-    - **Description**: Checks if the value is a valid version number.
-    - **Usage**: `"validVersion" => [true]`
-
-42. **versionCompare**
-    - **Description**: Validates and compares if a version is equal/more/equalMore/less than a specified version.
-    - **Usage**: `"versionCompare" => ["1.0.0", ">="]`
-
-### Logical Checks
-43. **oneOf**
-    - **Description**: Validates if one of the provided conditions is met.
-    - **Usage**: `"oneOf" => [["length", [1, 200]], "email"]`
-
-44. **allOf**
-    - **Description**: Validates if all the provided conditions are met.
-    - **Usage**: `"allOf" => [["length", [1, 200]], "email"]`
-
-### Additional Validations
-
-45. **creditCard**
-    - **Description**: Validates credit card numbers.
-    - **Usage**: `"creditCard" => []`
-
-56. **vatNumber**
-    - **Description**: Validates Swedish VAT numbers.
-    - **Usage**: `"vatNumber" => []`
+* [https://github.com/maplephp](https://github.com/maplephp)

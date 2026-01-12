@@ -1,7 +1,6 @@
 {
   "name": "maplephp/unitary",
   "type": "library",
-  "version": "v1.1.4",
   "description": "PHP Unitary is a user-friendly and robust unit testing library designed to make writing and running tests for your PHP code easy.",
   "keywords": [
     "php",
@@ -24,13 +23,20 @@
   ],
   "require": {
     "php": ">=8.0",
-    "maplephp/blunder": "^1.0",
-    "maplephp/dto": "^3.0",
-    "maplephp/http": "^1.0",
-    "maplephp/validate": "^1.0",
-    "maplephp/prompts": "^1.0"
+    "composer/semver": "^3.4",
+    "maplephp/blunder": "^1.3",
+    "maplephp/dto": "^3.1",
+    "maplephp/emitron": "^1.0",
+    "maplephp/http": "^2.0",
+    "maplephp/validate": "^2.0",
+    "maplephp/prompts": "^1.2",
+    "MaplePHP/container": "^2.0"
   },
   "autoload": {
+    "files": [
+      "src/Setup/assert-polyfill.php",
+      "src/Support/functions.php"
+    ],
     "psr-4": {
       "MaplePHP\\Unitary\\": "src"
     }
@@ -38,5 +44,5 @@
   "bin": [
     "bin/unitary"
   ],
-  "minimum-stability": "dev"
+  "minimum-stability": "stable"
 }

@@ -1,0 +1,39 @@
+<?php
+
+namespace TestLib;
+
+class UserService {
+    private $test = 1;
+    public function __construct(private Mailer $mailer) {}
+
+    public function registerUser(string $email): bool {
+        // register user logic...
+
+        $this->mailer->addFromEmail($email);
+        $this->mailer->addBCC("jane.doe@hotmail.com", "Jane Doe");
+        $this->mailer->addBCC("lane.doe@hotmail.com", "Lane Doe");
+
+        if(!filter_var($this->mailer->getFromEmail(), FILTER_VALIDATE_EMAIL)) {
+            throw new \Exception("Invalid email: " . $this->mailer->getFromEmail());
+        }
+        return true;
+    }
+
+    public function getUserRole(): string
+    {
+        return "guest";
+    }
+
+    final public function getUserType(): string
+    {
+        return "guest";
+    }
+
+    public function issueToken(): string {
+        return $this->generateToken(); // private
+    }
+
+    private function generateToken(): string {
+        return bin2hex(random_bytes(16));
+    }
+}
