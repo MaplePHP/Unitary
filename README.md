@@ -1,4 +1,4 @@
-# MaplePHP Unitary — Fast Testing, Full Control, Zero Friction
+# Unitary – Evidence-Driven PHP Testing Framework
 
 Unitary is a modern PHP testing framework for developers who value speed, precision, and full control. No configuration. No clutter. Just a clean, purpose-built core that can execute 100,000+ tests per second and scales smoothly from quick sanity checks to full integration suites.
 
@@ -37,7 +37,7 @@ group("Your grouped test subject", function (TestCase $case) {
 
 ## Next-Gen PHP Testing Framework
 
-Unitary is a blazing-fast, developer-first testing framework for PHP, built from the ground up with zero third-party dependencies and a highly optimized core, not just a wrapper around legacy tools. It’s simple to get started, lightning-fast to run, and powerful enough to test everything from units to mocks.
+Unitary is a lightning-fast, developer-first testing framework for PHP, built from the ground up with zero third-party dependencies and a highly optimized core, not just a wrapper around legacy tools.
 
 > 🚀 *Test 100,000+ cases in \~1 second. No config. No bloat. Just results.*
 
@@ -55,11 +55,11 @@ Unitary is a blazing-fast, developer-first testing framework for PHP, built from
 
 ---
 
-## ⚡ Blazing Fast Performance
+## ⚡ Lightning-fast Performance
 
 Unitary runs large test suites in a fraction of the time — even **100,000+** tests in just **1 second**.
 
-🚀 That’s up to 46× faster than the most widely used testing frameworks. 
+🚀 That’s up to 50× faster than the most widely used testing frameworks. 
 
 ---
 
