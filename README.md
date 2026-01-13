@@ -6,10 +6,16 @@ Mocking, validation, and assertions are built in from the start, with no plugins
 
 ![Prompt demo](http://wazabii.se/github-assets/unitary/unitary-cli-states.png)
 
-_Do you like the CLI theme? [Download it here](https://github.com/MaplePHP/DarkBark)_
+---
 
+## Documentation
 
-### Familiar Syntax. Fast Feedback.
+Visit the full documentation at:  
+👉 https://maplephp.github.io/Unitary/
+
+---
+
+## Familiar Syntax. Fast Feedback.
 
 Unitary is designed to feel natural for developers. With clear syntax, built-in validation, and zero setup required, writing tests becomes a smooth part of your daily flow and not a separate chore.
 
