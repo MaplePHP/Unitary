@@ -18,6 +18,7 @@ use MaplePHP\Unitary\Console\Enum\CoverageIssue;
 
 class CodeCoverage
 {
+    private ?string $projectRootDir;
     private CoverageIssue $coverageIssue = CoverageIssue::None;
     private ?array $data = null;
     private ?string $path = null;
@@ -47,8 +48,9 @@ class CodeCoverage
         ".github"
     ];
 
-    public function __construct()
+    public function __construct(?string $projectRootDir = null)
     {
+        $this->projectRootDir = $projectRootDir;
         $this->exclude = self::DEFAULT_EXCLUDED_FILES;
     }
 
@@ -151,7 +153,7 @@ class CodeCoverage
     protected function excludePattern(string $file): bool
     {
         $filename = basename($file);
-
+        $file = str_replace($this->projectRootDir, "", $file);
         foreach ($this->exclude as $pattern) {
             if (preg_match('#/' . preg_quote($pattern, '#') . '(/|$)#', $file)) {
                 return true;
