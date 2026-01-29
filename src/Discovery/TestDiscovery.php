@@ -222,6 +222,11 @@ final class TestDiscovery
      */
     private function isolateRequire($file): mixed
     {
+
+        $tes = new \Illuminate\Container\Container();
+        print_r($tes);
+        var_dump("src/Discovery/TestDiscovery.php:228");
+        die;
         return (static function (string $f) {
             return require $f;
         })($file);
