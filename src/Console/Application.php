@@ -7,6 +7,7 @@ use MaplePHP\Container\Container;
 use MaplePHP\Http\Environment;
 use MaplePHP\Http\ServerRequest;
 use MaplePHP\Http\Uri;
+use MaplePHP\Emitron\Kernel as EmitronKernel;
 use MaplePHP\Unitary\Console\Middlewares\{AddCommandMiddleware,
     CheckAllowedProps,
     CliInitMiddleware,
@@ -15,6 +16,23 @@ use MaplePHP\Unitary\Console\Middlewares\{AddCommandMiddleware,
 
 final class Application
 {
+    public function __construct()
+    {
+        EmitronKernel::setRouterFilePath(__DIR__ . "/ConsoleRouter.php");
+    }
+
+    /**
+     * Change router file
+     *
+     * @param string $path
+     * @return $this
+     */
+    public function withRouter(string $path): self
+    {
+        $inst = clone $this;
+        EmitronKernel::setRouterFilePath($path);
+        return $inst;
+    }
 
     /**
      * Default error handler boot

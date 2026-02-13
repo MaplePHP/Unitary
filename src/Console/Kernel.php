@@ -54,7 +54,6 @@ class Kernel
         } else {
             EmitronKernel::setConfigFilePath(self::DEFAULT_CONFIG_FILE_PATH);
         }
-        EmitronKernel::setRouterFilePath(self::UNITARY_DIR);
     }
 
     /**
@@ -85,8 +84,7 @@ class Kernel
     {
         $config = new DispatchConfig(EmitronKernel::getConfigFilePath());
         return $config
-            ->setRouter(function ($path) use ($request) {
-                $routerFile = $path . self::DEFAULT_ROUTER_FILE;
+            ->setRouter(function ($routerFile) use ($request) {
                 $router = new Router($request->getCliKeyword(), $request->getCliArgs());
                 if (!is_file($routerFile)) {
                     throw new Exception('The routes file (' . $routerFile . ') is missing.');
