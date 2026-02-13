@@ -59,7 +59,10 @@ abstract class DefaultController
     protected function forceShowHelp(ResponseInterface $response): void
     {
         if (!Validator::value($response->getStatusCode())->isHttpSuccess()) {
-            $help = new HelpController($this->container, $response->withStatus(200));
+            $props = $this->configs->getProps();
+            $help = ($props->helpController !== null) ?
+                $props->helpController : "\MaplePHP\Unitary\Console\Controllers\HelpController";
+            $help = new $help($this->container, $response->withStatus(200));
             $help->index();
             exit(1);
         }

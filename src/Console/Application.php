@@ -34,6 +34,13 @@ final class Application
         return $inst;
     }
 
+    public function withConfig(string $path): self
+    {
+        $inst = clone $this;
+        EmitronKernel::setConfigFilePath($path);
+        return $inst;
+    }
+
     /**
      * Default error handler boot
      * @param AbstractHandlerInterface $handler
