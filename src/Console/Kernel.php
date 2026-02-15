@@ -25,10 +25,6 @@ use MaplePHP\Emitron\Kernel as EmitronKernel;
 
 class Kernel
 {
-    private const DEFAULT_ROUTER_FILE = '/src/Console/ConsoleRouter.php';
-    public const UNITARY_DIR = __DIR__ . '/../../';
-    public const DEFAULT_CONFIG_FILE_PATH = __DIR__ . '/../../unitary.config';
-
     private ContainerInterface $container;
     private array $userMiddlewares;
     private ?DispatchConfig $config;
@@ -48,13 +44,6 @@ class Kernel
         $this->container = $container;
         $this->userMiddlewares = $userMiddlewares;
         $this->config = $dispatchConfig;
-
-        if(is_file(self::UNITARY_DIR . '/../../../unitary.config.php')) {
-            EmitronKernel::setConfigFilePath(self::UNITARY_DIR . '/../../../unitary.config');
-        } else {
-            EmitronKernel::setConfigFilePath(self::DEFAULT_CONFIG_FILE_PATH);
-        }
-        EmitronKernel::setRouterFilePath(self::UNITARY_DIR);
     }
 
     /**
@@ -85,8 +74,7 @@ class Kernel
     {
         $config = new DispatchConfig(EmitronKernel::getConfigFilePath());
         return $config
-            ->setRouter(function ($path) use ($request) {
-                $routerFile = $path . self::DEFAULT_ROUTER_FILE;
+            ->setRouter(function ($routerFile) use ($request) {
                 $router = new Router($request->getCliKeyword(), $request->getCliArgs());
                 if (!is_file($routerFile)) {
                     throw new Exception('The routes file (' . $routerFile . ') is missing.');

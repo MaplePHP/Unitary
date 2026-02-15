@@ -32,15 +32,16 @@ class ConfigProps extends AbstractConfigProps
     public ?bool $errorsOnly = null;
     public ?bool $smartSearch = null;
     public ?bool $failFast = null;
+    public ?string $helpController = null;
 
     /**
      * Hydrate the properties/object with expected data, and handle unexpected data
      *
-     * @param string $key
+     * @param string|bool $key
      * @param mixed $value
      * @return void
      */
-    protected function propsHydration(string $key, mixed $value): void
+    protected function propsHydration(string|bool $key, mixed $value): void
     {
         switch ($key) {
             case 'path':
@@ -57,6 +58,9 @@ class ConfigProps extends AbstractConfigProps
                 break;
             case 'type':
                 $this->type = (!is_string($value) || $value === '') ? null : $value;
+                break;
+            case 'helpController':
+                $this->helpController = (!is_string($value) || $value === '') ? null : $value;
                 break;
             case 'timezone':
                 // The default timezone is 'CET'

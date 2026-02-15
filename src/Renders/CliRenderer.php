@@ -34,7 +34,6 @@ class CliRenderer extends AbstractRenderHandler
     public function buildBody(): void
     {
         $this->initDefault();
-
         $this->command->message("");
         $this->command->message(
             $this->flag . " " .
