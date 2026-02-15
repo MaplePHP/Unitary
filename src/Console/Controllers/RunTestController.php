@@ -60,7 +60,7 @@ class RunTestController extends DefaultController
         $suitesXml = $suites->outputMemory();
 
         // Duration: pick your source (internal timer is fine)
-        $inst = TestDiscovery::getUnitaryInst();
+        $inst = TestDiscovery::getUnitaryInst(true);
         $xml = new \XMLWriter();
         $xml->openMemory();
         $xml->setIndent(true);
@@ -91,29 +91,27 @@ class RunTestController extends DefaultController
      */
     protected function buildFooter(): void
     {
-        $inst = TestDiscovery::getUnitaryInst();
-        if ($inst !== null) {
-            $dot = $this->command->getAnsi()->middot();
-            $this->command->message($this->command->getAnsi()->line(80));
-            $this->command->message(
-                $this->command->getAnsi()->style(
-                    ["bold", $inst::isSuccessful() ? "green" : "red"],
-                    "\nTests: " . $inst::getTotalTests() . " $dot " .
-                    "Failures: " . $inst::getTotalFailed() . " $dot " .
-                    "Errors: " . $inst::getTotalErrors() . " $dot " .
-                    "Skipped: " . $inst::getTotalSkipped() . " \n"
-                )
-            );
-            $this->command->message(
-                $this->command->getAnsi()->style(
-                    ["italic", "grey"],
-                    "Duration: " . Helpers::formatDuration($inst::getTotalDuration()) . " seconds $dot " .
-                    "Memory: " . Helpers::byteToMegabyte($inst::getTotalMemory()) . " MB $dot " .
-                    "Date: " . Clock::value("now")->iso() . "\n"
-                )
-            );
-            $this->command->message($this->command->getAnsi()->line(80));
-            $this->command->message("");
-        }
+        $inst = TestDiscovery::getUnitaryInst(true);
+        $dot = $this->command->getAnsi()->middot();
+        $this->command->message($this->command->getAnsi()->line(80));
+        $this->command->message(
+            $this->command->getAnsi()->style(
+                ["bold", $inst::isSuccessful() ? "green" : "red"],
+                "\nTests: " . $inst::getTotalTests() . " $dot " .
+                "Failures: " . $inst::getTotalFailed() . " $dot " .
+                "Errors: " . $inst::getTotalErrors() . " $dot " .
+                "Skipped: " . $inst::getTotalSkipped() . " \n"
+            )
+        );
+        $this->command->message(
+            $this->command->getAnsi()->style(
+                ["italic", "grey"],
+                "Duration: " . Helpers::formatDuration($inst::getTotalDuration()) . " seconds $dot " .
+                "Memory: " . Helpers::byteToMegabyte($inst::getTotalMemory()) . " MB $dot " .
+                "Date: " . Clock::value("now")->iso() . "\n"
+            )
+        );
+        $this->command->message($this->command->getAnsi()->line(80));
+        $this->command->message("");
     }
 }
