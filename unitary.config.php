@@ -6,6 +6,7 @@
 return [
     //'path' => 'app/Libraries/Unitary/tests/unitary-test.php',
     'type' => "cli",
+    'helpController' => "\MaplePHP\Unitary\Console\Controllers\HelpController",
     'path' => false, // false|string|array<int, string>
     'smart-search' => false, // bool
     'errors-only' => false, // bool

@@ -7,6 +7,7 @@ use MaplePHP\Container\Container;
 use MaplePHP\Http\Environment;
 use MaplePHP\Http\ServerRequest;
 use MaplePHP\Http\Uri;
+use MaplePHP\Emitron\Kernel as EmitronKernel;
 use MaplePHP\Unitary\Console\Middlewares\{AddCommandMiddleware,
     CheckAllowedProps,
     CliInitMiddleware,
@@ -15,6 +16,44 @@ use MaplePHP\Unitary\Console\Middlewares\{AddCommandMiddleware,
 
 final class Application
 {
+    public function __construct()
+    {
+        // Default config
+        if(is_file(__DIR__ . '/../../../../../unitary.config.php')) {
+            // From the vendor dir
+            EmitronKernel::setConfigFilePath(__DIR__ . '/../../../../../unitary.config.php');
+        } else {
+            // From the repo dir
+            EmitronKernel::setConfigFilePath(__DIR__ . '/../../unitary.config.php');
+        }
+        EmitronKernel::setRouterFilePath(__DIR__ . "/ConsoleRouter.php");
+    }
+
+    /**
+     * Change router file
+     *
+     * @param string $path
+     * @return $this
+     */
+    public function withRouter(string $path): self
+    {
+        $inst = clone $this;
+        EmitronKernel::setRouterFilePath($path);
+        return $inst;
+    }
+
+    /**
+     * Change the config file
+     *
+     * @param string $path
+     * @return $this
+     */
+    public function withConfig(string $path): self
+    {
+        $inst = clone $this;
+        EmitronKernel::setConfigFilePath($path);
+        return $inst;
+    }
 
     /**
      * Default error handler boot

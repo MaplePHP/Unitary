@@ -362,10 +362,14 @@ final class TestDiscovery
      * This is primary used to access the main test Unit instance that is
      * pre-initialized for each test file. Is used by shortcut function like `group()`
      *
+     * @param bool $initIfNull
      * @return Unit|null
      */
-    public static function getUnitaryInst(): ?Unit
+    public static function getUnitaryInst(bool $initIfNull = false): ?Unit
     {
+        if ($initIfNull) {
+            self::$unitary = new Unit();
+        }
         return self::$unitary;
     }
 }
