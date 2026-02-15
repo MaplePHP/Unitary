@@ -16,6 +16,14 @@ use MaplePHP\Unitary\Console\Middlewares\{AddCommandMiddleware,
 
 final class Application
 {
+    private array $middlewares = [
+        AddCommandMiddleware::class,
+        ConfigPropsMiddleware::class,
+        CheckAllowedProps::class,
+        LocalMiddleware::class,
+        CliInitMiddleware::class
+    ];
+
     public function __construct()
     {
         // Default config
@@ -27,6 +35,31 @@ final class Application
             EmitronKernel::setConfigFilePath(__DIR__ . '/../../unitary.config.php');
         }
         EmitronKernel::setRouterFilePath(__DIR__ . "/ConsoleRouter.php");
+    }
+
+    /**
+     * Clear the default middlewares, be careful with this
+     *
+     * @return $this
+     */
+    public function clearDefaultMiddleware(): self
+    {
+        $inst = clone $this;
+        $inst->middlewares = [];
+        return $inst;
+    }
+
+    /**
+     * Add custom middlewares, follow PSR convention
+     *
+     * @param array $middleware
+     * @return $this
+     */
+    public function withMiddleware(array $middleware): self
+    {
+        $inst = clone $this;
+        $inst->middlewares = array_merge($inst->middlewares, $middleware);
+        return $inst;
     }
 
     /**
@@ -84,13 +117,7 @@ final class Application
     {
         $env = new Environment();
         $request = new ServerRequest(new Uri($env->getUriParts($parts)), $env);
-        $kernel = new Kernel(new Container(), [
-            AddCommandMiddleware::class,
-            ConfigPropsMiddleware::class,
-            CheckAllowedProps::class,
-            LocalMiddleware::class,
-            CliInitMiddleware::class
-        ]);
+        $kernel = new Kernel(new Container(), $this->middlewares);
         $kernel->run($request);
         return $kernel;
     }
