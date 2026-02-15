@@ -34,6 +34,12 @@ final class Application
         return $inst;
     }
 
+    /**
+     * Change the config file
+     *
+     * @param string $path
+     * @return $this
+     */
     public function withConfig(string $path): self
     {
         $inst = clone $this;

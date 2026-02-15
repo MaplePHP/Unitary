@@ -27,7 +27,7 @@ class Kernel
 {
     private const DEFAULT_ROUTER_FILE = '/src/Console/ConsoleRouter.php';
     public const UNITARY_DIR = __DIR__ . '/../../';
-    public const DEFAULT_CONFIG_FILE_PATH = __DIR__ . '/../../unitary.config.php';
+    public const DEFAULT_CONFIG_FILE_NAME = 'unitary.config.php';
 
     private ContainerInterface $container;
     private array $userMiddlewares;
@@ -50,7 +50,13 @@ class Kernel
         $this->config = $dispatchConfig;
 
         if(EmitronKernel::getRouterFilePath() === null) {
-            EmitronKernel::setConfigFilePath(self::UNITARY_DIR . '/../../../unitary.config.php');
+            if(is_file(__DIR__ . '/../../../../../unitary.config.php')) {
+                // From the vendor dir
+                EmitronKernel::setConfigFilePath(__DIR__ . '/../../../../../unitary.config');
+            } else {
+                // From the the repo dir
+                EmitronKernel::setConfigFilePath(__DIR__ . '/../../unitary.config.php');
+            }
         }
     }
 
