@@ -18,6 +18,14 @@ final class Application
 {
     public function __construct()
     {
+        // Default config
+        if(is_file(__DIR__ . '/../../../../../unitary.config.php')) {
+            // From the vendor dir
+            EmitronKernel::setConfigFilePath(__DIR__ . '/../../../../../unitary.config.php');
+        } else {
+            // From the repo dir
+            EmitronKernel::setConfigFilePath(__DIR__ . '/../../unitary.config.php');
+        }
         EmitronKernel::setRouterFilePath(__DIR__ . "/ConsoleRouter.php");
     }
 
