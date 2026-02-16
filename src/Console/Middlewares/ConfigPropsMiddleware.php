@@ -2,6 +2,8 @@
 
 namespace MaplePHP\Unitary\Console\Middlewares;
 
+use MaplePHP\Emitron\Contracts\ConfigPropsInterface;
+use MaplePHP\Unitary\Support\Helpers;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -15,7 +17,7 @@ use Throwable;
 class ConfigPropsMiddleware implements MiddlewareInterface
 {
 
-    protected ?ConfigProps $props = null;
+    protected ?ConfigPropsInterface $props = null;
     private ContainerInterface $container;
 
     /**
@@ -56,7 +58,7 @@ class ConfigPropsMiddleware implements MiddlewareInterface
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    private function getInitProps(): ConfigProps
+    private function getInitProps(): ConfigPropsInterface
     {
         if ($this->props === null) {
             $args = $this->container->get("args");
@@ -65,14 +67,13 @@ class ConfigPropsMiddleware implements MiddlewareInterface
 
             try {
                 $props = array_merge($configs->getProps()->toArray(), $args);
-                $this->props = new ConfigProps($props);
-
+                $this->props = Helpers::getConfigPropInst($props);
                 if ($this->props->hasMissingProps() !== [] && isset($args['verbose'])) {
                     $command->error('The properties (' .
-                        implode(", ", $this->props->hasMissingProps()) . ') is not exist in config props');
+                        implode(", ", $this->props->hasMissingProps()) . ') is not exist in ' . get_class($this->props));
                     $command->message(
                         "One or more arguments you passed are not recognized as valid options.\n" .
-                        "Check your command syntax or configuration."
+                        "Check your command parameter syntax for spellings or configuration."
                     );
                 }
 

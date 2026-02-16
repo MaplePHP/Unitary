@@ -19,7 +19,6 @@ use MaplePHP\Emitron\AbstractConfigProps;
  */
 class ConfigProps extends AbstractConfigProps
 {
-    public ?string $path = null;
     public ?string $discoverPattern = null;
     public ?string $exclude = null;
     public ?string $show = null;

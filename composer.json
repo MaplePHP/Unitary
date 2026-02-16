@@ -33,6 +33,15 @@
     "maplephp/container": "^2.0",
     "maplephp/cache": "^2.0"
   },
+  "repositories": [
+    {
+      "type": "path",
+      "url": "../libraries/Emitron",
+      "options": {
+        "symlink": true
+      }
+    }
+  ],
   "autoload": {
     "files": [
       "src/Setup/assert-polyfill.php",

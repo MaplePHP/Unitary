@@ -50,6 +50,24 @@ final class Application
     }
 
     /**
+     * Clear the default middlewares, be careful with this
+     *
+     * @return $this
+     */
+    public function unsetMiddleware(string $class): self
+    {
+
+        $inst = clone $this;
+        foreach($inst->middlewares as $key => $middleware) {
+            if($middleware === $class) {
+                unset($inst->middlewares[$key]);
+                break;
+            }
+        }
+        return $inst;
+    }
+
+    /**
      * Add custom middlewares, follow PSR convention
      *
      * @param array $middleware
