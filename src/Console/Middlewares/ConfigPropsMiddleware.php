@@ -2,8 +2,8 @@
 
 namespace MaplePHP\Unitary\Console\Middlewares;
 
+use MaplePHP\Emitron\Configs\ConfigPropsFactory;
 use MaplePHP\Emitron\Contracts\ConfigPropsInterface;
-use MaplePHP\Unitary\Support\Helpers;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -67,7 +67,7 @@ class ConfigPropsMiddleware implements MiddlewareInterface
 
             try {
                 $props = array_merge($configs->getProps()->toArray(), $args);
-                $this->props = Helpers::getConfigPropInst($props);
+                $this->props = ConfigPropsFactory::create($props);
                 if ($this->props->hasMissingProps() !== [] && isset($args['verbose'])) {
                     $command->error('The properties (' .
                         implode(", ", $this->props->hasMissingProps()) . ') is not exist in ' . get_class($this->props));

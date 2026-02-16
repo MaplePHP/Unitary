@@ -21,27 +21,6 @@ use MaplePHP\DTO\Format\Str;
 
 final class Helpers
 {
-
-
-    /**
-     * Get expected instance of Config Props
-     *
-     * @param array $props
-     * @return ConfigPropsInterface
-     */
-    public static function getConfigPropInst(array $props): ConfigPropsInterface
-    {
-        $override = '\\Configs\\ConfigProps';
-        $default  = \MaplePHP\Unitary\Config\ConfigProps::class;
-        $name = class_exists($override) ? $override : $default;
-        if (!is_subclass_of($name, ConfigPropsInterface::class)) {
-            $name = $default;
-        }
-        return new $name($props);
-    }
-
-
-
     /**
      * Convert bytes to megabytes and return as a string with fixed precision.
      *
