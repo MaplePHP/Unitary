@@ -24,9 +24,9 @@
   "require": {
     "php": ">=8.0",
     "composer/semver": "^3.4",
-    "maplephp/blunder": "^1.3",
+    "maplephp/blunder": "*",
     "maplephp/dto": "^3.1",
-    "maplephp/emitron": "^1.0",
+    "maplephp/emitron": "*",
     "maplephp/http": "^2.0",
     "maplephp/validate": "^2.0",
     "maplephp/prompts": "^1.2",
@@ -36,7 +36,21 @@
   "repositories": [
     {
       "type": "path",
-      "url": "../libraries/Emitron",
+      "url": "../Emitron",
+      "options": {
+        "symlink": true
+      }
+    },
+    {
+      "type": "path",
+      "url": "../Blunder",
+      "options": {
+        "symlink": true
+      }
+    },
+    {
+      "type": "path",
+      "url": "../Validate",
       "options": {
         "symlink": true
       }
@@ -54,5 +68,5 @@
   "bin": [
     "bin/unitary"
   ],
-  "minimum-stability": "stable"
+  "minimum-stability": "dev"
 }

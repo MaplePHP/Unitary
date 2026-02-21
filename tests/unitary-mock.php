@@ -90,7 +90,7 @@ group($config->withSubject("Validating all mocker methods"), function (TestCase 
         $method->method("addFromEmail")
             ->withArguments("john.doe@gmail.com", "John Doe")
             ->withArgumentsForCalls(["john.doe@gmail.com", "John Doe"], ["jane.doe@gmail.com", "Jane Doe"])
-            ->willThrowOnce(new InvalidArgumentException("Lowrem ipsum"))
+            ->willThrowOnce(new InvalidArgumentException("Lorem ipsum"))
             ->called(2);
 
         $method->method("addBCC")
@@ -105,10 +105,9 @@ group($config->withSubject("Validating all mocker methods"), function (TestCase 
             ->called(0);
     });
 
-    $case->validate(fn() => $mail->addFromEmail("john.doe@gmail.com", "John Doe"), function(Expect $inst) {
-        $inst->isThrowable(InvalidArgumentException::class);
+    $case->expect(function(Expect $inst) use($mail) {
+        $inst->expect(fn() => $mail->addFromEmail("john.doe@gmail.com", "John Doe"))->isThrowable(InvalidArgumentException::class);
     });
-
 
     $mail->addFromEmail("jane.doe@gmail.com", "Jane Doe");
 

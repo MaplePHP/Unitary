@@ -14,7 +14,6 @@ namespace MaplePHP\Unitary\Support;
 
 use ErrorException;
 use Exception;
-use MaplePHP\Emitron\Contracts\ConfigPropsInterface;
 use MaplePHP\Blunder\ExceptionItem;
 use MaplePHP\Blunder\Handlers\CliHandler;
 use MaplePHP\DTO\Format\Str;
