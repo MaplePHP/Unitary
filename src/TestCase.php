@@ -355,12 +355,26 @@ final class TestCase
      *
      * @param mixed $value
      * @return Expect
+     * @throws ErrorException
      */
     public function expect(mixed $value): Expect
     {
-        $this->value = $value;
-        $this->expect = new Expect($value);
-        $this->expect->setTestCase($this, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[0] ?? []);
+
+        if(is_callable($value)) {
+            $validation = $value;
+            $expectInst = null;
+            $this->testUnit = $this->expectAndValidate(null, function (mixed $value, Expect $inst) use ($validation, &$expectInst) {
+                $expectInst = $inst;
+                return $validation($inst, new Traverse($value));
+            }, $this->error);
+
+            $this->expect = $expectInst;
+            $this->testUnit->setTestValue($this->expect->getValue());
+        } else {
+            $this->value = $value;
+            $this->expect = new Expect($value);
+            $this->expect->setTestCase($this, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[0] ?? []);
+        }
         return $this->expect;
     }
 

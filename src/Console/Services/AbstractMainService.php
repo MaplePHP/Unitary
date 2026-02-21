@@ -2,6 +2,7 @@
 
 namespace MaplePHP\Unitary\Console\Services;
 
+use MaplePHP\Emitron\Contracts\ConfigPropsInterface;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -10,7 +11,6 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use MaplePHP\Prompts\Command;
-use MaplePHP\Unitary\Config\ConfigProps;
 
 abstract class AbstractMainService
 {
@@ -20,7 +20,7 @@ abstract class AbstractMainService
     protected Command $command;
     protected DispatchConfigInterface $configs;
     protected ServerRequestInterface|RequestInterface $request;
-    protected ?ConfigProps $props = null;
+    protected ?ConfigPropsInterface $props = null;
 
     /**
      * @throws NotFoundExceptionInterface
