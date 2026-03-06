@@ -67,7 +67,7 @@ class ConfigPropsMiddleware implements MiddlewareInterface
 
             try {
                 $props = array_merge($configs->getProps()->toArray(), $args);
-                $this->props = ConfigPropsFactory::create($props);
+                $this->props = ConfigPropsFactory::create($props, $configs->getConfigPropsClass());
                 if ($this->props->hasMissingProps() !== [] && isset($args['verbose'])) {
                     $command->error('The properties (' .
                         implode(", ", $this->props->hasMissingProps()) . ') is not exist in ' . get_class($this->props));

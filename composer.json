@@ -33,6 +33,11 @@
     "maplephp/container": "^2.0",
     "maplephp/cache": "^2.0"
   },
+  "extra": {
+    "branch-alias": {
+      "dev-main": "2.x-dev"
+    }
+  },
   "autoload": {
     "files": [
       "src/Setup/assert-polyfill.php",
@@ -45,5 +50,6 @@
   "bin": [
     "bin/unitary"
   ],
-  "minimum-stability": "stable"
+  "minimum-stability": "dev",
+  "prefer-stable": true
 }
