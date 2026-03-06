@@ -202,14 +202,11 @@ final class TestDiscovery
         $ok = self::$unitary->execute();
 
         if (!$ok && $verbose) {
-            trigger_error(
-                "\n\nCould not find any tests inside the test file:\n$file\n\nPossible causes:\n" .
-                "  • There are no test in test group/case.\n" .
-                "  • Unitary could not locate the Unit instance.\n" .
-                "  • You did not use the `group()` function.\n" .
-                "  • You created a new Unit in the test file but did not return it at the end.\n\n",
-                E_USER_WARNING
-            );
+			throw new BlunderSoftException("Could not find any tests inside the test file: $file\n\nPossible causes:\n" .
+				"  • There are no test in test group/case.\n" .
+				"  • Unitary could not locate the Unit instance.\n" .
+				"  • You did not use the `group()` function.\n" .
+				"  • You created a new Unit in the test file but did not return it at the end.\n\n", 0, 0, $file);
         }
 
     }
