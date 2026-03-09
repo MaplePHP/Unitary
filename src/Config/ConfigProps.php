@@ -25,6 +25,7 @@ class ConfigProps extends AbstractConfigProps
     public ?string $timezone = null;
     public ?string $locale = null;
     public ?string $type = null;
+	public ?string $path = null;
     public ?int $exitCode = null;
     public ?bool $verbose = null;
     public ?bool $alwaysShowFiles = null;
