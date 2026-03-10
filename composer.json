@@ -21,6 +21,9 @@
       "homepage": "https://maplephp.github.io/Unitary/"
     }
   ],
+  "scripts": {
+    "test": "php bin/unitary"
+  },
   "require": {
     "php": ">=8.0",
     "composer/semver": "^3.4",
@@ -45,5 +48,12 @@
   "bin": [
     "bin/unitary"
   ],
-  "minimum-stability": "stable"
+  "extra": {
+    "branch-alias": {
+      "dev-main": "2.x-dev",
+      "dev-develop": "2.x-dev"
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
 }

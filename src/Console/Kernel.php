@@ -17,6 +17,7 @@ namespace MaplePHP\Unitary\Console;
 use Exception;
 use MaplePHP\Emitron\Contracts\DispatchConfigInterface;
 use MaplePHP\Emitron\DispatchConfig;
+use MaplePHP\Unitary\Config\ConfigProps;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamInterface;
 use MaplePHP\Unitary\Support\Router;
@@ -72,7 +73,7 @@ class Kernel
      */
     private function configuration(ServerRequestInterface $request): DispatchConfigInterface
     {
-        $config = new DispatchConfig(EmitronKernel::getConfigFilePath());
+        $config = new DispatchConfig(EmitronKernel::getConfigFilePath(), ConfigProps::class);
         return $config
             ->setRouter(function ($routerFile) use ($request) {
                 $router = new Router($request->getCliKeyword(), $request->getCliArgs());

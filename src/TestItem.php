@@ -208,7 +208,8 @@ final class TestItem
     {
         if ($this->hasArgs) {
             $args = array_map(fn ($value) => Helpers::stringifyArgs($value), $this->args);
-            return "(" . implode(", ", $args) . ")";
+            $args = preg_replace('/\R+/', '', implode(", ", $args));
+            return "(" . $args . ")";
         }
         return "";
     }

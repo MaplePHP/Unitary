@@ -20,7 +20,6 @@ use MaplePHP\DTO\Format\Str;
 
 final class Helpers
 {
-
     /**
      * Convert bytes to megabytes and return as a string with fixed precision.
      *

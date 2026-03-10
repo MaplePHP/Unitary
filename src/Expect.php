@@ -37,6 +37,12 @@ class Expect extends ValidationChain
         return new self($value);
     }
 
+
+    public function expect(mixed $value): self
+    {
+        return $this->setValue($value);
+    }
+
     /**
      * We need to pass a test case to Exception to create one loop
      *

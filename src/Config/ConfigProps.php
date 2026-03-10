@@ -19,13 +19,13 @@ use MaplePHP\Emitron\AbstractConfigProps;
  */
 class ConfigProps extends AbstractConfigProps
 {
-    public ?string $path = null;
     public ?string $discoverPattern = null;
     public ?string $exclude = null;
     public ?string $show = null;
     public ?string $timezone = null;
     public ?string $locale = null;
     public ?string $type = null;
+	public ?string $path = null;
     public ?int $exitCode = null;
     public ?bool $verbose = null;
     public ?bool $alwaysShowFiles = null;
@@ -33,6 +33,7 @@ class ConfigProps extends AbstractConfigProps
     public ?bool $smartSearch = null;
     public ?bool $failFast = null;
     public ?string $helpController = null;
+    public ?array $configuration = null;
 
     /**
      * Hydrate the properties/object with expected data, and handle unexpected data
@@ -92,6 +93,9 @@ class ConfigProps extends AbstractConfigProps
                 break;
             case 'failFast':
                 $this->failFast = $this->dataToBool($value);
+                break;
+            case 'configuration':
+                $this->configuration = (array)$value;
                 break;
         }
     }
