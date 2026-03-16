@@ -5,6 +5,15 @@ use MaplePHP\Unitary\{Config\TestConfig, Expect, TestCase};
 $config = TestConfig::make()->withName("unitary");
 
 
+
+
+group("Your grouped test subject", function (TestCase $case) {
+
+    $case->expect(1 + 2)
+        ->isEqualTo(2)
+        ->validate("Addition must be correct"); // Will fail
+
+});
 group($config->withSubject("Assert validations"), function (TestCase $case) {
 
     $case->validate("HelloWorld", function(Expect $inst) {
