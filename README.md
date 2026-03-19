@@ -11,7 +11,7 @@ Mocking, validation, and assertions are built in from the start, with no plugins
 ## Documentation
 
 Visit the full documentation at:  
-👉 https://maplephp.github.io/Unitary/
+👉 https://maplephp.github.io/unitary/
 
 ---
 
