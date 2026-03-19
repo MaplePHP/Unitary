@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkunitary=globalThis.webpackChunkunitary||[]).push([[4587],{5873:a=>{a.exports=JSON.parse('{"metadata":{"permalink":"/unitary/blog","page":1,"postsPerPage":10,"totalPages":1,"totalCount":4,"blogDescription":"Blog","blogTitle":"Blog"}}')}}]);

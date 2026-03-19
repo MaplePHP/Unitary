@@ -1,1 +1,0 @@
-"use strict";(globalThis.webpackChunkunitary=globalThis.webpackChunkunitary||[]).push([[1903],{1912:a=>{a.exports=JSON.parse('{"blogBasePath":"/Unitary/blog","blogTitle":"Blog","authorsListPath":"/Unitary/blog/authors"}')}}]);
